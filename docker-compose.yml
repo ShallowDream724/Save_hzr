@@ -1,0 +1,19 @@
+services:
+  pharm-sync:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+    container_name: pharm-sync
+    environment:
+      - PORT=8787
+      - DB_PATH=/data/app.db
+      - JWT_SECRET=${JWT_SECRET:?set JWT_SECRET in .env}
+      - CORS_ORIGIN=${CORS_ORIGIN:-*}
+    volumes:
+      - pharm_sync_data:/data
+    ports:
+      - "127.0.0.1:8787:8787"
+    restart: unless-stopped
+
+volumes:
+  pharm_sync_data:

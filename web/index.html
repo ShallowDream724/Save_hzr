@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>拯救Hzr</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="./style.css">
+    <!-- CodePen 时可以把 API_BASE 改成你的服务地址，如：https://qianmeng.me -->
+    <script>window.API_BASE = '';</script>
+    <script src="./app.js" defer></script>
+</head>
+<body>
+
+    <div class="app-container">
+        <aside class="sidebar" id="sidebar">
+            <div class="brand">
+                <i class="fa-solid fa-flask-vial"></i> 拯救Hzr
+            </div>
+            
+            <!-- 章节列表容器 -->
+            <div class="chapter-list" id="chapterList">
+                <!-- JS将在这里渲染文件夹和章节 -->
+            </div>
+
+            <!-- 底部功能区 -->
+            <div class="sidebar-footer">
+                <!-- 新建文件夹 -->
+                <button id="addFolderBtn" class="action-btn icon-btn" title="新建文件夹">
+                    <i class="fa-solid fa-folder-plus"></i>
+                </button>
+
+                <!-- 导入文件 -->
+                <label for="fileInput" class="action-btn icon-btn" title="导入JSON文件">
+                    <i class="fa-solid fa-file-import"></i>
+                </label>
+                <input type="file" id="fileInput" accept=".json" style="display: none;">
+                
+                <!-- 粘贴文本 -->
+                <button id="openPasteModalBtn" class="action-btn icon-btn" title="粘贴文本导入">
+                    <i class="fa-regular fa-clipboard"></i>
+                </button>
+
+                <!-- 同步/账号 -->
+                <button id="syncBtn" class="action-btn icon-btn" title="同步/账号">
+                    <i class="fa-solid fa-cloud"></i>
+                </button>
+
+                <!-- 清空 -->
+                <button id="clearDataBtn" class="action-btn icon-btn danger" title="清除所有本地数据">
+                    <i class="fa-solid fa-trash-can"></i>
+                </button>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="top-bar">
+                <button id="menuToggle" class="menu-toggle"><i class="fa-solid fa-bars"></i></button>
+                <h2 id="currentChapterTitle">请选择章节</h2>
+                <div id="syncStatus" style="margin-left:auto; font-size:0.9rem; color:#888;"></div>
+            </header>
+            
+            <div class="questions-container" id="questionsContainer">
+                <div class="welcome-message">
+                    <h3>欢迎复习</h3>
+                    <p>您可以：</p>
+                    <ul style="margin-left:20px; color:#666;">
+                        <li>点击“新建文件夹”整理题库</li>
+                        <li>将章节<b>拖拽</b>到文件夹中（移动端可按住右侧<b>拖拽</b>按钮）</li>
+                        <li><b>双击</b>名称进行重命名</li>
+                    </ul>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- 粘贴文本弹窗 (保持不变) -->
+    <div class="modal-overlay" id="pasteModal">
+        <div class="modal-box">
+            <h3>粘贴 JSON 数据</h3>
+            <textarea id="pasteTextarea" placeholder='{"title": "...", "questions": [...]}'></textarea>
+            <div class="modal-actions">
+                <button id="cancelPasteBtn" class="modal-btn">取消</button>
+                <button id="confirmPasteBtn" class="modal-btn primary">确认导入</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="authModal">
+        <div class="modal-box">
+            <h3>同步账号</h3>
+            <div style="display:flex; gap:10px; margin:10px 0;">
+                <button id="authTabLogin" class="modal-btn primary" type="button">登录</button>
+                <button id="authTabRegister" class="modal-btn" type="button">注册</button>
+                <button id="authLogoutBtn" class="modal-btn" type="button" style="margin-left:auto; display:none;">退出</button>
+            </div>
+            <div style="display:grid; gap:10px;">
+                <input id="authUsername" class="auth-input" placeholder="用户名（3-32位，字母数字._-）">
+                <input id="authPassword" class="auth-input" placeholder="密码（>=8位）" type="password">
+                <div id="authHint" style="color:#888; font-size:0.9rem;"></div>
+            </div>
+            <div class="modal-actions">
+                <button id="authCancelBtn" class="modal-btn">关闭</button>
+                <button id="authSubmitBtn" class="modal-btn primary">提交</button>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,3119 @@
+{
+  "chapters": [
+    {
+      "title": "局麻药、全麻药与镇静催眠药",
+      "questions": [
+        {
+          "id": "10",
+          "text": "普鲁卡因不可用于",
+          "options": [
+            {
+              "label": "A",
+              "content": "蛛网膜下腔麻醉"
+            },
+            {
+              "label": "B",
+              "content": "浸润麻醉"
+            },
+            {
+              "label": "C",
+              "content": "表面麻醉"
+            },
+            {
+              "label": "D",
+              "content": "传导麻醉"
+            },
+            {
+              "label": "E",
+              "content": "硬膜外麻醉"
+            }
+          ],
+          "answer": "C",
+          "explanation": "普鲁卡因（Procaine）是一种酯类局麻药，其脂溶性低，<span class='highlight'>对黏膜的穿透力弱</span>，因此<span class='bold-em'>不用于表面麻醉</span>。它主要用于浸润麻醉、传导麻醉、蛛网膜下腔麻醉和硬膜外麻醉。",
+          "knowledgeTitle": "常用局麻药的特点对比",
+          "knowledge": "<ul><li><b>普鲁卡因</b>：穿透力弱，不用于表面麻醉。代谢产物PABA可能引起过敏。</li><li><b>丁卡因</b>：穿透力强，毒性大，主要用于表面麻醉，禁用于浸润麻醉。</li><li><b>利多卡因</b>：全能麻醉药，穿透力强，起效快，兼具抗心律失常作用。</li></ul>"
+        },
+        {
+          "id": "11",
+          "text": "常用于抗心律失常的局麻药是",
+          "options": [
+            {
+              "label": "A",
+              "content": "普鲁卡因"
+            },
+            {
+              "label": "B",
+              "content": "罗哌卡因"
+            },
+            {
+              "label": "C",
+              "content": "利多卡因"
+            },
+            {
+              "label": "D",
+              "content": "丁卡因"
+            },
+            {
+              "label": "E",
+              "content": "布比卡因"
+            }
+          ],
+          "answer": "C",
+          "explanation": "利多卡因（Lidocaine）不仅是广泛使用的酰胺类局麻药，也是<span class='highlight'>Ib类抗心律失常药</span>，主要用于治疗<span class='bold-em'>室性心律失常</span>（如急性心肌梗死引起的室性早搏、室性心动过速等）。",
+          "knowledgeTitle": "利多卡因的临床应用",
+          "knowledge": "<ul><li><b>局麻作用</b>：起效快、弥散广、穿透力强。用于各种形式麻醉（全能）。</li><li><b>心血管作用</b>：抑制Na+内流，促进K+外流，用于<b>室性</b>心律失常。</li></ul>"
+        },
+        {
+          "id": "12",
+          "text": "与吸入性全麻药吸收入血速度无直接关系的因素是",
+          "options": [
+            {
+              "label": "A",
+              "content": "肺通气量"
+            },
+            {
+              "label": "B",
+              "content": "药物脑/血分配系数"
+            },
+            {
+              "label": "C",
+              "content": "吸入气中药物分压"
+            },
+            {
+              "label": "D",
+              "content": "药物血/气分配系数"
+            },
+            {
+              "label": "E",
+              "content": "心肾功能"
+            }
+          ],
+          "answer": "E",
+          "explanation": "吸入性全麻药的吸收（从肺泡进入血液）主要取决于：<br>1. <b>吸入药物浓度/分压</b>（C）。<br>2. <b>肺通气量</b>（A）。<br>3. <b>血/气分配系数</b>（D）：决定了药物在血液中的溶解度。<br>B选项脑/血分配系数影响药物从血液进入脑组织（分布），而非吸收。E选项心肾功能影响分布和排泄，对初期吸收入血速度影响相对较小且不直接（心输出量增加反倒会减慢肺泡气药物浓度上升速度，但相比物理溶解因素，心肾功能不是直接决定吸收的物理参数）。本题最佳排除项为E。",
+          "knowledgeTitle": "吸入麻醉药的药动学",
+          "knowledge": "<ul><li><b>吸收</b>：肺泡气分压是驱动力。血/气分配系数越<b>小</b>，诱导和苏醒越<b>快</b>（如氧化亚氮）。</li><li><b>分布</b>：取决于器官血流量和组织/血分配系数。</li><li><b>消除</b>：主要经肺以原形排出。</li></ul>"
+        },
+        {
+          "id": "13",
+          "text": "下列会引起肝损伤的药物是",
+          "options": [
+            {
+              "label": "A",
+              "content": "氯胺酮"
+            },
+            {
+              "label": "B",
+              "content": "乙醚"
+            },
+            {
+              "label": "C",
+              "content": "恩氟烷"
+            },
+            {
+              "label": "D",
+              "content": "氧化亚氮"
+            },
+            {
+              "label": "E",
+              "content": "氟烷"
+            }
+          ],
+          "answer": "E",
+          "explanation": "氟烷（Halothane）在体内代谢率较高（约20%），其代谢产物可能导致肝细胞损伤，引起<span class='bold-em'>“氟烷肝炎”</span>，表现为黄疸和肝功能衰竭。因此，肝功能障碍者禁用氟烷。",
+          "knowledgeTitle": "氟烷的不良反应",
+          "knowledge": "<ul><li><b>肝毒性</b>：氟烷肝炎（免疫反应或代谢物毒性）。</li><li><b>心脏毒性</b>：增加心肌对儿茶酚胺的敏感性，易诱发心律失常。</li><li><b>恶性高热</b>：遗传性肌病患者易发。</li></ul>"
+        },
+        {
+          "id": "14",
+          "text": "下列药物中肌松作用较完全的是",
+          "options": [
+            {
+              "label": "A",
+              "content": "硫喷妥钠"
+            },
+            {
+              "label": "B",
+              "content": "吸入乙醚"
+            },
+            {
+              "label": "C",
+              "content": "氟烷"
+            },
+            {
+              "label": "D",
+              "content": "氯胺酮"
+            },
+            {
+              "label": "E",
+              "content": "氧化亚氮"
+            }
+          ],
+          "answer": "B",
+          "explanation": "乙醚（Ether）麻醉的特点是麻醉分期明显，<span class='highlight'>肌肉松弛作用强</span>（尤其在外科麻醉期），无需额外使用肌松药。其他选项如氧化亚氮肌松极差，氟烷肌松作用较弱，硫喷妥钠和氯胺酮肌松效果均不佳。",
+          "knowledgeTitle": "乙醚麻醉的特点",
+          "knowledge": "<p>乙醚是经典的吸入麻醉药，虽然现在临床少用，但其药理特点常作为考点：</p><ul><li>优点：安全范围大，<b>肌松作用好</b>。</li><li>缺点：诱导期和苏醒期长，刺激呼吸道分泌物增加，易燃易爆。</li></ul>"
+        },
+        {
+          "id": "15",
+          "text": "硫喷妥钠静脉麻醉适用于",
+          "options": [
+            {
+              "label": "A",
+              "content": "支气管哮喘患者"
+            },
+            {
+              "label": "B",
+              "content": "肝功能损害患者"
+            },
+            {
+              "label": "C",
+              "content": "麻醉前给药"
+            },
+            {
+              "label": "D",
+              "content": "诱导麻醉"
+            },
+            {
+              "label": "E",
+              "content": "新生儿、婴幼儿"
+            }
+          ],
+          "answer": "D",
+          "explanation": "硫喷妥钠（Thiopental Sodium）是超短效巴比妥类药物，脂溶性极高，静注后迅速进入脑组织，起效极快，但维持时间短。因此主要用于<span class='highlight'>全麻诱导</span>、短小手术或控制惊厥。由于其可引起支气管痉挛（禁用于A）和抑制呼吸（慎用于E），且经肝代谢（慎用于B），故D为最佳答案。",
+          "knowledgeTitle": "硫喷妥钠的临床应用与禁忌",
+          "knowledge": "<ul><li><b>应用</b>：诱导麻醉（最常用）、短时麻醉、控制惊厥。</li><li><b>禁忌</b>：支气管哮喘（因释放组胺引起支气管痉挛）、严重呼吸循环衰竭、卟啉病。</li></ul>"
+        },
+        {
+          "id": "16",
+          "text": "应用硫喷妥钠麻醉的最大缺点是",
+          "options": [
+            {
+              "label": "A",
+              "content": "麻醉深度不够"
+            },
+            {
+              "label": "B",
+              "content": "兴奋期长"
+            },
+            {
+              "label": "C",
+              "content": "易引起缺氧"
+            },
+            {
+              "label": "D",
+              "content": "易产生呼吸抑制"
+            },
+            {
+              "label": "E",
+              "content": "易引起心律失常"
+            }
+          ],
+          "answer": "D",
+          "explanation": "硫喷妥钠对呼吸中枢有明显的抑制作用，且容易引起喉头痉挛和支气管痉挛。静脉注射速度过快或剂量过大<span class='highlight'>易导致呼吸暂停</span>，这是其主要危险和缺点。",
+          "knowledgeTitle": "硫喷妥钠的主要不良反应",
+          "knowledge": "<ul><li><b>呼吸抑制</b>：静注过快可致呼吸停止。</li><li><b>喉痉挛/支气管痉挛</b>：哮喘患者禁用。</li><li><b>心血管抑制</b>：血压下降。</li></ul>"
+        },
+        {
+          "id": "17",
+          "text": "对心血管具有明显兴奋作用的静脉麻醉药是",
+          "options": [
+            {
+              "label": "A",
+              "content": "硫喷妥钠"
+            },
+            {
+              "label": "B",
+              "content": "氯胺酮"
+            },
+            {
+              "label": "C",
+              "content": "丙泊酚"
+            },
+            {
+              "label": "D",
+              "content": "氧化亚氮"
+            },
+            {
+              "label": "E",
+              "content": "以上均不是"
+            }
+          ],
+          "answer": "B",
+          "explanation": "氯胺酮（Ketamine）能激动交感神经中枢，导致<span class='highlight'>心率加快、血压升高</span>、心输出量增加。这与其他大多数抑制心血管系统的麻醉药不同。",
+          "knowledgeTitle": "氯胺酮的独特药理作用",
+          "knowledge": "<ul><li><b>分离麻醉</b>：感觉与环境分离（阻断痛觉，意识模糊）。</li><li><b>心血管兴奋</b>：升压、快心率（适用于休克患者诱导，禁用于高血压）。</li><li><b>精神反应</b>：苏醒期幻觉、噩梦。</li></ul>"
+        },
+        {
+          "id": "18",
+          "text": "下述叙述中正确的是",
+          "options": [
+            {
+              "label": "A",
+              "content": "氟烷镇痛作用较强"
+            },
+            {
+              "label": "B",
+              "content": "吸入麻醉时禁用镇痛药"
+            },
+            {
+              "label": "C",
+              "content": "氧化亚氮比氟烷麻醉作用强而镇痛作用弱"
+            },
+            {
+              "label": "D",
+              "content": "氟烷能抑制心肌对儿茶酚胺的敏感性"
+            },
+            {
+              "label": "E",
+              "content": "恩氟烷对肝脏无明显副作用"
+            }
+          ],
+          "answer": "E",
+          "explanation": "A错：氟烷镇痛作用弱。B错：常合用阿片类镇痛药以减少麻醉药用量（平衡麻醉）。C错：氧化亚氮麻醉效能极弱（MAC大），但镇痛作用强。D错：氟烷<span class='highlight'>增加</span>心肌对儿茶酚胺的敏感性。E对：恩氟烷在体内代谢率低，且不产生氟烷那样严重的肝毒性，对肝脏副作用较小。",
+          "knowledgeTitle": "常用吸入麻醉药对比",
+          "knowledge": "<ul><li><b>氟烷</b>：麻醉强，镇痛弱，肝毒性，致心律失常。</li><li><b>氧化亚氮</b>：麻醉弱（由于MAC>100不可单独达全麻），镇痛强，无毒性。</li><li><b>恩氟烷/异氟烷</b>：肌松较好，性质较稳定，肝毒性小。</li></ul>"
+        },
+        {
+          "id": "19",
+          "text": "关于麻醉药的叙述中正确的是",
+          "options": [
+            {
+              "label": "A",
+              "content": "氧化亚氮的主要缺点是易产生缺氧"
+            },
+            {
+              "label": "B",
+              "content": "吸入麻醉药在作用初期因兴奋中枢而表现为兴奋期"
+            },
+            {
+              "label": "C",
+              "content": "手术在第四期进行，因为此期肌松作用完全"
+            },
+            {
+              "label": "D",
+              "content": "短效巴比妥类药物可作为静脉麻醉药"
+            },
+            {
+              "label": "E",
+              "content": "与延髓相比，脊髓不易受抑制"
+            }
+          ],
+          "answer": "A",
+          "explanation": "A正确：氧化亚氮效能低，需高浓度吸入（>70%），停药时大量N2O弥散至肺泡，置换出氧气，导致<span class='highlight'>弥散性缺氧</span>。B错：兴奋期是因为抑制了大脑皮层的抑制性神经元（去抑制），而非直接兴奋。C错：手术应在第三期（外科麻醉期）进行，第四期是延髓麻痹期，危及生命。D错：通常使用“超短效”巴比妥类（硫喷妥钠）作为静脉麻醉药，而非短效。",
+          "knowledgeTitle": "氧化亚氮（笑气）",
+          "knowledge": "<ul><li><b>特点</b>：起效快，镇痛强，麻醉弱。</li><li><b>弥散性缺氧</b>：停药后应吸纯氧防止缺氧。</li><li><b>空腔积气</b>：易扩散进入体内封闭空腔（如肠梗阻、气胸），使其容积扩大，故禁用。</li></ul>"
+        },
+        {
+          "id": "20",
+          "text": "恢复过程中易出现幻觉的药物是",
+          "options": [
+            {
+              "label": "A",
+              "content": "乙醚"
+            },
+            {
+              "label": "B",
+              "content": "硫喷妥钠"
+            },
+            {
+              "label": "C",
+              "content": "氟烷"
+            },
+            {
+              "label": "D",
+              "content": "氯胺酮"
+            },
+            {
+              "label": "E",
+              "content": "氧化亚氮"
+            }
+          ],
+          "answer": "D",
+          "explanation": "氯胺酮在苏醒期常引起精神运动性反应，表现为<span class='highlight'>幻觉、噩梦、谵妄</span>等。",
+          "knowledgeTitle": "氯胺酮的精神副作用",
+          "knowledge": "<p>氯胺酮阻断NMDA受体，产生分离麻醉。其主要的副作用之一是苏醒期的精神反应。通常需要合用苯二氮卓类药物（如地西泮、咪达唑仑）来减少这些反应。</p>"
+        },
+        {
+          "id": "21",
+          "text": "麻醉时易致喉肌痉挛的全麻药是",
+          "options": [
+            {
+              "label": "A",
+              "content": "乙醚"
+            },
+            {
+              "label": "B",
+              "content": "硫喷妥钠"
+            },
+            {
+              "label": "C",
+              "content": "氧化亚氮"
+            },
+            {
+              "label": "D",
+              "content": "氟烷"
+            },
+            {
+              "label": "E",
+              "content": "氯胺酮"
+            }
+          ],
+          "answer": "B",
+          "explanation": "硫喷妥钠具有拟副交感作用，可增加喉头敏感性，操作不当易诱发<span class='highlight'>喉头痉挛</span>和支气管痉挛。",
+          "knowledgeTitle": "硫喷妥钠呼吸系统影响",
+          "knowledge": "<ul><li><b>呼吸抑制</b>：呈剂量依赖性。</li><li><b>气道反应</b>：诱发喉痉挛、支气管痉挛。</li><li><b>预防</b>：术前使用阿托品可降低迷走神经张力，减少分泌物和痉挛风险。</li></ul>"
+        },
+        {
+          "id": "22",
+          "text": "下述药物中使心脏对儿茶酚胺的增敏作用最强的是",
+          "options": [
+            {
+              "label": "A",
+              "content": "氟烷"
+            },
+            {
+              "label": "B",
+              "content": "乙醚"
+            },
+            {
+              "label": "C",
+              "content": "氧化亚氮"
+            },
+            {
+              "label": "D",
+              "content": "硫喷妥钠"
+            },
+            {
+              "label": "E",
+              "content": "氯胺酮"
+            }
+          ],
+          "answer": "A",
+          "explanation": "氟烷能增加心肌对儿茶酚胺（如肾上腺素）的敏感性，若体内儿茶酚胺水平升高（如焦虑、疼痛或外源性给予），极易诱发<span class='bold-em'>室性心律失常</span>。",
+          "knowledgeTitle": "氟烷与儿茶酚胺",
+          "knowledge": "<p>这是氟烷麻醉的重要禁忌点。使用氟烷麻醉时，应限制肾上腺素的用量，并严密监测心电图。</p>"
+        },
+        {
+          "id": "23",
+          "text": "麻醉前给药必须用阿托品类药物的麻醉方法是",
+          "options": [
+            {
+              "label": "A",
+              "content": "乙醚吸入麻醉"
+            },
+            {
+              "label": "B",
+              "content": "硫喷妥钠静脉麻醉"
+            },
+            {
+              "label": "C",
+              "content": "蛛网膜下腔麻醉"
+            },
+            {
+              "label": "D",
+              "content": "硬脊膜外麻醉"
+            },
+            {
+              "label": "E",
+              "content": "浸润麻醉"
+            }
+          ],
+          "answer": "A",
+          "explanation": "乙醚对呼吸道有强烈的刺激性，会引起<span class='highlight'>大量的唾液和支气管分泌物</span>，可能导致呼吸道阻塞或吸入性肺炎。因此，乙醚麻醉前<span class='bold-em'>必须</span>使用阿托品以抑制腺体分泌。硫喷妥钠也常合用阿托品防痉挛，但乙醚因分泌物问题更为绝对。",
+          "knowledgeTitle": "麻醉前用药的目的",
+          "knowledge": "<ul><li><b>阿托品/东莨菪碱</b>：抑制腺体分泌，防止吸入性肺炎；抑制迷走神经反射。</li><li><b>苯二氮卓类</b>：镇静、抗焦虑、遗忘。</li><li><b>阿片类</b>：镇痛，配合麻醉。</li></ul>"
+        },
+        {
+          "id": "24",
+          "text": "硫喷妥钠作用时间短的原因是",
+          "options": [
+            {
+              "label": "A",
+              "content": "很快在肝被代谢"
+            },
+            {
+              "label": "B",
+              "content": "很快从肾被排泄"
+            },
+            {
+              "label": "C",
+              "content": "很快在血液中分解"
+            },
+            {
+              "label": "D",
+              "content": "在体内重新分布"
+            },
+            {
+              "label": "E",
+              "content": "与血浆蛋白结合而失活"
+            }
+          ],
+          "answer": "D",
+          "explanation": "硫喷妥钠脂溶性高，静注后先进入血供丰富的脑组织（产生麻醉），随后迅速转移到肌肉和脂肪等血供较少的组织，使脑内药物浓度迅速下降而苏醒。这种现象称为<span class='bold-em'>再分布（Redistribution）</span>。",
+          "knowledgeTitle": "药物的再分布",
+          "knowledge": "<p><b>定义</b>：药物先进入血流量大的器官（心、脑、肾），然后向血流量小但体积大或脂溶性高的组织（肌、脂肪）转移的过程。</p><p><b>意义</b>：是硫喷妥钠等超短效药物作用终止的主要原因，而非代谢或排泄。</p>"
+        },
+        {
+          "id": "25",
+          "text": "地西泮的作用机制是",
+          "options": [
+            {
+              "label": "A",
+              "content": "不通过受体，直接抑制中枢"
+            },
+            {
+              "label": "B",
+              "content": "作用于苯二氮卓受体，增加GABA与GABA受体的亲和力"
+            },
+            {
+              "label": "C",
+              "content": "作用于GABA受体，增强体内抑制性递质的作用"
+            },
+            {
+              "label": "D",
+              "content": "诱导生成一种新蛋白质而起作用"
+            },
+            {
+              "label": "E",
+              "content": "以上均不是"
+            }
+          ],
+          "answer": "B",
+          "explanation": "地西泮（苯二氮卓类）与GABA_A受体复合物上的<span class='highlight'>苯二氮卓结合位点（BZ受体）</span>结合，发生变构调节，<span class='bold-em'>增加GABA与GABA_A受体的亲和力</span>，提高Cl-通道开放的<b>频率</b>，从而增强GABA的抑制效应。",
+          "knowledgeTitle": "苯二氮卓类 vs 巴比妥类机制",
+          "knowledge": "<ul><li><b>苯二氮卓类</b>：增加Cl-通道开放<b>频率</b>。需依赖GABA存在。</li><li><b>巴比妥类</b>：延长Cl-通道开放<b>时间</b>。高浓度可直接开放通道（拟GABA作用），故安全性较低。</li></ul>"
+        },
+        {
+          "id": "26",
+          "text": "不属于苯二氮卓类的药物是",
+          "options": [
+            {
+              "label": "A",
+              "content": "氟如卓 (注:原文可能有误，疑为氟urazepam等，但看选项E更明显)"
+            },
+            {
+              "label": "B",
+              "content": "氟西泮"
+            },
+            {
+              "label": "C",
+              "content": "奥沙西泮"
+            },
+            {
+              "label": "D",
+              "content": "三唑仑"
+            },
+            {
+              "label": "E",
+              "content": "甲丙氨酯"
+            }
+          ],
+          "answer": "E",
+          "explanation": "甲丙氨酯（Meprobamate）属于氨基甲酸酯类镇静催眠药，不属于苯二氮卓类。A、B、C、D均带有“西泮”或“唑仑”后缀，属于苯二氮卓类。",
+          "knowledgeTitle": "苯二氮卓类药物命名",
+          "knowledge": "<ul><li>通常后缀为“<b>-西泮</b>” (PAM) 或“<b>-唑仑</b>” (LAM)。</li><li>如：地西泮、氯硝西泮、艾司唑仑、咪达唑仑。</li></ul>"
+        },
+        {
+          "id": "27",
+          "text": "治疗焦虑症最好选用",
+          "options": [
+            {
+              "label": "A",
+              "content": "氟西泮"
+            },
+            {
+              "label": "B",
+              "content": "地西泮"
+            },
+            {
+              "label": "C",
+              "content": "三唑仑"
+            },
+            {
+              "label": "D",
+              "content": "苯巴比妥"
+            },
+            {
+              "label": "E",
+              "content": "奥沙西泮"
+            }
+          ],
+          "answer": "B",
+          "explanation": "地西泮（Diazepam）是典型的<span class='highlight'>抗焦虑药</span>，小剂量即可抑制边缘系统，缓解焦虑。虽然丁螺环酮等新药也用于焦虑，但在给出的选项中，苯二氮卓类中的地西泮是首选。",
+          "knowledgeTitle": "地西泮的药理作用",
+          "knowledge": "<ul><li><b>抗焦虑</b>：小剂量，边缘系统。</li><li><b>镇静催眠</b>：较大剂量。</li><li><b>抗惊厥/癫痫</b>：静注治疗癫痫持续状态首选。</li><li><b>中枢肌松</b>：缓解肌张力增高。</li></ul>"
+        },
+        {
+          "id": "28",
+          "text": "苯二氮卓类药物不具有的药理作用是",
+          "options": [
+            {
+              "label": "A",
+              "content": "镇静"
+            },
+            {
+              "label": "B",
+              "content": "催眠"
+            },
+            {
+              "label": "C",
+              "content": "抗惊厥"
+            },
+            {
+              "label": "D",
+              "content": "抗癫痫"
+            },
+            {
+              "label": "E",
+              "content": "麻醉"
+            }
+          ],
+          "answer": "E",
+          "explanation": "苯二氮卓类药物具有镇静、催眠、抗焦虑、抗惊厥和中枢性肌松作用。虽然高剂量可引起意识丧失（用于诱导），但单独使用通常<span class='highlight'>达不到外科麻醉所需的深度（真正的麻醉作用）</span>，且有“封顶效应”，比巴比妥类更安全。因此E选项是其不具备（或不典型）的作用。",
+          "knowledgeTitle": "苯二氮卓类 vs 巴比妥类作用谱",
+          "knowledge": "<ul><li><b>苯二氮卓类</b>：镇静、催眠、抗焦虑、抗惊厥、肌松。无真正麻醉作用（除非与其他药合用）。</li><li><b>巴比妥类</b>：镇静、催眠、抗惊厥、<b>麻醉</b>（高剂量可致死）。</li></ul>"
+        },
+        {
+          "id": "29",
+          "text": "低剂量地西泮即可产生的作用是",
+          "options": [
+            {
+              "label": "A",
+              "content": "中枢性肌肉松弛"
+            },
+            {
+              "label": "B",
+              "content": "记忆缺失"
+            },
+            {
+              "label": "C",
+              "content": "明显降低血压"
+            },
+            {
+              "label": "D",
+              "content": "抑制肺泡换气功能"
+            },
+            {
+              "label": "E",
+              "content": "制边缘系统电活动的发放和传递"
+            }
+          ],
+          "answer": "E",
+          "explanation": "地西泮的抗焦虑作用在<span class='highlight'>小于镇静剂量</span>时即可产生，其机制主要是<span class='bold-em'>抑制边缘系统</span>（杏仁核、海马等）的电活动发放和传递。",
+          "knowledgeTitle": "苯二氮卓类的剂量-效应关系",
+          "knowledge": "<ul><li><b>小剂量</b>：抗焦虑（作用于边缘系统）。</li><li><b>中剂量</b>：镇静催眠（作用于网状结构上行激活系统）。</li><li><b>大剂量</b>：抗惊厥、肌松。</li></ul>"
+        },
+        {
+          "id": "30",
+          "text": "可致短时记忆缺失的药物是",
+          "options": [
+            {
+              "label": "A",
+              "content": "苯巴比妥"
+            },
+            {
+              "label": "B",
+              "content": "氟马西尼"
+            },
+            {
+              "label": "C",
+              "content": "丁螺环酮"
+            },
+            {
+              "label": "D",
+              "content": "地西泮"
+            },
+            {
+              "label": "E",
+              "content": "水合氯醛"
+            }
+          ],
+          "answer": "D",
+          "explanation": "苯二氮卓类药物（如地西泮、咪达唑仑、三唑仑）可引起<span class='highlight'>顺行性遗忘</span>（即服药后一段时间内的记忆缺失）。这一副作用在内窥镜检查等小手术中常被视为有利作用，但在治疗失眠时则为副作用。",
+          "knowledgeTitle": "顺行性遗忘",
+          "knowledge": "<p>特指服药后无法形成新的记忆。利用此作用，苯二氮卓类常用于术前给药，使患者忘记手术过程中的不适。</p>"
+        }
+      ]
+    },
+    {
+      "title": "镇静催眠药、抗癫痫药与抗惊厥药",
+      "questions": [
+        {
+          "id": "31",
+          "text": "苯二氮卓受体的拮抗剂是",
+          "options": [
+            {
+              "label": "A",
+              "content": "苯巴比妥"
+            },
+            {
+              "label": "B",
+              "content": "氟马西尼"
+            },
+            {
+              "label": "C",
+              "content": "丁螺环酮"
+            },
+            {
+              "label": "D",
+              "content": "地西泮"
+            },
+            {
+              "label": "E",
+              "content": "水合氯醛"
+            }
+          ],
+          "answer": "B",
+          "explanation": "氟马西尼（Flumazenil）是<span class='highlight'>苯二氮卓受体的特异性拮抗剂</span>，能竞争性阻断苯二氮卓类药物与受体的结合，用于苯二氮卓类药物过量中毒的解救。",
+          "knowledgeTitle": "氟马西尼的应用",
+          "knowledge": "<ul><li><b>机制</b>：竞争性阻断GABA_A受体上的苯二氮卓结合位点。</li><li><b>用途</b>：苯二氮卓类药物中毒的急救；全麻术后拮抗苯二氮卓类的残余作用。</li></ul>"
+        },
+        {
+          "id": "32",
+          "text": "地西泮抗焦虑的主要作用部位是",
+          "options": [
+            {
+              "label": "A",
+              "content": "中脑网状结构"
+            },
+            {
+              "label": "B",
+              "content": "下丘脑"
+            },
+            {
+              "label": "C",
+              "content": "边缘系统"
+            },
+            {
+              "label": "D",
+              "content": "大脑皮层"
+            },
+            {
+              "label": "E",
+              "content": "纹状体"
+            }
+          ],
+          "answer": "C",
+          "explanation": "地西泮的抗焦虑作用主要与其抑制<span class='highlight'>边缘系统</span>（如杏仁核、海马）的电活动有关。而其镇静催眠作用则主要与抑制脑干网状结构上行激活系统有关。",
+          "knowledgeTitle": "地西泮作用部位与效应",
+          "knowledge": "<ul><li><b>边缘系统</b>：抗焦虑作用。</li><li><b>脑干网状结构</b>：镇静、催眠作用。</li><li><b>脊髓/脑干</b>：中枢性肌松作用。</li></ul>"
+        },
+        {
+          "id": "33",
+          "text": "具有中枢性肌肉松弛作用的药物是",
+          "options": [
+            {
+              "label": "A",
+              "content": "苯巴比妥"
+            },
+            {
+              "label": "B",
+              "content": "水合氯醛"
+            },
+            {
+              "label": "C",
+              "content": "硫喷妥钠"
+            },
+            {
+              "label": "D",
+              "content": "戊巴比妥"
+            },
+            {
+              "label": "E",
+              "content": "地西泮"
+            }
+          ],
+          "answer": "E",
+          "explanation": "地西泮（苯二氮卓类）具有显著的<span class='highlight'>中枢性肌松作用</span>，可缓解大脑或脊髓损伤引起的肌张力增高，也可用于缓解局部关节病变引起的肌肉痉挛。巴比妥类和水合氯醛无此作用。",
+          "knowledgeTitle": "地西泮的药理作用谱",
+          "knowledge": "<p><b>四大作用</b>：</p><ol><li>抗焦虑</li><li>镇静催眠</li><li>抗惊厥/抗癫痫</li><li>中枢性肌松</li></ol>"
+        },
+        {
+          "id": "34",
+          "text": "巴比妥类药物中能用于短时麻醉的药物是",
+          "options": [
+            {
+              "label": "A",
+              "content": "苯巴比妥"
+            },
+            {
+              "label": "B",
+              "content": "戊巴比妥"
+            },
+            {
+              "label": "C",
+              "content": "异戊巴比妥"
+            },
+            {
+              "label": "D",
+              "content": "司可巴比妥"
+            },
+            {
+              "label": "E",
+              "content": "硫喷妥"
+            }
+          ],
+          "answer": "E",
+          "explanation": "硫喷妥（通常指硫喷妥钠）属于<span class='bold-em'>超短效</span>巴比妥类药物，脂溶性极高，起效快、维持时间短，常用于静脉诱导麻醉或短小手术麻醉。",
+          "knowledgeTitle": "巴比妥类药物的分类",
+          "knowledge": "<ul><li><b>长效</b>：苯巴比妥（抗癫痫）。</li><li><b>中效</b>：异戊巴比妥（催眠）。</li><li><b>短效</b>：司可巴比妥（催眠）。</li><li><b>超短效</b>：硫喷妥钠（静脉麻醉）。</li></ul>"
+        },
+        {
+          "id": "35",
+          "text": "水合氯醛不具有的特点是",
+          "options": [
+            {
+              "label": "A",
+              "content": "对胃有刺激性"
+            },
+            {
+              "label": "B",
+              "content": "久服可产生依赖性"
+            },
+            {
+              "label": "C",
+              "content": "口服易吸收"
+            },
+            {
+              "label": "D",
+              "content": "明显缩短快动眼睡眠时相"
+            },
+            {
+              "label": "E",
+              "content": "可用于催眠"
+            }
+          ],
+          "answer": "D",
+          "explanation": "水合氯醛的一个主要优点是<span class='highlight'>不明显缩短快动眼睡眠（REM）时相</span>，停药后无明显的“反跳”现象。这与巴比妥类药物（显著缩短REM）不同。其他选项均为其特点：刺激胃（需稀释口服）、有依赖性、口服吸收快。",
+          "knowledgeTitle": "水合氯醛的特点",
+          "knowledge": "<ul><li><b>优点</b>：起效快，不缩短REM睡眠（近似生理睡眠）。</li><li><b>缺点</b>：胃刺激大（溃疡患者禁用），久服成瘾。</li><li><b>应用</b>：顽固性失眠、小儿高热惊厥（灌肠给药）。</li></ul>"
+        },
+        {
+          "id": "36",
+          "text": "地西泮不用于",
+          "options": [
+            {
+              "label": "A",
+              "content": "焦虑症或焦虑性失眠"
+            },
+            {
+              "label": "B",
+              "content": "麻醉前给药"
+            },
+            {
+              "label": "C",
+              "content": "高热惊厥"
+            },
+            {
+              "label": "D",
+              "content": "癫痫持续状态"
+            },
+            {
+              "label": "E",
+              "content": "诱导麻醉"
+            }
+          ],
+          "answer": "E",
+          "explanation": "地西泮虽然可辅助麻醉，但用于<span class='bold-em'>全麻诱导</span>并不是其主要用途（起效相对慢，需大剂量，且有时刺激血管）。临床上常选用硫喷妥钠、丙泊酚或咪达唑仑进行诱导。地西泮是癫痫持续状态的首选药（D），也常用于焦虑（A）、麻醉前给药（B）和惊厥（C）。",
+          "knowledgeTitle": "地西泮的临床首选",
+          "knowledge": "<p>地西泮是治疗<b>癫痫持续状态</b>的首选药物（静脉注射）。也广泛用于各类焦虑症和作为麻醉前用药（消除紧张、遗忘）。</p>"
+        },
+        {
+          "id": "37",
+          "text": "地西泮不具有的作用是",
+          "options": [
+            {
+              "label": "A",
+              "content": "镇静、催眠、抗焦虑作用"
+            },
+            {
+              "label": "B",
+              "content": "抗抑郁作用"
+            },
+            {
+              "label": "C",
+              "content": "抗惊厥作用"
+            },
+            {
+              "label": "D",
+              "content": "缩短慢波睡眠时间"
+            },
+            {
+              "label": "E",
+              "content": "中枢性肌肉松弛作用"
+            }
+          ],
+          "answer": "B",
+          "explanation": "地西泮是中枢抑制药，<span class='highlight'>不具有抗抑郁作用</span>，甚至可能加重抑郁症状。对于伴有焦虑的抑郁症患者，通常需合用抗抑郁药。",
+          "knowledgeTitle": "苯二氮卓类对睡眠的影响",
+          "knowledge": "<ul><li>缩短睡眠潜伏期（入睡快）。</li><li>延长NREM第二期睡眠（睡眠时间长）。</li><li>缩短慢波睡眠（深睡眠）和REM睡眠（但程度较巴比妥类轻）。</li></ul>"
+        },
+        {
+          "id": "38",
+          "text": "巴比妥类药物中具有抗癫痫作用的是",
+          "options": [
+            {
+              "label": "A",
+              "content": "巴比妥"
+            },
+            {
+              "label": "B",
+              "content": "戊巴比妥"
+            },
+            {
+              "label": "C",
+              "content": "苯巴比妥"
+            },
+            {
+              "label": "D",
+              "content": "异戊巴比妥"
+            },
+            {
+              "label": "E",
+              "content": "硫喷妥钠"
+            }
+          ],
+          "answer": "C",
+          "explanation": "苯巴比妥（Phenobarbital）除了镇静催眠外，还具有良好的<span class='highlight'>抗癫痫</span>作用，常用于癫痫大发作和癫痫持续状态。其他中短效巴比妥类药物抗癫痫作用较弱，主要用于催眠。",
+          "knowledgeTitle": "苯巴比妥的特殊用途",
+          "knowledge": "<p>它是巴比妥类中唯一广泛用于抗癫痫的药物。虽然中枢抑制作用随剂量增加而增强，但在非麻醉剂量下即可产生抗惊厥和抗癫痫效应。</p>"
+        },
+        {
+          "id": "39",
+          "text": "下面的巴比妥类药物中作用时间最长的是",
+          "options": [
+            {
+              "label": "A",
+              "content": "异戊巴比妥"
+            },
+            {
+              "label": "B",
+              "content": "戊巴比妥"
+            },
+            {
+              "label": "C",
+              "content": "苯巴比妥"
+            },
+            {
+              "label": "D",
+              "content": "司可巴比妥"
+            },
+            {
+              "label": "E",
+              "content": "硫喷妥钠"
+            }
+          ],
+          "answer": "C",
+          "explanation": "苯巴比妥脂溶性较低，进入脑组织慢，代谢排泄也慢，属于<span class='bold-em'>长效</span>巴比妥类药物。",
+          "knowledgeTitle": "巴比妥类构效关系",
+          "knowledge": "<ul><li><b>脂溶性</b>：决定起效快慢和维持时间。脂溶性越高（如硫喷妥），起效越快，维持越短（因再分布）。</li><li><b>苯巴比妥</b>：脂溶性低，起效慢，维持长。</li></ul>"
+        },
+        {
+          "id": "40",
+          "text": "苯二氮卓类与巴比妥类比较，前者不具有的作用是",
+          "options": [
+            {
+              "label": "A",
+              "content": "镇静、催眠"
+            },
+            {
+              "label": "B",
+              "content": "抗焦虑"
+            },
+            {
+              "label": "C",
+              "content": "麻醉作用"
+            },
+            {
+              "label": "D",
+              "content": "抗惊厥"
+            },
+            {
+              "label": "E",
+              "content": "抗癫痫作用"
+            }
+          ],
+          "answer": "C",
+          "explanation": "苯二氮卓类药物具有“封顶效应”，随着剂量增加，其作用达到一定程度后不再显著增强，难以单独达到外科手术所需的<span class='highlight'>麻醉深度</span>（虽然高剂量可致意识丧失，但不如巴比妥类能引起深度全麻甚至延髓麻痹）。这也是其安全性高于巴比妥类的主要原因。",
+          "knowledgeTitle": "安全性对比：苯二氮卓类 vs 巴比妥类",
+          "knowledge": "<ul><li><b>苯二氮卓类</b>：安全范围大，不易致死（除非合用乙醇等）。</li><li><b>巴比妥类</b>：剂量-效应曲线陡峭，大剂量可致呼吸中枢麻痹死亡。</li></ul>"
+        },
+        {
+          "id": "41",
+          "text": "抢救口服巴比妥类药物中毒，最重要的措施是",
+          "options": [
+            {
+              "label": "A",
+              "content": "排空胃内容物及结合残留的毒物"
+            },
+            {
+              "label": "B",
+              "content": "碱化尿液以促进毒物排泄"
+            },
+            {
+              "label": "C",
+              "content": "保持呼吸道通畅及充分的肺通气量"
+            },
+            {
+              "label": "D",
+              "content": "输液以增加回心血量及心输出量"
+            },
+            {
+              "label": "E",
+              "content": "静滴间羟胺以升高血压"
+            }
+          ],
+          "answer": "C",
+          "explanation": "巴比妥类中毒致死的主要原因是<span class='highlight'>呼吸中枢麻痹</span>。因此，抢救的首要和最重要措施是维持呼吸功能，<span class='bold-em'>保持呼吸道通畅</span>，必要时进行人工呼吸。",
+          "knowledgeTitle": "镇静催眠药中毒抢救原则",
+          "knowledge": "<ol><li><b>维持呼吸循环</b>：人工呼吸、吸氧、升压。</li><li><b>清除毒物</b>：洗胃、导泻。</li><li><b>促进排泄</b>：碱化尿液（针对苯巴比妥）。</li><li><b>特效解毒</b>：氟马西尼（仅针对苯二氮卓类）。</li></ol>"
+        },
+        {
+          "id": "42",
+          "text": "巴比妥类中毒时，对病人最危险的是",
+          "options": [
+            {
+              "label": "A",
+              "content": "呼吸麻痹"
+            },
+            {
+              "label": "B",
+              "content": "心跳停止"
+            },
+            {
+              "label": "C",
+              "content": "深度昏迷"
+            },
+            {
+              "label": "D",
+              "content": "吸入性肺炎"
+            },
+            {
+              "label": "E",
+              "content": "肝损害"
+            }
+          ],
+          "answer": "A",
+          "explanation": "深度呼吸抑制导致的<span class='highlight'>呼吸麻痹</span>是巴比妥类急性中毒致死的主要原因。",
+          "knowledgeTitle": "巴比妥类急性中毒表现",
+          "knowledge": "<ul><li>昏迷、呼吸减慢或不规则、瞳孔缩小（晚期散大）、血压下降、反射消失。</li></ul>"
+        },
+        {
+          "id": "43",
+          "text": "苯巴比妥起效慢，其原因是",
+          "options": [
+            {
+              "label": "A",
+              "content": "与血浆蛋白质结合率高"
+            },
+            {
+              "label": "B",
+              "content": "肾排泄慢"
+            },
+            {
+              "label": "C",
+              "content": "脂溶性低"
+            },
+            {
+              "label": "D",
+              "content": "体内再分布"
+            },
+            {
+              "label": "E",
+              "content": "肝内破坏快"
+            }
+          ],
+          "answer": "C",
+          "explanation": "药物进入脑组织的速度取决于其脂溶性。苯巴比妥在巴比妥类中<span class='highlight'>脂溶性较低</span>，通过血脑屏障较慢，因此起效较慢。",
+          "knowledgeTitle": "药物脂溶性与起效速度",
+          "knowledge": "<p>硫喷妥钠（高脂溶性）→ 瞬间起效。<br>苯巴比妥（低脂溶性）→ 起效慢。</p>"
+        },
+        {
+          "id": "44",
+          "text": "苯巴比妥连续应用产生耐受性的主要原因是",
+          "options": [
+            {
+              "label": "A",
+              "content": "再分布于脂肪组织"
+            },
+            {
+              "label": "B",
+              "content": "排泄加快"
+            },
+            {
+              "label": "C",
+              "content": "被假性胆碱酯酶破坏"
+            },
+            {
+              "label": "D",
+              "content": "被单胺氧化酶破坏"
+            },
+            {
+              "label": "E",
+              "content": "诱导肝药酶使自身代谢加快"
+            }
+          ],
+          "answer": "E",
+          "explanation": "苯巴比妥是强效的<span class='highlight'>肝药酶诱导剂</span>。长期用药会加速肝脏微粒体酶的活性，加速自身及其他药物的代谢，从而产生<span class='bold-em'>药代动力学耐受性</span>。",
+          "knowledgeTitle": "肝药酶诱导剂",
+          "knowledge": "<ul><li>苯巴比妥可诱导P450酶系。</li><li><b>后果</b>：加速自身代谢（耐受性）；加速合用药物（如双香豆素、糖皮质激素）代谢，降低其疗效。</li></ul>"
+        },
+        {
+          "id": "45",
+          "text": "巴比妥类中毒时用静脉滴注碳酸氢钠以达解毒目的，其机制为",
+          "options": [
+            {
+              "label": "A",
+              "content": "巴比妥为弱碱，酸化尿液..."
+            },
+            {
+              "label": "B",
+              "content": "碳酸氢钠入血..."
+            },
+            {
+              "label": "C",
+              "content": "巴比妥为弱酸，碱化尿液加速其排泄"
+            },
+            {
+              "label": "D",
+              "content": "..."
+            },
+            {
+              "label": "E",
+              "content": "..."
+            }
+          ],
+          "answer": "C",
+          "explanation": "巴比妥类药物属于<span class='highlight'>弱酸性</span>药物。静脉滴注碳酸氢钠可碱化血液和尿液，使药物在尿液中解离度增加（离子化增多），<span class='bold-em'>重吸收减少</span>，从而加速排泄。",
+          "knowledgeTitle": "离子障原理 (Ion Trapping)",
+          "knowledge": "<ul><li><b>弱酸性药物</b>：在碱性环境中解离多，不易通过膜重吸收，排泄加快。</li><li><b>弱碱性药物</b>：在酸性环境中解离多，排泄加快。</li></ul>"
+        },
+        {
+          "id": "46",
+          "text": "具有镇静、催眠、抗惊厥、抗癫痫作用的药物是",
+          "options": [
+            {
+              "label": "A",
+              "content": "苯妥英钠"
+            },
+            {
+              "label": "B",
+              "content": "苯巴比妥"
+            },
+            {
+              "label": "C",
+              "content": "水合氯醛"
+            },
+            {
+              "label": "D",
+              "content": "扑米酮"
+            },
+            {
+              "label": "E",
+              "content": "戊巴比妥钠"
+            }
+          ],
+          "answer": "B",
+          "explanation": "苯巴比妥具备上述所有作用。苯妥英钠（A）主要抗癫痫、抗痛类，无镇静催眠作用；水合氯醛（C）主要催眠；戊巴比妥（E）主要催眠抗惊厥，抗癫痫作用弱。",
+          "knowledgeTitle": "苯巴比妥 vs 苯妥英钠",
+          "knowledge": "<ul><li><b>苯巴比妥</b>：广谱，有明显镇静作用（副作用）。</li><li><b>苯妥英钠</b>：抗癫痫大发作首选之一，<b>无</b>镇静催眠作用。</li></ul>"
+        },
+        {
+          "id": "47",
+          "text": "不产生成瘾性的药物是",
+          "options": [
+            {
+              "label": "A",
+              "content": "巴比妥类"
+            },
+            {
+              "label": "B",
+              "content": "苯二氮卓类"
+            },
+            {
+              "label": "C",
+              "content": "吗啡"
+            },
+            {
+              "label": "D",
+              "content": "哌替啶"
+            },
+            {
+              "label": "E",
+              "content": "苯妥英钠"
+            }
+          ],
+          "answer": "E",
+          "explanation": "苯妥英钠是抗癫痫药，长期使用<span class='highlight'>不产生精神依赖性（成瘾性）</span>。其他选项（A、B、C、D）均为麻醉药品或精神药品，长期使用均可成瘾。",
+          "knowledgeTitle": "药物成瘾性",
+          "knowledge": "<p>麻醉性镇痛药（吗啡）和镇静催眠药（巴比妥、苯二氮卓）均有成瘾性。抗癫痫药（如苯妥英钠、卡马西平）通常无成瘾性。</p>"
+        },
+        {
+          "id": "48",
+          "text": "下列药物中显效最快的是",
+          "options": [
+            {
+              "label": "A",
+              "content": "苯巴比妥"
+            },
+            {
+              "label": "B",
+              "content": "戊巴比妥"
+            },
+            {
+              "label": "C",
+              "content": "巴比妥"
+            },
+            {
+              "label": "D",
+              "content": "司可巴比妥"
+            },
+            {
+              "label": "E",
+              "content": "硫喷妥"
+            }
+          ],
+          "answer": "E",
+          "explanation": "硫喷妥（钠）脂溶性最高，静脉注射后几乎立即进入脑组织，<span class='highlight'>起效最快</span>（1分钟内）。",
+          "knowledgeTitle": "巴比妥类起效比较",
+          "knowledge": "<p>硫喷妥 > 司可巴比妥 > 异戊巴比妥 > 苯巴比妥。</p>"
+        },
+        {
+          "id": "49",
+          "text": "长期应用能引起齿龈增生的药物是",
+          "options": [
+            {
+              "label": "A",
+              "content": "苯巴比妥"
+            },
+            {
+              "label": "B",
+              "content": "苯妥英钠"
+            },
+            {
+              "label": "C",
+              "content": "乙琥胺"
+            },
+            {
+              "label": "D",
+              "content": "丙戊酸钠"
+            },
+            {
+              "label": "E",
+              "content": "卡马西平"
+            }
+          ],
+          "answer": "B",
+          "explanation": "苯妥英钠长期应用常见的不良反应包括<span class='highlight'>齿龈增生</span>（约20%患者发生，多见于青少年）、巨幼红细胞性贫血等。",
+          "knowledgeTitle": "苯妥英钠的不良反应",
+          "knowledge": "<ul><li><b>局部</b>：胃肠道反应、静脉炎。</li><li><b>神经系统</b>：眩晕、共济失调、眼球震颤。</li><li><b>长期</b>：齿龈增生、巨幼红细胞性贫血（补充叶酸）。</li><li><b>过敏</b>：皮疹。</li></ul>"
+        },
+        {
+          "id": "50",
+          "text": "临床上最常用的抗惊厥药物是",
+          "options": [
+            {
+              "label": "A",
+              "content": "苯巴比妥"
+            },
+            {
+              "label": "B",
+              "content": "乙琥胺"
+            },
+            {
+              "label": "C",
+              "content": "丙戊酸钠"
+            },
+            {
+              "label": "D",
+              "content": "硫酸镁"
+            },
+            {
+              "label": "E",
+              "content": "苯妥英钠"
+            }
+          ],
+          "answer": "D",
+          "explanation": "在药理学分类中，“抗惊厥药”特指用于缓解破伤风、子痫等引起惊厥的药物，首选<span class='highlight'>硫酸镁</span>（Magnesium Sulfate）。而苯巴比妥、苯妥英钠等虽有抗惊厥作用，但通常归类为抗癫痫药或镇静催眠药。",
+          "knowledgeTitle": "硫酸镁的药理作用",
+          "knowledge": "<ul><li><b>口服</b>：泻下、利胆（不吸收）。</li><li><b>注射</b>：抗惊厥（阻断神经肌肉接头Ca2+内流）、降压（血管扩张）。</li><li><b>用途</b>：子痫、破伤风惊厥、高血压危象。</li></ul>"
+        }
+      ]
+    },
+    {
+      "title": "抗癫痫药、抗帕金森药与抗精神病药",
+      "questions": [
+        {
+          "id": "51",
+          "text": "用于硫酸镁过量抢救的药物是",
+          "options": [
+            {
+              "label": "A",
+              "content": "苯巴比妥"
+            },
+            {
+              "label": "B",
+              "content": "氯化钙"
+            },
+            {
+              "label": "C",
+              "content": "（选项缺失）"
+            },
+            {
+              "label": "D",
+              "content": "（选项缺失）"
+            },
+            {
+              "label": "E",
+              "content": "（选项缺失）"
+            }
+          ],
+          "answer": "B",
+          "explanation": "硫酸镁过量中毒（表现为膝腱反射消失、呼吸抑制）时，应立即进行人工呼吸，并缓慢静脉注射<span class='highlight'>钙剂</span>（如氯化钙或葡萄糖酸钙）。Ca2+与Mg2+性质相似，在神经肌肉接头处产生竞争性拮抗作用，从而对抗Mg2+的肌松和抑制作用。",
+          "knowledgeTitle": "硫酸镁中毒解救",
+          "knowledge": "<p><b>中毒指征</b>：膝腱反射消失是早期指标，随之呼吸抑制。<br><b>解救药</b>：10%葡萄糖酸钙或氯化钙缓慢静注。</p>"
+        },
+        {
+          "id": "52",
+          "text": "癫痫持续状态时首选",
+          "options": [
+            {
+              "label": "A",
+              "content": "苯巴比妥钠肌注"
+            },
+            {
+              "label": "B",
+              "content": "苯妥英钠静注"
+            },
+            {
+              "label": "C",
+              "content": "水合氯醛灌肠"
+            },
+            {
+              "label": "D",
+              "content": "地西泮静注"
+            },
+            {
+              "label": "E",
+              "content": "硫喷妥钠静注"
+            }
+          ],
+          "answer": "D",
+          "explanation": "地西泮（Diazepam）静脉注射起效极快，能迅速终止发作，是治疗<span class='highlight'>癫痫持续状态</span>的首选药物。",
+          "knowledgeTitle": "癫痫持续状态的治疗",
+          "knowledge": "<ul><li><b>首选</b>：地西泮（静注）。</li><li><b>次选</b>：苯妥英钠（静注，起效较慢但维持久）、苯巴比妥、水合氯醛。</li><li><b>顽固性</b>：静脉全麻药（硫喷妥钠）。</li></ul>"
+        },
+        {
+          "id": "53",
+          "text": "癫痫大发作时应首选",
+          "options": [
+            {
+              "label": "A",
+              "content": "苯巴比妥"
+            },
+            {
+              "label": "B",
+              "content": "苯妥英钠"
+            },
+            {
+              "label": "C",
+              "content": "乙琥胺"
+            },
+            {
+              "label": "D",
+              "content": "丙戊酸钠"
+            },
+            {
+              "label": "E",
+              "content": "地西泮"
+            }
+          ],
+          "answer": "B",
+          "explanation": "苯妥英钠（Phenytoin Sodium）对<span class='highlight'>大发作（强直-阵挛发作）</span>和局限性发作疗效好，常作为首选。苯巴比妥也是大发作的有效药物。乙琥胺用于小发作。",
+          "knowledgeTitle": "癫痫大发作选药",
+          "knowledge": "<p><b>首选</b>：苯妥英钠、卡马西平、丙戊酸钠、苯巴比妥。<br>注：苯妥英钠因无嗜睡副作用，成人多首选；儿童多用苯巴比妥或丙戊酸钠。</p>"
+        },
+        {
+          "id": "54",
+          "text": "对癫痫小发作最有效的药物是",
+          "options": [
+            {
+              "label": "A",
+              "content": "苯巴比妥"
+            },
+            {
+              "label": "B",
+              "content": "乙琥胺"
+            },
+            {
+              "label": "C",
+              "content": "丙戊酸钠"
+            },
+            {
+              "label": "D",
+              "content": "地西泮"
+            },
+            {
+              "label": "E",
+              "content": "苯妥英钠"
+            }
+          ],
+          "answer": "C",
+          "explanation": "本题需区分“最有效”和“首选”。<span class='highlight'>丙戊酸钠</span>是广谱抗癫痫药，对小发作的控制作用极强（往往优于乙琥胺），但因有肝毒性，通常作为二线或合并大发作时使用。若单论效力，丙戊酸钠最强。若问“首选”（考虑安全性），常选乙琥胺（见第56题）。",
+          "knowledgeTitle": "丙戊酸钠",
+          "knowledge": "<ul><li><b>广谱</b>：大、小、精神运动性发作均有效。</li><li><b>机制</b>：抑制GABA转氨酶，提高脑内GABA浓度；阻断Na+通道。</li><li><b>副作用</b>：严重肝毒性（需查肝功）。</li></ul>"
+        },
+        {
+          "id": "55",
+          "text": "卡马西平对何种癫痫的疗效最好",
+          "options": [
+            {
+              "label": "A",
+              "content": "大发作"
+            },
+            {
+              "label": "B",
+              "content": "小发作"
+            },
+            {
+              "label": "C",
+              "content": "癫痫持续状态"
+            },
+            {
+              "label": "D",
+              "content": "精神运动性发作"
+            },
+            {
+              "label": "E",
+              "content": "失神性发作"
+            }
+          ],
+          "answer": "D",
+          "explanation": "卡马西平（Carbamazepine）是治疗<span class='highlight'>精神运动性发作（复杂部分性发作）</span>的首选药物。对大发作也有效（首选之一）。",
+          "knowledgeTitle": "卡马西平的临床应用",
+          "knowledge": "<ul><li><b>抗癫痫</b>：精神运动性发作（首选）、大发作。</li><li><b>镇痛</b>：三叉神经痛（首选）。</li><li><b>抗躁狂</b>：锂盐无效的躁狂症。</li></ul>"
+        },
+        {
+          "id": "56",
+          "text": "癫痫小发作时应首选",
+          "options": [
+            {
+              "label": "A",
+              "content": "苯巴比妥"
+            },
+            {
+              "label": "B",
+              "content": "苯妥英钠"
+            },
+            {
+              "label": "C",
+              "content": "乙琥胺"
+            },
+            {
+              "label": "D",
+              "content": "丙戊酸钠"
+            },
+            {
+              "label": "E",
+              "content": "地西泮"
+            }
+          ],
+          "answer": "C",
+          "explanation": "乙琥胺（Ethosuximide）仅对<span class='highlight'>小发作（失神发作）</span>有效，且副作用较丙戊酸钠少（无严重肝毒性），因此常作为单纯性小发作的<span class='bold-em'>首选药</span>。",
+          "knowledgeTitle": "癫痫小发作选药原则",
+          "knowledge": "<ul><li><b>单纯小发作</b>：首选乙琥胺。</li><li><b>混合型（小发作+大发作）</b>：首选丙戊酸钠（因乙琥胺对大发作无效，甚至可能诱发大发作）。</li></ul>"
+        },
+        {
+          "id": "57",
+          "text": "治疗三叉神经痛首选的药物是",
+          "options": [
+            {
+              "label": "A",
+              "content": "地西泮"
+            },
+            {
+              "label": "B",
+              "content": "苯妥英钠"
+            },
+            {
+              "label": "C",
+              "content": "氟奋乃静"
+            },
+            {
+              "label": "D",
+              "content": "卡马西平"
+            },
+            {
+              "label": "E",
+              "content": "镇痛药"
+            }
+          ],
+          "answer": "D",
+          "explanation": "卡马西平和苯妥英钠都能治疗三叉神经痛，但<span class='highlight'>卡马西平疗效更好</span>，故为首选。",
+          "knowledgeTitle": "中枢性疼痛治疗",
+          "knowledge": "<p>三叉神经痛、舌咽神经痛等属于神经病理性疼痛，普通解热镇痛药无效，阿片类效果差。需使用<b>抗癫痫药</b>（卡马西平、苯妥英钠）治疗。</p>"
+        },
+        {
+          "id": "58",
+          "text": "苯妥英钠抗癫痫作用的主要机制是",
+          "options": [
+            {
+              "label": "A",
+              "content": "抑制病灶本身异常放电"
+            },
+            {
+              "label": "B",
+              "content": "稳定神经细胞膜"
+            },
+            {
+              "label": "C",
+              "content": "抑制脊髓神经元"
+            },
+            {
+              "label": "D",
+              "content": "具有肌肉松弛作用"
+            },
+            {
+              "label": "E",
+              "content": "对中枢神经系统普遍抑制"
+            }
+          ],
+          "answer": "B",
+          "explanation": "苯妥英钠主要通过阻滞电压依赖性Na+通道，<span class='highlight'>稳定神经细胞膜</span>，从而抑制异常高频放电的<span class='bold-em'>扩散</span>，而对病灶本身的异常放电抑制作用较弱。它不产生普遍的中枢抑制（无镇静作用）。",
+          "knowledgeTitle": "苯妥英钠作用机制",
+          "knowledge": "<ul><li><b>膜稳定作用</b>：阻断Na+通道（主要），阻断Ca2+通道。</li><li><b>结果</b>：限制突触后膜高频放电的扩散（“灭火”不“灭源”）。</li></ul>"
+        },
+        {
+          "id": "59",
+          "text": "能提高左旋多巴疗效的药物是",
+          "options": [
+            {
+              "label": "A",
+              "content": "多巴酚丁胺"
+            },
+            {
+              "label": "B",
+              "content": "多巴胺"
+            },
+            {
+              "label": "C",
+              "content": "氯丙嗪"
+            },
+            {
+              "label": "D",
+              "content": "苯海索"
+            },
+            {
+              "label": "E",
+              "content": "卡比多巴"
+            }
+          ],
+          "answer": "E",
+          "explanation": "卡比多巴（Carbidopa）是<span class='highlight'>外周多巴脱羧酶抑制剂</span>。它不能通过血脑屏障，仅在外周抑制L-Dopa转化为多巴胺，从而减少外周副作用，并增加进入脑内的L-Dopa量，提高疗效。",
+          "knowledgeTitle": "帕金森病的联合用药",
+          "knowledge": "<ul><li><b>左旋多巴 + 卡比多巴</b>：基础组合（如信尼麦）。</li><li><b>原理</b>：卡比多巴保护左旋多巴在外周不被代谢，“护送”其进入大脑。</li></ul>"
+        },
+        {
+          "id": "60",
+          "text": "左旋多巴治疗帕金森病的机制是",
+          "options": [
+            {
+              "label": "A",
+              "content": "补充纹状体内多巴胺的不足"
+            },
+            {
+              "label": "B",
+              "content": "提高纹状体中乙酰胆碱的含量"
+            },
+            {
+              "label": "C",
+              "content": "提高纹状体中5-羟色胺的含量"
+            },
+            {
+              "label": "D",
+              "content": "降低黑质中乙酰胆碱的含量"
+            },
+            {
+              "label": "E",
+              "content": "阻断黑质中胆碱受体"
+            }
+          ],
+          "answer": "A",
+          "explanation": "帕金森病的病理基础是黑质多巴胺能神经元变性，导致纹状体内多巴胺（DA）减少。左旋多巴（L-Dopa）通过血脑屏障后，在多巴脱羧酶作用下转化为DA，<span class='highlight'>补充DA的不足</span>。",
+          "knowledgeTitle": "帕金森病机制",
+          "knowledge": "<p><b>DA与ACh失衡</b>：黑质-纹状体通路中，多巴胺（DA，抑制性）减少，乙酰胆碱（ACh，兴奋性）相对优势。治疗策略是<b>补DA</b>或<b>抗ACh</b>。</p>"
+        },
+        {
+          "id": "61",
+          "text": "下列药物中单用抗帕金森病无效的是",
+          "options": [
+            {
+              "label": "A",
+              "content": "卡比多巴"
+            },
+            {
+              "label": "B",
+              "content": "左旋多巴"
+            },
+            {
+              "label": "C",
+              "content": "金刚烷胺"
+            },
+            {
+              "label": "D",
+              "content": "苯海索"
+            },
+            {
+              "label": "E",
+              "content": "溴隐亭"
+            }
+          ],
+          "answer": "A",
+          "explanation": "卡比多巴<span class='bold-em'>不能通过血脑屏障</span>，单独使用对中枢神经系统无作用，无法治疗帕金森病，必须与左旋多巴合用。",
+          "knowledgeTitle": "抗帕金森药物分类",
+          "knowledge": "<ul><li><b>拟多巴胺类</b>：左旋多巴、溴隐亭（DA受体激动剂）、金刚烷胺（促DA释放）。</li><li><b>辅助药</b>：卡比多巴（外周脱羧酶抑制剂）、司来吉兰（MAO-B抑制剂）。</li><li><b>中枢抗胆碱药</b>：苯海索。</li></ul>"
+        },
+        {
+          "id": "62",
+          "text": "抗精神病药引起的帕金森综合征应选用",
+          "options": [
+            {
+              "label": "A",
+              "content": "左旋多巴"
+            },
+            {
+              "label": "B",
+              "content": "卡比多巴"
+            },
+            {
+              "label": "C",
+              "content": "金刚烷胺"
+            },
+            {
+              "label": "D",
+              "content": "溴隐亭"
+            },
+            {
+              "label": "E",
+              "content": "苯海索"
+            }
+          ],
+          "answer": "E",
+          "explanation": "抗精神病药（如氯丙嗪）阻断了DA受体，引起药源性帕金森综合征。此时若用左旋多巴（补充DA），因受体已被阻断，效果不佳，且可能加重精神分裂症症状。因此应选用<span class='highlight'>中枢抗胆碱药</span>（如苯海索/安坦），通过抑制胆碱能神经功能来恢复DA-ACh平衡。",
+          "knowledgeTitle": "药源性帕金森综合征",
+          "knowledge": "<p>是抗精神病药常见的锥体外系反应。<b>禁用左旋多巴</b>，首选<b>苯海索</b>。</p>"
+        },
+        {
+          "id": "63",
+          "text": "与苯海索治疗帕金森病无关的是",
+          "options": [
+            {
+              "label": "A",
+              "content": "阻断胆碱受体"
+            },
+            {
+              "label": "B",
+              "content": "阻断多巴胺受体"
+            },
+            {
+              "label": "C",
+              "content": "抗震颤效果好"
+            },
+            {
+              "label": "D",
+              "content": "减弱黑质-纹状体通路中Ach的作用"
+            },
+            {
+              "label": "E",
+              "content": "对僵直和运动迟缓的疗效较差"
+            }
+          ],
+          "answer": "B",
+          "explanation": "苯海索是中枢抗胆碱药，机制是阻断胆碱受体（M受体）。它<span class='bold-em'>不阻断多巴胺受体</span>（阻断多巴胺受体是导致帕金森症状的原因，如氯丙嗪）。其特点是对震颤疗效好，对僵直疗效差。",
+          "knowledgeTitle": "苯海索（安坦）",
+          "knowledge": "<ul><li><b>机制</b>：阻断中枢M胆碱受体。</li><li><b>特点</b>：对抗震颤效果好，改善僵直差。</li><li><b>副作用</b>：口干、便秘、散瞳（青光眼禁用）。</li></ul>"
+        },
+        {
+          "id": "64",
+          "text": "氯丙嗪引起锥体外系反应的机制是",
+          "options": [
+            {
+              "label": "A",
+              "content": "阻断中脑-边缘系统的多巴胺受体"
+            },
+            {
+              "label": "B",
+              "content": "阻断黑质-纹状体的多巴胺受体"
+            },
+            {
+              "label": "C",
+              "content": "阻断中脑-皮质的多巴胺受体"
+            },
+            {
+              "label": "D",
+              "content": "阻断结节-漏斗部的多巴胺受体"
+            },
+            {
+              "label": "E",
+              "content": "阻断脑内M受体"
+            }
+          ],
+          "answer": "B",
+          "explanation": "氯丙嗪阻断<span class='highlight'>黑质-纹状体通路</span>的DA受体，导致胆碱能神经功能相对亢进，引起锥体外系反应。A和C与抗精神病疗效有关，D与内分泌副作用有关。",
+          "knowledgeTitle": "氯丙嗪作用机制与通路",
+          "knowledge": "<ul><li><b>中脑-边缘/皮层通路</b>：抗精神病作用（主要）。</li><li><b>黑质-纹状体通路</b>：锥体外系副作用。</li><li><b>结节-漏斗通路</b>：内分泌副作用（催乳素↑）。</li><li><b>CTZ</b>：镇吐作用。</li></ul>"
+        },
+        {
+          "id": "65",
+          "text": "可用于人工冬眠的药物是",
+          "options": [
+            {
+              "label": "A",
+              "content": "苯巴比妥"
+            },
+            {
+              "label": "B",
+              "content": "吗啡"
+            },
+            {
+              "label": "C",
+              "content": "芬太尼"
+            },
+            {
+              "label": "D",
+              "content": "喷他佐辛"
+            },
+            {
+              "label": "E",
+              "content": "哌替啶"
+            }
+          ],
+          "answer": "E",
+          "explanation": "人工冬眠合剂常由<span class='highlight'>氯丙嗪 + 异丙嗪 + 哌替啶</span>组成。哌替啶（杜冷丁）是人工冬眠合剂中的镇痛成分。",
+          "knowledgeTitle": "人工冬眠",
+          "knowledge": "<p>利用药物配合物理降温，降低机体代谢率和耗氧量，提高对缺氧的耐受力。用于严重创伤、感染性休克、高热惊厥等。</p>"
+        },
+        {
+          "id": "66",
+          "text": "锥体外系反应最轻的吩噻嗪类抗精神病药是",
+          "options": [
+            {
+              "label": "A",
+              "content": "氯丙嗪"
+            },
+            {
+              "label": "B",
+              "content": "氟奋乃静"
+            },
+            {
+              "label": "C",
+              "content": "奋乃静"
+            },
+            {
+              "label": "D",
+              "content": "三氟拉嗪"
+            },
+            {
+              "label": "E",
+              "content": "硫利达嗪"
+            }
+          ],
+          "answer": "E",
+          "explanation": "硫利达嗪（Thioridazine）具有较强的<span class='highlight'>抗胆碱作用</span>，这能一定程度上抵消其阻断DA受体带来的不平衡，因此其锥体外系反应在吩噻嗪类中是最轻的。但其心脏毒性较大。",
+          "knowledgeTitle": "抗精神病药副作用比较",
+          "knowledge": "<ul><li><b>锥体外系反应强</b>：氟奋乃静、三氟拉嗪（含氟类）。</li><li><b>锥体外系反应弱</b>：硫利达嗪、氯氮平（非典型）。</li></ul>"
+        },
+        {
+          "id": "67",
+          "text": "长期应用氯丙嗪治疗精神病，最常见的副作用是",
+          "options": [
+            {
+              "label": "A",
+              "content": "直立性低血压"
+            },
+            {
+              "label": "B",
+              "content": "过敏反应"
+            },
+            {
+              "label": "C",
+              "content": "锥体外系反应"
+            },
+            {
+              "label": "D",
+              "content": "内分泌障碍"
+            },
+            {
+              "label": "E",
+              "content": "消化系统症状"
+            }
+          ],
+          "answer": "C",
+          "explanation": "长期大量服用氯丙嗪，最常见且棘手的副作用是<span class='highlight'>锥体外系反应</span>，包括帕金森综合征、静坐不能、急性肌张力障碍，以及迟发性运动障碍。",
+          "knowledgeTitle": "锥体外系反应",
+          "knowledge": "<ol><li><b>帕金森综合征</b>：肌张力高、震颤。</li><li><b>静坐不能</b>：烦躁不安。</li><li><b>急性肌张力障碍</b>：斜颈、吞咽困难。</li><li><b>迟发性运动障碍(TD)</b>：长期用药致受体超敏，表现为口-舌-颊不自主运动。</li></ol>"
+        },
+        {
+          "id": "68",
+          "text": "氯丙嗪不适用于",
+          "options": [
+            {
+              "label": "A",
+              "content": "人工冬眠"
+            },
+            {
+              "label": "B",
+              "content": "麻醉前给药"
+            },
+            {
+              "label": "C",
+              "content": "镇吐"
+            },
+            {
+              "label": "D",
+              "content": "帕金森病"
+            },
+            {
+              "label": "E",
+              "content": "精神分裂症"
+            }
+          ],
+          "answer": "D",
+          "explanation": "氯丙嗪阻断多巴胺受体，会<span class='bold-em'>加重</span>帕金森病的症状，因此禁用。",
+          "knowledgeTitle": "氯丙嗪的临床应用",
+          "knowledge": "<ul><li>精神分裂症（主要）。</li><li>镇吐（晕动症无效）。</li><li>低温麻醉与人工冬眠。</li><li>顽固性呃逆。</li></ul>"
+        },
+        {
+          "id": "69",
+          "text": "氯丙嗪过量中毒引起的低血压应选用",
+          "options": [
+            {
+              "label": "A",
+              "content": "肾上腺素"
+            },
+            {
+              "label": "B",
+              "content": "酚妥拉明"
+            },
+            {
+              "label": "C",
+              "content": "异丙肾上腺素"
+            },
+            {
+              "label": "D",
+              "content": "去甲肾上腺素"
+            },
+            {
+              "label": "E",
+              "content": "多巴胺"
+            }
+          ],
+          "answer": "D",
+          "explanation": "氯丙嗪具有α受体阻断作用。如果使用肾上腺素（兼具α和β作用），其α升压作用被阻断，而β2扩血管作用显现，导致血压进一步下降（<span class='highlight'>肾上腺素翻转现象</span>）。因此，应选用主要激动α受体的<span class='bold-em'>去甲肾上腺素</span>来升压。",
+          "knowledgeTitle": "肾上腺素翻转",
+          "knowledge": "<p>在使用α受体阻断药（如氯丙嗪、酚妥拉明）后，肾上腺素的升压作用被翻转为降压作用。此时抢救低血压只能用去甲肾上腺素。</p>"
+        },
+        {
+          "id": "70",
+          "text": "下述药物中属长效抗精神病药的是",
+          "options": [
+            {
+              "label": "A",
+              "content": "氯丙嗪"
+            },
+            {
+              "label": "B",
+              "content": "氟奋乃静"
+            },
+            {
+              "label": "C",
+              "content": "五氟利多"
+            },
+            {
+              "label": "D",
+              "content": "奋乃静"
+            },
+            {
+              "label": "E",
+              "content": "氟哌平"
+            }
+          ],
+          "answer": "C",
+          "explanation": "五氟利多（Penfluridol）是口服<span class='highlight'>长效</span>抗精神病药，脂溶性高，每周只需服药一次。",
+          "knowledgeTitle": "长效抗精神病药",
+          "knowledge": "<ul><li><b>五氟利多</b>：口服长效。</li><li><b>氟奋乃静癸酸酯</b>：注射长效。</li></ul>"
+        },
+        {
+          "id": "71",
+          "text": "下述药物中几乎无锥体外系反应的是",
+          "options": [
+            {
+              "label": "A",
+              "content": "氯丙嗪"
+            },
+            {
+              "label": "B",
+              "content": "氟奋乃静"
+            },
+            {
+              "label": "C",
+              "content": "奋乃静"
+            },
+            {
+              "label": "D",
+              "content": "三氟拉嗪"
+            },
+            {
+              "label": "E",
+              "content": "氯氮平"
+            }
+          ],
+          "answer": "E",
+          "explanation": "氯氮平（Clozapine）是二苯二氮卓类<span class='highlight'>非典型（新型）</span>抗精神病药，特异性阻断中脑-边缘系统DA受体，对黑质-纹状体系统影响小，故<span class='bold-em'>几乎无锥体外系反应</span>。但需注意其粒细胞缺乏的副作用。",
+          "knowledgeTitle": "非典型抗精神病药",
+          "knowledge": "<ul><li>代表药：氯氮平、利培酮、奥氮平。</li><li>特点：对阴性症状有效，锥体外系反应少。</li><li>氯氮平严重副作用：<b>粒细胞缺乏症</b>（需定期查血）。</li></ul>"
+        },
+        {
+          "id": "72",
+          "text": "氯丙嗪引起的锥体外系反应中不能用苯海索缓解的是",
+          "options": [
+            {
+              "label": "A",
+              "content": "帕金森综合征"
+            },
+            {
+              "label": "B",
+              "content": "急性肌张力障碍"
+            },
+            {
+              "label": "C",
+              "content": "肌张力增强"
+            },
+            {
+              "label": "D",
+              "content": "迟发性运动障碍"
+            },
+            {
+              "label": "E",
+              "content": "静坐不能"
+            }
+          ],
+          "answer": "D",
+          "explanation": "迟发性运动障碍（TD）是由于长期阻断DA受体导致突触后膜<span class='highlight'>DA受体上调（超敏）</span>所致。此时若使用抗胆碱药苯海索，会进一步减弱胆碱能功能，使DA功能相对更强，从而<span class='bold-em'>加重</span>症状。",
+          "knowledgeTitle": "迟发性运动障碍 (TD)",
+          "knowledge": "<ul><li><b>机制</b>：DA受体增多、敏感性增高。</li><li><b>治疗</b>：停药；抗胆碱药无效且禁用；可用耗竭DA的药物（如利血平、四苯嗪）。</li></ul>"
+        }
+      ]
+    },
+    {
+      "title": "抗精神病药、中枢兴奋药与镇痛药",
+      "questions": [
+        {
+          "id": "73",
+          "text": "下述药物能用于神经阻滞镇痛术的是",
+          "options": [
+            {
+              "label": "A",
+              "content": "氯丙嗪"
+            },
+            {
+              "label": "B",
+              "content": "氟奋乃静"
+            },
+            {
+              "label": "C",
+              "content": "五氟利多"
+            },
+            {
+              "label": "D",
+              "content": "奋乃静"
+            },
+            {
+              "label": "E",
+              "content": "氟哌利多"
+            }
+          ],
+          "answer": "E",
+          "explanation": "神经阻滞镇痛术（Neuroleptanalgesia）通常使用强效镇痛药（如芬太尼）配合强效抗精神病药（如<span class='highlight'>氟哌利多</span>）进行，以达到意识处于淡漠状态但痛觉消失的效果。",
+          "knowledgeTitle": "神经安定镇痛术",
+          "knowledge": "<ul><li><b>组成</b>：芬太尼 + 氟哌利多。</li><li><b>特点</b>：患者意识模糊、痛觉消失、即使在清醒状态下也无恐惧感。</li><li><b>用途</b>：内窥镜检查、小手术、烧伤换药等。</li></ul>"
+        },
+        {
+          "id": "74",
+          "text": "具有抗抑郁作用的抗精神病药物是",
+          "options": [
+            {
+              "label": "A",
+              "content": "氯氮平"
+            },
+            {
+              "label": "B",
+              "content": "氯丙嗪"
+            },
+            {
+              "label": "C",
+              "content": "碳酸锂"
+            },
+            {
+              "label": "D",
+              "content": "丙米嗪"
+            },
+            {
+              "label": "E",
+              "content": "氟哌噻吨"
+            }
+          ],
+          "answer": "D",
+          "explanation": "<span class='bold-em'>题目存在明显逻辑错误</span>。根据参考答案选D，但D选项<span class='highlight'>丙米嗪（Imipramine）</span>是典型的三环类抗抑郁药（TCA），而非抗精神病药。如果题目问“下列哪项是抗抑郁药”，选D。如果严格按照“具有抗抑郁作用的抗精神病药”，E选项<span class='highlight'>氟哌噻吨</span>（Flupentixol）更为合适（小剂量氟哌噻吨有抗焦虑抑郁作用）。<br>此处遵循您提供的答案D进行解析。",
+          "knowledgeTitle": "药物分类辨析（纠错）",
+          "knowledge": "<ul><li><b>丙米嗪</b>：三环类抗抑郁药。</li><li><b>氟哌噻吨</b>：硫杂蒽类抗精神病药（小剂量抗抑郁）。</li><li><b>碳酸锂</b>：抗躁狂药（情绪稳定剂）。</li></ul>"
+        },
+        {
+          "id": "75",
+          "text": "金刚烷胺治疗震颤麻痹的主要作用机制是",
+          "options": [
+            {
+              "label": "A",
+              "content": "转化为多巴胺而起作用"
+            },
+            {
+              "label": "B",
+              "content": "抗胆碱作用"
+            },
+            {
+              "label": "C",
+              "content": "阻断多巴胺受体"
+            },
+            {
+              "label": "D",
+              "content": "促进多巴胺释放"
+            },
+            {
+              "label": "E",
+              "content": "激动D2受体"
+            }
+          ],
+          "answer": "D",
+          "explanation": "金刚烷胺（Amantadine）主要通过<span class='highlight'>促进纹状体内多巴胺的释放</span>，并抑制多巴胺的再摄取，从而增强多巴胺能神经的功能。它也有较弱的抗胆碱作用和NMDA受体阻断作用。",
+          "knowledgeTitle": "金刚烷胺的特点",
+          "knowledge": "<ul><li><b>起效</b>：快，但维持时间短（数月后疗效减退）。</li><li><b>机制</b>：促释放、抑摄取。</li><li><b>副作用</b>：下肢网状青斑、幻觉（兴奋性）。</li></ul>"
+        },
+        {
+          "id": "76",
+          "text": "主要兴奋大脑皮层的药物是",
+          "options": [
+            {
+              "label": "A",
+              "content": "尼可刹米"
+            },
+            {
+              "label": "B",
+              "content": "洛贝林"
+            },
+            {
+              "label": "C",
+              "content": "丁螺环酮"
+            },
+            {
+              "label": "D",
+              "content": "咖啡因"
+            },
+            {
+              "label": "E",
+              "content": "二甲弗林"
+            }
+          ],
+          "answer": "D",
+          "explanation": "咖啡因（Caffeine）主要兴奋<span class='highlight'>大脑皮层</span>，提高精神兴奋性，驱除睡意。A、B、E主要兴奋延髓呼吸中枢。",
+          "knowledgeTitle": "中枢兴奋药作用部位",
+          "knowledge": "<ul><li><b>大脑皮层</b>：咖啡因（提神）。</li><li><b>延髓呼吸中枢</b>：尼可刹米、洛贝林（抢救呼吸衰竭）。</li><li><b>脊髓</b>：士的宁（毒性大，少用）。</li></ul>"
+        },
+        {
+          "id": "77",
+          "text": "主要兴奋呼吸中枢的药物是",
+          "options": [
+            {
+              "label": "A",
+              "content": "尼可刹米"
+            },
+            {
+              "label": "B",
+              "content": "茶碱"
+            },
+            {
+              "label": "C",
+              "content": "丁螺环酮"
+            },
+            {
+              "label": "D",
+              "content": "咖啡因"
+            },
+            {
+              "label": "E",
+              "content": "哌甲酯"
+            }
+          ],
+          "answer": "A",
+          "explanation": "尼可刹米（Nikethamide，又名可拉明）直接兴奋延髓呼吸中枢，也可通过刺激颈动脉体化学感受器反射性兴奋呼吸中枢，是临床常用的<span class='highlight'>呼吸兴奋药</span>。",
+          "knowledgeTitle": "常用呼吸兴奋药",
+          "knowledge": "<ul><li><b>尼可刹米</b>：作用温和，安全范围大。</li><li><b>洛贝林</b>：作用弱，维持短，通过反射性兴奋。</li><li><b>二甲弗林</b>：效力强，过量易致惊厥。</li></ul>"
+        },
+        {
+          "id": "78",
+          "text": "丙米嗪抗抑郁症的机理是",
+          "options": [
+            {
+              "label": "A",
+              "content": "可能抑制突触前膜NA的释放"
+            },
+            {
+              "label": "B",
+              "content": "使脑内单胺类递质减少"
+            },
+            {
+              "label": "C",
+              "content": "抑制突触前膜NA和5-HT的再摄取"
+            },
+            {
+              "label": "D",
+              "content": "使脑内5-HT缺乏"
+            },
+            {
+              "label": "E",
+              "content": "使脑内儿茶酚胺类递质耗竭"
+            }
+          ],
+          "answer": "C",
+          "explanation": "丙米嗪是三环类抗抑郁药（TCA），其主要机制是<span class='highlight'>抑制突触前膜对去甲肾上腺素（NA）和5-羟色胺（5-HT）的再摄取</span>，使突触间隙内递质浓度升高，促进突触传递功能。",
+          "knowledgeTitle": "抗抑郁药机制分类",
+          "knowledge": "<ul><li><b>TCA（丙米嗪）</b>：非选择性抑制NA和5-HT再摄取。</li><li><b>SSRI（氟西汀）</b>：选择性抑制5-HT再摄取。</li><li><b>MAOI</b>：抑制单胺氧化酶，减少递质降解。</li></ul>"
+        },
+        {
+          "id": "79",
+          "text": "碳酸锂主要用于治疗",
+          "options": [
+            {
+              "label": "A",
+              "content": "焦虑症"
+            },
+            {
+              "label": "B",
+              "content": "躁狂症"
+            },
+            {
+              "label": "C",
+              "content": "抑郁症"
+            },
+            {
+              "label": "D",
+              "content": "精神分裂症"
+            },
+            {
+              "label": "E",
+              "content": "以上均不是"
+            }
+          ],
+          "answer": "B",
+          "explanation": "碳酸锂（Lithium Carbonate）是治疗<span class='highlight'>躁狂症</span>的首选药物，也用于双相情感障碍的稳定治疗。",
+          "knowledgeTitle": "碳酸锂的注意事项",
+          "knowledge": "<p>安全范围窄，治疗量与中毒量接近。需定期监测<b>血锂浓度</b>（超过1.6mmol/L易中毒）。中毒主要表现为神经系统症状（震颤、意识障碍）。</p>"
+        },
+        {
+          "id": "80",
+          "text": "吗啡的作用包括",
+          "options": [
+            {
+              "label": "A",
+              "content": "镇痛、镇静、镇咳"
+            },
+            {
+              "label": "B",
+              "content": "镇痛、镇静、抗震颤麻痹"
+            },
+            {
+              "label": "C",
+              "content": "镇痛、兴奋呼吸"
+            },
+            {
+              "label": "D",
+              "content": "镇痛、欣快、镇吐"
+            },
+            {
+              "label": "E",
+              "content": "镇痛、安定、散瞳"
+            }
+          ],
+          "answer": "A",
+          "explanation": "吗啡具有强大的<span class='bold-em'>镇痛、镇静、镇咳</span>作用。D错在“镇吐”（吗啡兴奋延髓CTZ，引起恶心呕吐）；C错在“兴奋呼吸”（吗啡抑制呼吸）；E错在“散瞳”（吗啡兴奋动眼神经核，导致<span class='highlight'>针尖样瞳孔</span>）。",
+          "knowledgeTitle": "吗啡的三大临床应用",
+          "knowledge": "<ol><li><b>镇痛</b>：剧烈疼痛（创伤、癌症、心梗）。</li><li><b>心源性哮喘</b>：扩张血管降低负荷；镇静消除恐惧；抑制呼吸降低耗氧。</li><li><b>止泻</b>：阿片酊用于急慢性腹泻。</li></ol>"
+        },
+        {
+          "id": "81",
+          "text": "吗啡的镇痛作用主要用于",
+          "options": [
+            {
+              "label": "A",
+              "content": "分娩阵痛"
+            },
+            {
+              "label": "B",
+              "content": "慢性钝痛"
+            },
+            {
+              "label": "C",
+              "content": "胃肠痉挛"
+            },
+            {
+              "label": "D",
+              "content": "肾绞痛"
+            },
+            {
+              "label": "E",
+              "content": "急性锐痛"
+            }
+          ],
+          "answer": "E",
+          "explanation": "吗啡成瘾性强，不用于慢性痛（B）；易通过胎盘抑制胎儿呼吸，禁用分娩止痛（A）；对平滑肌痉挛引起的绞痛（C、D）需合用阿托品，且不是单纯止痛首选。它主要用于其他镇痛药无效的<span class='highlight'>急性锐痛</span>（如严重创伤、烧伤）。",
+          "knowledgeTitle": "吗啡禁忌症",
+          "knowledge": "<ul><li>分娩止痛、哺乳期妇女。</li><li>支气管哮喘、肺源性心脏病（抑制呼吸）。</li><li>颅脑外伤（升高颅内压）。</li></ul>"
+        },
+        {
+          "id": "82",
+          "text": "镇痛效力明显强于吗啡的药物是",
+          "options": [
+            {
+              "label": "A",
+              "content": "美沙酮"
+            },
+            {
+              "label": "B",
+              "content": "喷他佐辛"
+            },
+            {
+              "label": "C",
+              "content": "芬太尼"
+            },
+            {
+              "label": "D",
+              "content": "哌替啶"
+            },
+            {
+              "label": "E",
+              "content": "可待因"
+            }
+          ],
+          "answer": "C",
+          "explanation": "芬太尼（Fentanyl）是强效阿片受体激动剂，其镇痛效力约为吗啡的<span class='highlight'>100倍</span>。美沙酮与吗啡相当，哌替啶和可待因弱于吗啡。",
+          "knowledgeTitle": "芬太尼",
+          "knowledge": "<p>短效、强效。常用于各种手术麻醉的镇痛辅助，或与氟哌利多合用进行神经安定镇痛术。</p>"
+        },
+        {
+          "id": "83",
+          "text": "骨折引起剧痛应选用",
+          "options": [
+            {
+              "label": "A",
+              "content": "吲哚美辛"
+            },
+            {
+              "label": "B",
+              "content": "阿司匹林"
+            },
+            {
+              "label": "C",
+              "content": "纳洛酮"
+            },
+            {
+              "label": "D",
+              "content": "哌替啶"
+            },
+            {
+              "label": "E",
+              "content": "保泰松"
+            }
+          ],
+          "answer": "D",
+          "explanation": "骨折剧痛属于剧烈锐痛，解热镇痛药（A、B、E）作用不够，需使用<span class='highlight'>阿片类镇痛药</span>。纳洛酮（C）是解毒药。哌替啶（D）镇痛作用强，可用于创伤性剧痛。",
+          "knowledgeTitle": "疼痛阶梯治疗",
+          "knowledge": "<ul><li>轻度痛：解热镇痛药（阿司匹林）。</li><li>中度痛：弱阿片类（可待因）。</li><li>重度痛：强阿片类（吗啡、哌替啶）。</li></ul>"
+        },
+        {
+          "id": "84",
+          "text": "呼吸抑制作用最弱的镇痛药是",
+          "options": [
+            {
+              "label": "A",
+              "content": "吗啡"
+            },
+            {
+              "label": "B",
+              "content": "哌替啶"
+            },
+            {
+              "label": "C",
+              "content": "芬太尼"
+            },
+            {
+              "label": "D",
+              "content": "喷他佐辛"
+            },
+            {
+              "label": "E",
+              "content": "美沙酮"
+            }
+          ],
+          "answer": "D",
+          "explanation": "喷他佐辛（Pentazocine）是阿片受体的<span class='highlight'>部分激动剂</span>（激动κ受体，拮抗μ受体）。其呼吸抑制作用具有“封顶效应”，即达到一定程度后不再随剂量增加而加重，相对较弱。",
+          "knowledgeTitle": "喷他佐辛的特点",
+          "knowledge": "<ul><li>成瘾性极小（列为二类精神药品，非麻醉药品）。</li><li>能拮抗吗啡的镇痛作用（诱发成瘾者的戒断症状）。</li><li>由于升高血压，不宜用于心梗。</li></ul>"
+        },
+        {
+          "id": "85",
+          "text": "“开-关现象”是下列何种药物特有的不良反应",
+          "options": [
+            {
+              "label": "A",
+              "content": "氯丙嗪"
+            },
+            {
+              "label": "B",
+              "content": "左旋多巴"
+            },
+            {
+              "label": "C",
+              "content": "卡比多巴"
+            },
+            {
+              "label": "D",
+              "content": "地西泮"
+            },
+            {
+              "label": "E",
+              "content": "吗啡"
+            }
+          ],
+          "answer": "B",
+          "explanation": "“开-关现象”是长期服用<span class='highlight'>左旋多巴</span>治疗帕金森病后出现的一种运动障碍副作用，表现为患者突然出现肢体僵直（关）或活动正常（开），与服药时间无明显关联。",
+          "knowledgeTitle": "左旋多巴的长期副作用",
+          "knowledge": "<ul><li><b>开-关现象</b>：多巴胺受体敏感性改变或纹状体DA贮存能力下降所致。</li><li><b>剂末现象</b>：药效维持时间缩短。</li></ul>"
+        },
+        {
+          "id": "86",
+          "text": "吗啡中毒致死的主要原因是",
+          "options": [
+            {
+              "label": "A",
+              "content": "昏睡"
+            },
+            {
+              "label": "B",
+              "content": "血压下降"
+            },
+            {
+              "label": "C",
+              "content": "心律失常"
+            },
+            {
+              "label": "D",
+              "content": "心力衰竭"
+            },
+            {
+              "label": "E",
+              "content": "呼吸抑制"
+            }
+          ],
+          "answer": "E",
+          "explanation": "吗啡降低呼吸中枢对CO2的敏感性，急性中毒时出现极度<span class='highlight'>呼吸抑制</span>（每分钟2-4次），这是直接致死原因。",
+          "knowledgeTitle": "吗啡中毒三联征",
+          "knowledge": "<p><b>昏迷、针尖样瞳孔、呼吸抑制</b>。解救首选<b>纳洛酮</b>。</p>"
+        },
+        {
+          "id": "87",
+          "text": "吗啡的镇痛作用机制主要为",
+          "options": [
+            {
+              "label": "A",
+              "content": "抑制中枢前列腺素合成"
+            },
+            {
+              "label": "B",
+              "content": "阻断阿片受体"
+            },
+            {
+              "label": "C",
+              "content": "抑制外周前列腺素合成"
+            },
+            {
+              "label": "D",
+              "content": "激动阿片受体"
+            },
+            {
+              "label": "E",
+              "content": "以上均不是"
+            }
+          ],
+          "answer": "D",
+          "explanation": "吗啡是阿片受体（主要是μ受体）的<span class='highlight'>激动剂</span>，模拟内源性阿片肽的作用，抑制痛觉传导。",
+          "knowledgeTitle": "阿片受体类型",
+          "knowledge": "<ul><li><b>μ受体</b>：镇痛、呼吸抑制、欣快、成瘾。</li><li><b>κ受体</b>：镇痛、镇静、缩瞳。</li></ul>"
+        },
+        {
+          "id": "88",
+          "text": "吗啡禁用于下列哪种患者",
+          "options": [
+            {
+              "label": "A",
+              "content": "严重创伤剧痛者"
+            },
+            {
+              "label": "B",
+              "content": "血压正常的心肌梗死引起剧痛者"
+            },
+            {
+              "label": "C",
+              "content": "心源性哮喘者"
+            },
+            {
+              "label": "D",
+              "content": "颅脑外伤引起剧痛者"
+            },
+            {
+              "label": "E",
+              "content": "大面积烧伤引起的剧痛者"
+            }
+          ],
+          "answer": "D",
+          "explanation": "吗啡抑制呼吸导致CO2潴留，引起脑血管扩张，<span class='highlight'>升高颅内压</span>。颅脑外伤患者已有颅压升高风险，使用吗啡可能导致脑疝，故禁用。",
+          "knowledgeTitle": "吗啡适应症辨析",
+          "knowledge": "<ul><li><b>可用</b>：心梗剧痛（还能镇静、扩张血管）、严重创伤/烧伤、心源性哮喘。</li><li><b>禁用</b>：颅脑外伤、分娩止痛、支气管哮喘。</li></ul>"
+        },
+        {
+          "id": "89",
+          "text": "吗啡中毒的特效解救药物是",
+          "options": [
+            {
+              "label": "A",
+              "content": "美沙酮"
+            },
+            {
+              "label": "B",
+              "content": "曲马朵"
+            },
+            {
+              "label": "C",
+              "content": "纳洛酮"
+            },
+            {
+              "label": "D",
+              "content": "喷他佐辛"
+            },
+            {
+              "label": "E",
+              "content": "芬太尼"
+            }
+          ],
+          "answer": "C",
+          "explanation": "纳洛酮（Naloxone）是阿片受体的<span class='highlight'>竞争性拮抗剂</span>，能迅速逆转吗啡引起的中枢抑制，特别是呼吸抑制。",
+          "knowledgeTitle": "纳洛酮的临床应用",
+          "knowledge": "<ul><li>阿片类药物中毒解救。</li><li>全麻术后催醒（针对阿片类复合麻醉）。</li><li>海洛因成瘾者的诊断（诱发戒断症状）。</li></ul>"
+        },
+        {
+          "id": "90",
+          "text": "无抗风湿作用的药物是",
+          "options": [
+            {
+              "label": "A",
+              "content": "阿司匹林"
+            },
+            {
+              "label": "B",
+              "content": "布洛芬"
+            },
+            {
+              "label": "C",
+              "content": "对乙酰氨基酚"
+            },
+            {
+              "label": "D",
+              "content": "保泰松"
+            },
+            {
+              "label": "E",
+              "content": "吲哚美辛"
+            }
+          ],
+          "answer": "C",
+          "explanation": "对乙酰氨基酚（扑热息痛）主要在<span class='highlight'>中枢</span>抑制前列腺素合成，具有解热镇痛作用，但对外周COX抑制极弱，因此<span class='bold-em'>几乎无抗炎、抗风湿作用</span>。",
+          "knowledgeTitle": "对乙酰氨基酚的特点",
+          "knowledge": "<ul><li><b>作用</b>：解热=镇痛（中等），无抗炎抗风湿。</li><li><b>优点</b>：不刺激胃（因无外周抗炎作用）。</li><li><b>缺点</b>：过量致肝坏死。</li></ul>"
+        },
+        {
+          "id": "91",
+          "text": "阿司匹林解热作用的机制是",
+          "options": [
+            {
+              "label": "A",
+              "content": "兴奋汗腺上的M受体，使出汗增加，散热增加"
+            },
+            {
+              "label": "B",
+              "content": "抑制前列腺素的合成"
+            },
+            {
+              "label": "C",
+              "content": "抑制下丘脑体温调节中枢"
+            },
+            {
+              "label": "D",
+              "content": "中和内毒素"
+            },
+            {
+              "label": "E",
+              "content": "中和前列腺素对下丘脑的作用"
+            }
+          ],
+          "answer": "B",
+          "explanation": "发热是由于致热原使下丘脑产生前列腺素（PGE2），使体温调定点上移。阿司匹林通过<span class='highlight'>抑制环氧酶（COX）</span>，减少PGE2的合成，使调定点恢复正常，通过增加散热（出汗、扩血管）来降温。",
+          "knowledgeTitle": "解热药 vs 物理降温",
+          "knowledge": "<ul><li><b>解热药（阿司匹林）</b>：只降低发热者的体温，不降正常人体温。机制是<b>调回</b>调定点。</li><li><b>物理降温/氯丙嗪</b>：可降低发热和正常人体温。</li></ul>"
+        },
+        {
+          "id": "92",
+          "text": "对胃肠道无刺激作用的药物是",
+          "options": [
+            {
+              "label": "A",
+              "content": "阿司匹林"
+            },
+            {
+              "label": "B",
+              "content": "吲哚美辛"
+            },
+            {
+              "label": "C",
+              "content": "布洛芬"
+            },
+            {
+              "label": "D",
+              "content": "对乙酰氨基酚"
+            },
+            {
+              "label": "E",
+              "content": "萘普生"
+            }
+          ],
+          "answer": "D",
+          "explanation": "大多数非甾体抗炎药（NSAIDs）如阿司匹林、吲哚美辛等通过抑制外周PG合成（PG对胃黏膜有保护作用）和直接酸性刺激，都会损伤胃黏膜。对乙酰氨基酚<span class='highlight'>对外周COX抑制作用微弱</span>，因此几乎不引起胃肠道刺激。",
+          "knowledgeTitle": "NSAIDs的胃肠道反应",
+          "knowledge": "<ul><li><b>机制</b>：抑制COX-1 -> 保护性PGs（PGE2, PGI2）减少。</li><li><b>后果</b>：溃疡、出血。</li><li><b>对策</b>：饭后服、同服米索前列醇、选用COX-2抑制剂（塞来昔布）。</li></ul>"
+        },
+        {
+          "id": "93",
+          "text": "苯二氮卓类药物急性中毒时最宜选用的解毒药是",
+          "options": [
+            {
+              "label": "A",
+              "content": "纳洛酮"
+            },
+            {
+              "label": "B",
+              "content": "烯丙吗啡"
+            },
+            {
+              "label": "C",
+              "content": "氟马西尼"
+            },
+            {
+              "label": "D",
+              "content": "硫酸镁"
+            },
+            {
+              "label": "E",
+              "content": "氯化钙"
+            }
+          ],
+          "answer": "C",
+          "explanation": "氟马西尼（Flumazenil）是<span class='highlight'>苯二氮卓受体阻断药</span>，能特异性竞争拮抗苯二氮卓类的中枢作用。",
+          "knowledgeTitle": "常见中毒解救配对",
+          "knowledge": "<ul><li><b>苯二氮卓类</b> — 氟马西尼。</li><li><b>阿片类</b> — 纳洛酮。</li><li><b>有机磷</b> — 阿托品 + 解磷定。</li><li><b>硫酸镁</b> — 钙剂。</li></ul>"
+        },
+        {
+          "id": "94",
+          "text": "阿司匹林的作用机制是",
+          "options": [
+            {
+              "label": "A",
+              "content": "作用于阿片受体"
+            },
+            {
+              "label": "B",
+              "content": "抑制前列腺素的合成"
+            },
+            {
+              "label": "C",
+              "content": "直接抑制中枢"
+            },
+            {
+              "label": "D",
+              "content": "中和内毒素"
+            },
+            {
+              "label": "E",
+              "content": "阻断多巴胺能神经通路"
+            }
+          ],
+          "answer": "B",
+          "explanation": "阿司匹林不可逆地乙酰化<span class='highlight'>环氧酶（COX）</span>，阻断花生四烯酸转化为前列腺素（PG），从而发挥解热、镇痛、抗炎和抗血小板作用。",
+          "knowledgeTitle": "阿司匹林的药理作用",
+          "knowledge": "<ol><li>解热镇痛抗风湿（剂量依赖）。</li><li>抗血小板聚集（小剂量，抑制TXA2）。</li></ol>"
+        },
+        {
+          "id": "95",
+          "text": "易引起肝细胞坏死的药物是",
+          "options": [
+            {
+              "label": "A",
+              "content": "阿司匹林"
+            },
+            {
+              "label": "B",
+              "content": "赖氨匹林"
+            },
+            {
+              "label": "C",
+              "content": "对乙酰氨基酚"
+            },
+            {
+              "label": "D",
+              "content": "保泰松"
+            },
+            {
+              "label": "E",
+              "content": "醋氨酚 (即对乙酰氨基酚)"
+            }
+          ],
+          "answer": "C",
+          "explanation": "对乙酰氨基酚（Acetaminophen，又称扑热息痛）在治疗剂量下副作用很少，但在<span class='highlight'>过量中毒</span>时，其毒性代谢产物（NAPQI）会导致肝内谷胱甘肽（GSH）耗竭，引起严重的<span class='bold-em'>急性肝坏死</span>，甚至导致死亡。阿司匹林主要引起胃肠道反应，保泰松主要引起骨髓抑制。",
+          "knowledgeTitle": "对乙酰氨基酚中毒机制与解救",
+          "knowledge": "<ul><li><b>机制</b>：肝药酶代谢产物 NAPQI 蓄积，与肝细胞蛋白结合致死。</li><li><b>解救</b>：早期应用<b>乙酰半胱氨酸</b>（NAC），通过提供巯基（-SH）合成谷胱甘肽来解毒。</li></ul>"
+        }
+      ]
+    },
+    {
+      "title": "解热镇痛药、中枢兴奋药与其他CNS药物综合",
+      "questions": [
+        {
+          "id": "96",
+          "text": "阿司匹林预防血栓生成是由于",
+          "options": [
+            {
+              "label": "A",
+              "content": "小剂量抑制 PGI2 由生成"
+            },
+            {
+              "label": "B",
+              "content": "小剂量抑制 TXA2 生成"
+            },
+            {
+              "label": "C",
+              "content": "小剂量抑制环氧酶"
+            },
+            {
+              "label": "D",
+              "content": "大剂量抑制 TXA2 生成"
+            },
+            {
+              "label": "E",
+              "content": "以上均不是"
+            }
+          ],
+          "answer": "B",
+          "explanation": "阿司匹林通过抑制血小板中的环氧酶（COX-1），阻断<span class='highlight'>血栓素A2（TXA2）</span>的合成。TXA2是强烈的血小板聚集诱导剂。小剂量（如75-100mg）阿司匹林主要抑制血小板COX-1，而对血管内皮细胞合成抗聚集物质PGI2的COX-2影响较小（或内皮细胞能再生COX），从而达到抗血栓形成的目的。",
+          "knowledgeTitle": "阿司匹林的抗血栓机制",
+          "knowledge": "<ul><li><b>小剂量</b>：选择性抑制血小板TXA2生成，抗血栓。</li><li><b>大剂量</b>：同时抑制血管内皮PGI2生成，抗血栓作用减弱，甚至促进血栓。</li></ul>"
+        },
+        {
+          "id": "97",
+          "text": "治疗慢性痛风的药物是",
+          "options": [
+            {
+              "label": "A",
+              "content": "保泰松"
+            },
+            {
+              "label": "B",
+              "content": "别嘌呤醇"
+            },
+            {
+              "label": "C",
+              "content": "呋塞米"
+            },
+            {
+              "label": "D",
+              "content": "氢氯噻嗪"
+            },
+            {
+              "label": "E",
+              "content": "以上均不是"
+            }
+          ],
+          "answer": "B",
+          "explanation": "别嘌呤醇（Allopurinol）能抑制<span class='highlight'>黄嘌呤氧化酶</span>，减少尿酸的生物合成，降低血中尿酸浓度，适用于<span class='bold-em'>慢性痛风</span>及痛风性肾病的治疗。保泰松用于急性痛风（由于副作用大现少用）。呋塞米和氢氯噻嗪等利尿剂会抑制尿酸排泄，加重痛风。",
+          "knowledgeTitle": "痛风治疗药物分类",
+          "knowledge": "<ul><li><b>急性期</b>：秋水仙碱（特异性）、NSAIDs（吲哚美辛）。</li><li><b>慢性期/缓解期</b>：别嘌呤醇（抑制生成）、丙磺舒（促进排泄）。</li></ul>"
+        },
+        {
+          "id": "98",
+          "text": "中枢性呼吸衰竭时，可选用下列哪一药物？",
+          "options": [
+            {
+              "label": "A",
+              "content": "间羟胺"
+            },
+            {
+              "label": "B",
+              "content": "尼可刹米"
+            },
+            {
+              "label": "C",
+              "content": "酚妥拉明"
+            },
+            {
+              "label": "D",
+              "content": "美卡拉明"
+            },
+            {
+              "label": "E",
+              "content": "新斯的明"
+            }
+          ],
+          "answer": "B",
+          "explanation": "尼可刹米（Nikethamide）是<span class='highlight'>中枢兴奋药</span>，主要兴奋延髓呼吸中枢，用于治疗各种原因引起的中枢性呼吸衰竭。",
+          "knowledgeTitle": "常见药物适应症",
+          "knowledge": "<ul><li><b>尼可刹米</b>：呼吸衰竭。</li><li><b>间羟胺</b>：休克（升压）。</li><li><b>新斯的明</b>：重症肌无力。</li></ul>"
+        },
+        {
+          "id": "99",
+          "text": "新生儿窒息首选",
+          "options": [
+            {
+              "label": "A",
+              "content": "山梗菜碱"
+            },
+            {
+              "label": "B",
+              "content": "回苏灵"
+            },
+            {
+              "label": "C",
+              "content": "戊四氮"
+            },
+            {
+              "label": "D",
+              "content": "尼可刹米"
+            },
+            {
+              "label": "E",
+              "content": "去氧肾上腺素"
+            }
+          ],
+          "answer": "A",
+          "explanation": "山梗菜碱（洛贝林，Lobeline）作用温和，安全范围大，主要通过刺激颈动脉体化学感受器<span class='highlight'>反射性兴奋呼吸中枢</span>。由于其不易引起惊厥，常作为<span class='bold-em'>新生儿窒息</span>的首选药。",
+          "knowledgeTitle": "呼吸兴奋药的选择",
+          "knowledge": "<p><b>洛贝林</b>：作用弱、短、安全。用于新生儿窒息、CO中毒。<br><b>尼可刹米</b>：作用较强。用于麻醉药中毒、肺心病呼吸衰竭。</p>"
+        },
+        {
+          "id": "100",
+          "text": "哌甲酯可用于",
+          "options": [
+            {
+              "label": "A",
+              "content": "癫痫小发作"
+            },
+            {
+              "label": "B",
+              "content": "儿童多动综合征"
+            },
+            {
+              "label": "C",
+              "content": "高血压"
+            },
+            {
+              "label": "D",
+              "content": "惊厥"
+            },
+            {
+              "label": "E",
+              "content": "以上均不是"
+            }
+          ],
+          "answer": "B",
+          "explanation": "哌甲酯（Methylphenidate，利他林）是一种中枢兴奋药，能改善精神活动，提高注意力。临床主要用于治疗<span class='highlight'>儿童多动综合征（ADHD）</span>和发作性睡病。",
+          "knowledgeTitle": "儿童多动症治疗",
+          "knowledge": "<p>虽然哌甲酯是兴奋剂，但在ADHD患儿中能通过增加突触间隙儿茶酚胺浓度，增强皮层抑制功能，从而产生“平静”的治疗效果。</p>"
+        },
+        {
+          "id": "101",
+          "text": "关于硫喷妥钠的叙述错误的是",
+          "options": [
+            {
+              "label": "A",
+              "content": "肌松作用不完全"
+            },
+            {
+              "label": "B",
+              "content": "镇痛效应差"
+            },
+            {
+              "label": "C",
+              "content": "维持时间短"
+            },
+            {
+              "label": "D",
+              "content": "无诱导兴奋现象"
+            },
+            {
+              "label": "E",
+              "content": "对呼吸循环的影响小"
+            }
+          ],
+          "answer": "E",
+          "explanation": "硫喷妥钠对<span class='highlight'>呼吸和循环系统有明显的抑制作用</span>。静注过快或过量可导致呼吸暂停和血压剧降，这是其主要缺点和危险所在。因此E选项叙述错误。",
+          "knowledgeTitle": "硫喷妥钠的药理特点",
+          "knowledge": "<ul><li><b>优点</b>：诱导快（无兴奋期）、无刺激性。</li><li><b>缺点</b>：镇痛差、肌松差、抑制呼吸循环、易发生喉痉挛。</li></ul>"
+        },
+        {
+          "id": "102",
+          "text": "下列关于地西泮的不良反应的叙述中错误的是",
+          "options": [
+            {
+              "label": "A",
+              "content": "治疗量可见困倦等中枢抑制作用"
+            },
+            {
+              "label": "B",
+              "content": "治疗量口服可产生心血管抑制"
+            },
+            {
+              "label": "C",
+              "content": "大剂量常见共济失调等肌张力降低现象"
+            },
+            {
+              "label": "D",
+              "content": "长期服用可产生习惯性、耐受性、成瘾性"
+            },
+            {
+              "label": "E",
+              "content": "久用突然停药可产生戒断症状如失眠"
+            }
+          ],
+          "answer": "B",
+          "explanation": "地西泮的安全范围较大，<span class='highlight'>口服治疗量对心血管系统影响极小</span>（B错误）。只有在静脉注射（尤其是快速注射）时才可能引起血压下降或心肌抑制。",
+          "knowledgeTitle": "地西泮的安全性",
+          "knowledge": "<p>相比巴比妥类，苯二氮卓类（地西泮）对呼吸和循环的抑制作用很轻，这是其取代巴比妥类成为首选镇静催眠药的主要原因。</p>"
+        },
+        {
+          "id": "103",
+          "text": "下列关于巴比妥类的作用和应用的叙述中不正确的是",
+          "options": [
+            {
+              "label": "A",
+              "content": "剂量不同对中枢神经系统产生不同程度的抑制作用"
+            },
+            {
+              "label": "B",
+              "content": "均可用于抗惊厥"
+            },
+            {
+              "label": "C",
+              "content": "可用于麻醉或麻醉前给药"
+            },
+            {
+              "label": "D",
+              "content": "均可用于抗癫痫"
+            },
+            {
+              "label": "E",
+              "content": "可诱导肝药酶，加速自身代谢"
+            }
+          ],
+          "answer": "D",
+          "explanation": "并不是所有的巴比妥类药物都用于抗癫痫。只有<span class='highlight'>苯巴比妥</span>（长效）具有显著的抗癫痫作用且在非麻醉剂量下有效。短效和超短效巴比妥类主要用于催眠或麻醉，不用于抗癫痫治疗（维持时间太短）。",
+          "knowledgeTitle": "巴比妥类的临床分类应用",
+          "knowledge": "<ul><li><b>抗癫痫</b>：苯巴比妥。</li><li><b>静脉麻醉</b>：硫喷妥钠。</li><li><b>催眠/抗惊厥</b>：戊巴比妥、司可巴比妥（现少用）。</li></ul>"
+        },
+        {
+          "id": "104",
+          "text": "关于解热镇痛抗炎药的叙述错误的是",
+          "options": [
+            {
+              "label": "A",
+              "content": "能使高烧者体温下降"
+            },
+            {
+              "label": "B",
+              "content": "具有中等度镇痛作用"
+            },
+            {
+              "label": "C",
+              "content": "大多数均具有抗炎作用"
+            },
+            {
+              "label": "D",
+              "content": "对正常体温无影响"
+            },
+            {
+              "label": "E",
+              "content": "本类药均具有抗血栓形成的作用"
+            }
+          ],
+          "answer": "E",
+          "explanation": "并非所有解热镇痛抗炎药（NSAIDs）都具有抗血栓作用。阿司匹林具有不可逆抑制COX-1导致的抗血小板聚集作用。其他NSAIDs（如布洛芬、吲哚美辛）多为可逆性抑制，抗栓作用弱且短暂；而选择性COX-2抑制剂（如塞来昔布）甚至可能<span class='highlight'>增加血栓风险</span>（打破TXA2/PGI2平衡）。",
+          "knowledgeTitle": "NSAIDs的心血管风险",
+          "knowledge": "<p>除阿司匹林外，长期使用大多数NSAIDs（尤其是COX-2抑制剂）可能增加心肌梗死和卒中的风险。</p>"
+        },
+        {
+          "id": "105",
+          "text": "吗啡的作用不包括",
+          "options": [
+            {
+              "label": "A",
+              "content": "止咳作用"
+            },
+            {
+              "label": "B",
+              "content": "呼吸抑制"
+            },
+            {
+              "label": "C",
+              "content": "体位性低血压"
+            },
+            {
+              "label": "D",
+              "content": "腹泻"
+            },
+            {
+              "label": "E",
+              "content": "支气管收缩"
+            }
+          ],
+          "answer": "D",
+          "explanation": "吗啡兴奋胃肠平滑肌，提高括约肌张力，减慢肠蠕动，导致<span class='highlight'>便秘</span>，而非腹泻。实际上，阿片制剂（如复方樟脑酊）常用于<b>治疗</b>腹泻。",
+          "knowledgeTitle": "吗啡的平滑肌效应",
+          "knowledge": "<ul><li><b>胃肠道</b>：便秘（止泻）。</li><li><b>胆道</b>：胆道奥迪括约肌痉挛（胆绞痛）。</li><li><b>支气管</b>：收缩（诱发哮喘）。</li><li><b>膀胱</b>：尿潴留。</li></ul>"
+        },
+        {
+          "id": "106",
+          "text": "下面关于地西泮的陈述哪点是错误的？",
+          "options": [
+            {
+              "label": "A",
+              "content": "地西泮有较强的肌肉松弛作用"
+            },
+            {
+              "label": "B",
+              "content": "地西泮口服后吸收迅速而完全"
+            },
+            {
+              "label": "C",
+              "content": "地西泮毒性小，安全范围大"
+            },
+            {
+              "label": "D",
+              "content": "一般剂量对正常人呼吸功能有很大影响"
+            },
+            {
+              "label": "E",
+              "content": "地西泮可明显缩短入睡时间，减少觉醒次数"
+            }
+          ],
+          "answer": "D",
+          "explanation": "地西泮治疗剂量对<span class='highlight'>呼吸功能几乎无影响</span>（D错），这也是其优于巴比妥类的重要特征。但在静脉注射或伴有呼吸系统疾病时需注意。",
+          "knowledgeTitle": "苯二氮卓类的呼吸影响",
+          "knowledge": "<p>治疗量口服无影响。大剂量或静注可致呼吸抑制。与酒精合用可致严重呼吸抑制甚至死亡。</p>"
+        },
+        {
+          "id": "107",
+          "text": "下面关于抗癫痫药的说法哪点是正确的？",
+          "options": [
+            {
+              "label": "A",
+              "content": "苯妥英钠是治疗癫痫小发作的首选药"
+            },
+            {
+              "label": "B",
+              "content": "苯巴比妥可作用于突触后膜上 GABA 受体，增加 Cl- 的电导，导致膜超级化，降低其兴奋性"
+            },
+            {
+              "label": "C",
+              "content": "乙琥胺不可用于儿童的癫痫失神小发作"
+            },
+            {
+              "label": "D",
+              "content": "硝西泮主要用于癫痫大发作的治疗"
+            },
+            {
+              "label": "E",
+              "content": "丙戊酸钠可增加卡马西平的清除率"
+            }
+          ],
+          "answer": "B",
+          "explanation": "A错（乙琥胺是小发作首选，苯妥英钠无效）。B对（这是巴比妥类增强GABA作用的经典机制）。C错（乙琥胺是儿童失神发作首选）。D错（硝西泮主要用于肌阵挛发作/婴儿痉挛）。E错（丙戊酸钠是肝药酶抑制剂，通常会减慢其他药物代谢，增加血药浓度）。",
+          "knowledgeTitle": "苯巴比妥作用机制",
+          "knowledge": "<ul><li>延长GABA门控Cl-通道开放时间。</li><li>拟GABA作用（高浓度直接开放Cl-通道）。</li><li>阻断兴奋性谷氨酸受体。</li></ul>"
+        },
+        {
+          "id": "108",
+          "text": "哪种药物可在术中配合其他麻醉药物，以提高麻醉效果？",
+          "options": [
+            {
+              "label": "A",
+              "content": "阿司匹林"
+            },
+            {
+              "label": "B",
+              "content": "碳酸锂"
+            },
+            {
+              "label": "C",
+              "content": "吗啡"
+            },
+            {
+              "label": "D",
+              "content": "布洛芬"
+            },
+            {
+              "label": "E",
+              "content": "可待因"
+            }
+          ],
+          "answer": "C",
+          "explanation": "吗啡具有强大的镇痛作用，常作为<span class='highlight'>麻醉辅助用药</span>（平衡麻醉的一部分），用于术前镇静止痛或术中增强麻醉效果，减少全麻药用量。",
+          "knowledgeTitle": "平衡麻醉",
+          "knowledge": "<p>联合使用镇静药、镇痛药（吗啡/芬太尼）、肌松药和吸入/静脉麻醉药，以发挥各药优势，减少副作用。</p>"
+        },
+        {
+          "id": "109",
+          "text": "下面关于解热镇痛药的叙述哪点是错误的？",
+          "options": [
+            {
+              "label": "A",
+              "content": "水杨酸类药物适用于轻、中度疼痛，对内脏病变导致的疼痛无效"
+            },
+            {
+              "label": "B",
+              "content": "阿司匹林可使 COX-2 分子的一个丝氨酸残基不可逆地乙酰化，但对于COX-1 无作用"
+            },
+            {
+              "label": "C",
+              "content": "治疗剂量的水杨酸类药物对心血管系统无明显的药理作用"
+            },
+            {
+              "label": "D",
+              "content": "水杨酸可直接刺激呼吸中枢，导致明显的过度通气"
+            },
+            {
+              "label": "E",
+              "content": "长期、大剂量服用水杨酸类药物可引起胃溃疡或胃出血"
+            }
+          ],
+          "answer": "B",
+          "explanation": "阿司匹林对COX-1和COX-2<span class='highlight'>均有不可逆的抑制作用</span>，且对COX-1的抑制作用强于COX-2（这正是其胃肠道副作用和抗血小板作用的来源）。说它对COX-1无作用是完全错误的。",
+          "knowledgeTitle": "阿司匹林的作用靶点",
+          "knowledge": "<ul><li><b>COX-1</b>：结构型。抑制后导致抗血栓（TXA2↓）和胃黏膜损伤（PGE2↓）。</li><li><b>COX-2</b>：诱导型。抑制后产生抗炎、镇痛、解热作用。</li></ul>"
+        },
+        {
+          "id": "110",
+          "text": "在常用的抗精神病药物作用比较中，哪种锥体外系反应最弱？",
+          "options": [
+            {
+              "label": "A",
+              "content": "氯丙嗪"
+            },
+            {
+              "label": "B",
+              "content": "奋乃静"
+            },
+            {
+              "label": "C",
+              "content": "氟奋乃静"
+            },
+            {
+              "label": "D",
+              "content": "三氟拉嗪"
+            },
+            {
+              "label": "E",
+              "content": "氯氮平"
+            }
+          ],
+          "answer": "E",
+          "explanation": "氯氮平（Clozapine）属于<span class='highlight'>非典型抗精神病药</span>，主要阻断中脑-边缘系统D4和5-HT2A受体，对黑质-纹状体系统D2受体亲和力低，因此<span class='bold-em'>几乎无锥体外系反应</span>。",
+          "knowledgeTitle": "典型 vs 非典型抗精神病药",
+          "knowledge": "<ul><li><b>典型（氯丙嗪）</b>：主要阻断D2受体。EPS常见，主要治阳性症状。</li><li><b>非典型（氯氮平）</b>：多受体阻断（5-HT/D2）。EPS极少，对阴性症状也有效。</li></ul>"
+        },
+        {
+          "id": "111",
+          "text": "吗啡的药理作用不包括：",
+          "options": [
+            {
+              "label": "A",
+              "content": "强大的镇痛作用"
+            },
+            {
+              "label": "B",
+              "content": "嗜睡"
+            },
+            {
+              "label": "C",
+              "content": "缩瞳"
+            },
+            {
+              "label": "D",
+              "content": "抗惊厥"
+            },
+            {
+              "label": "E",
+              "content": "镇咳"
+            }
+          ],
+          "answer": "D",
+          "explanation": "吗啡高剂量时可引起中枢兴奋，甚至诱发<span class='highlight'>惊厥</span>（可能与抑制GABA能神经元有关）。它不是抗惊厥药，甚至禁用于惊厥患者（除破伤风引起的惊厥需谨慎配合其他药外）。",
+          "knowledgeTitle": "吗啡的中枢双向作用",
+          "knowledge": "<ul><li><b>抑制</b>：痛觉、呼吸、咳嗽反射。</li><li><b>兴奋</b>：瞳孔（动眼神经核）、胃肠平滑肌张力、CTZ（催吐）、大剂量致惊厥。</li></ul>"
+        },
+        {
+          "id": "112",
+          "text": "下面的说法哪点是错误的？",
+          "options": [
+            {
+              "label": "A",
+              "content": "左旋多巴是儿茶酚胺类神经递质生物合成过程的中间产物"
+            },
+            {
+              "label": "B",
+              "content": "左旋多巴对吩噻嗪类抗精神病药引起的锥体外系症状无效"
+            },
+            {
+              "label": "C",
+              "content": "多巴胺可以直接透过血脑屏障从而发挥作用"
+            },
+            {
+              "label": "D",
+              "content": "卡比多巴与左旋多巴合用可以减少左旋多巴在外周组织的副作用"
+            },
+            {
+              "label": "E",
+              "content": "左旋多巴可引起幻觉、妄想等精神障碍"
+            }
+          ],
+          "answer": "C",
+          "explanation": "多巴胺（Dopamine）<span class='highlight'>不能通过血脑屏障</span>。因此治疗帕金森病需使用其前体左旋多巴（L-Dopa），它能通过血脑屏障并在脑内转化为多巴胺。",
+          "knowledgeTitle": "血脑屏障与帕金森药物",
+          "knowledge": "<ul><li><b>多巴胺</b>：不过BBB，外周给药无效。</li><li><b>左旋多巴</b>：过BBB，脑内转为DA生效。</li><li><b>卡比多巴</b>：不过BBB，外周抑制Dopa脱羧，保护L-Dopa。</li></ul>"
+        }
+      ]
+    }
+  ]
+}
