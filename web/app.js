@@ -3235,15 +3235,16 @@
       // Home HUD shortcuts (sync / saves / settings)
       if (els.homeSyncBtn) {
         els.homeSyncBtn.onclick = function () {
+          updateAuthModalUI();
+          switchSyncTab('account');
           if (els.authModal) els.authModal.classList.add('open');
-          // default to account tab
-          try { if (els.syncTabAccount && els.syncTabAccount.click) els.syncTabAccount.click(); } catch (_) {}
         };
       }
       if (els.homeSavesBtn) {
         els.homeSavesBtn.onclick = function () {
+          updateAuthModalUI();
+          switchSyncTab(getToken() ? 'saves' : 'account');
           if (els.authModal) els.authModal.classList.add('open');
-          try { if (els.syncTabSaves && els.syncTabSaves.click) els.syncTabSaves.click(); } catch (_) {}
         };
       }
       if (els.homeSettingsBtn) {
