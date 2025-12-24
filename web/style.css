@@ -477,8 +477,10 @@ body.sidebar-collapsed .icon-btn { width: 44px; height: 44px; flex: none; border
     border-radius: 12px;
     border: 1px solid rgba(148,163,184,0.28);
     background: rgba(255,255,255,0.9);
+    max-width: 100%;
 }
-.save-meta { flex: 1; overflow: hidden; }
+.save-meta { flex: 1; overflow: hidden; min-width: 0; }
+.save-actions { flex-shrink: 0; }
 .save-name { font-weight: 800; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .save-time { font-size: 0.86rem; color: #64748b; margin-top: 2px; }
 .save-actions { display: flex; gap: 8px; }

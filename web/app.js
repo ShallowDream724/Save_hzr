@@ -175,6 +175,11 @@
       els.cancelPasteBtn = document.getElementById('cancelPasteBtn');
       els.confirmPasteBtn = document.getElementById('confirmPasteBtn');
 
+      els.folderModal = document.getElementById('folderModal');
+      els.folderNameInput = document.getElementById('folderNameInput');
+      els.folderCancelBtn = document.getElementById('folderCancelBtn');
+      els.folderCreateBtn = document.getElementById('folderCreateBtn');
+
       // auth modal (optional)
       els.authModal = document.getElementById('authModal');
       els.authTabLogin = document.getElementById('authTabLogin');
@@ -327,7 +332,7 @@
       els.toastHost.appendChild(el);
       toastState.el = el;
 
-      var ms = typeof opts.timeoutMs === 'number' ? opts.timeoutMs : 4200;
+      var ms = typeof opts.timeoutMs === 'number' ? opts.timeoutMs : 5000;
       toastState.timer = window.setTimeout(function () {
         hideToast(false);
       }, ms);
@@ -2003,6 +2008,7 @@
         }, false);
       }
       bindOverlayClose(els.pasteModal);
+      bindOverlayClose(els.folderModal);
       bindOverlayClose(els.authModal);
       bindOverlayClose(els.settingsModal);
 
@@ -2024,12 +2030,32 @@
             document.body.classList.remove('sidebar-collapsed');
             updateCollapseIcon();
           }
-          var title = prompt('文件夹名称:');
-          if (!title) return;
-          appData.folders.push({ id: uid('f'), title: title, isOpen: true });
-          saveData();
-          renderSidebar();
+          if (!els.folderModal) return;
+          if (els.folderNameInput) els.folderNameInput.value = '';
+          els.folderModal.classList.add('open');
+          try { if (els.folderNameInput) els.folderNameInput.focus(); } catch (_) {}
         };
+      }
+
+      function createFolderFromModal() {
+        var title = (els.folderNameInput && typeof els.folderNameInput.value === 'string') ? els.folderNameInput.value.trim() : '';
+        if (!title) {
+          showToast('请输入文件夹名称', { timeoutMs: 1800 });
+          return;
+        }
+        appData.folders.push({ id: uid('f'), title: title, isOpen: true });
+        saveData();
+        renderSidebar();
+        if (els.folderModal) els.folderModal.classList.remove('open');
+        showToast('已创建文件夹：' + title, { timeoutMs: 2200 });
+      }
+
+      if (els.folderCancelBtn && els.folderModal) els.folderCancelBtn.onclick = function () { els.folderModal.classList.remove('open'); };
+      if (els.folderCreateBtn) els.folderCreateBtn.onclick = createFolderFromModal;
+      if (els.folderNameInput) {
+        els.folderNameInput.addEventListener('keydown', function (e) {
+          if (e && e.key === 'Enter') createFolderFromModal();
+        });
       }
   
       // 粘贴导入
