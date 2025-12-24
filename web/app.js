@@ -296,12 +296,13 @@
       }
     }
 
-    var toastState = { timer: 0, el: null, action: null };
+    var toastState = { timer: 0, el: null, action: null, removeTimer: 0 };
     function showToast(message, opts) {
       opts = opts || {};
       if (!els.toastHost) return;
 
       if (toastState.timer) { window.clearTimeout(toastState.timer); toastState.timer = 0; }
+      if (toastState.removeTimer) { window.clearTimeout(toastState.removeTimer); toastState.removeTimer = 0; }
       if (toastState.el && toastState.el.remove) toastState.el.remove();
       toastState.el = null;
       toastState.action = null;
@@ -318,11 +319,7 @@
         btn.textContent = opts.actionText;
         btn.onclick = function () {
           try { opts.onAction(); } catch (e) {}
-          if (toastState.timer) window.clearTimeout(toastState.timer);
-          if (el.remove) el.remove();
-          toastState.timer = 0;
-          toastState.el = null;
-          toastState.action = null;
+          hideToast(true);
         };
         el.appendChild(btn);
       }
@@ -332,18 +329,61 @@
 
       var ms = typeof opts.timeoutMs === 'number' ? opts.timeoutMs : 4200;
       toastState.timer = window.setTimeout(function () {
-        if (el.remove) el.remove();
-        toastState.timer = 0;
-        toastState.el = null;
-        toastState.action = null;
+        hideToast(false);
       }, ms);
     }
 
-    function hideToast() {
+    function hideToast(immediate) {
+      immediate = !!immediate;
       if (toastState.timer) { window.clearTimeout(toastState.timer); toastState.timer = 0; }
-      if (toastState.el && toastState.el.remove) toastState.el.remove();
+      if (toastState.removeTimer) { window.clearTimeout(toastState.removeTimer); toastState.removeTimer = 0; }
+
+      var el = toastState.el;
+      if (!el) return;
+
+      if (immediate) {
+        if (el.remove) el.remove();
+        toastState.el = null;
+        toastState.action = null;
+        return;
+      }
+
+      try { el.classList.add('closing'); } catch (_) {}
+      toastState.removeTimer = window.setTimeout(function () {
+        if (el.remove) el.remove();
+        toastState.removeTimer = 0;
+        toastState.el = null;
+        toastState.action = null;
+      }, 180);
       toastState.el = null;
       toastState.action = null;
+    }
+
+    function summarizeLibrary(data) {
+      if (!data || typeof data !== 'object') return { folders: 0, chapters: 0, deleted: 0 };
+      return {
+        folders: Array.isArray(data.folders) ? data.folders.length : 0,
+        chapters: Array.isArray(data.chapters) ? data.chapters.length : 0,
+        deleted: Array.isArray(data.deletedChapterIds) ? data.deletedChapterIds.length : 0
+      };
+    }
+
+    function librarySignature(data) {
+      // 用于“是否需要备份”判断：忽略纯 UI 状态（folder.isOpen）
+      try {
+        if (!data || typeof data !== 'object') return '';
+        var sig = {
+          folders: Array.isArray(data.folders) ? data.folders.map(function (f) { return { id: f && f.id, title: f && f.title }; }) : [],
+          chapters: Array.isArray(data.chapters) ? data.chapters : [],
+          layoutMap: data.layoutMap && typeof data.layoutMap === 'object' ? data.layoutMap : {},
+          deletedChapterIds: Array.isArray(data.deletedChapterIds) ? data.deletedChapterIds.slice() : []
+        };
+        // deleted 顺序不重要，排序避免误报
+        sig.deletedChapterIds.sort();
+        return JSON.stringify(sig);
+      } catch (e) {
+        return '';
+      }
     }
   
     /** ---------------------------
@@ -466,7 +506,7 @@
     }
 
     function cloudListRevisions() {
-      return apiFetch('/api/revisions?limit=20', { method: 'GET' }).then(function (res) {
+      return apiFetch('/api/revisions?limit=3', { method: 'GET' }).then(function (res) {
         if (!res.ok) throw new Error('revisions failed');
         return res.json();
       });
@@ -579,24 +619,23 @@
         }
 
         // 云端有数据：默认以云端为准（更安全）
-        // 只有“本机与云端内容不同”时才自动备份本机一次，避免每次登录都刷一堆存档
+        // 只有“本机与云端内容不同(忽略UI状态)”时才自动备份本机一次，避免每次登录/刷新都刷存档
         if (localHas && remoteHas) {
-          var localJson = '';
-          var remoteJson = '';
-          try { localJson = JSON.stringify(appData); } catch (_) { localJson = ''; }
-          try { remoteJson = JSON.stringify(remote); } catch (_) { remoteJson = ''; }
-
-          if (localJson && remoteJson && localJson !== remoteJson) {
-            var BOOT_KEY = 'hzr_bootstrap_backup_v2';
-            var marker = String(j && j.version ? j.version : 0) + ':' + String(localJson.length);
+          var localSig = librarySignature(appData);
+          var remoteSig = librarySignature(remote);
+          if (localSig && remoteSig && localSig !== remoteSig) {
+            var BOOT_KEY = 'hzr_bootstrap_backup_v3';
+            var marker = String(cloud.version) + ':' + String(localSig.length) + ':' + String(remoteSig.length);
             var last = null;
             try { last = localStorage.getItem(BOOT_KEY); } catch (_) { last = null; }
 
             if (last !== marker) {
               try { localStorage.setItem(BOOT_KEY, marker); } catch (_) {}
+              var ls = summarizeLibrary(appData);
+              var rs = summarizeLibrary(remote);
               var name = '自动备份(登录覆盖前) ' + new Date().toISOString();
               cloudCreateArchive(name, appData).then(function () {
-                showToast('本机数据已自动备份到“存档”。', { timeoutMs: 3600 });
+                showToast('检测到本机与云端不同：本机' + ls.chapters + '章/' + ls.folders + '夹，云端' + rs.chapters + '章/' + rs.folders + '夹。本机已备份到“存档”。', { timeoutMs: 5200 });
               }).catch(function () {});
             }
           }
@@ -1980,6 +2019,11 @@
       // 新建文件夹
       if (els.addFolderBtn) {
         els.addFolderBtn.onclick = function () {
+          // 桌面折叠态下用户看不到列表，先自动展开
+          if (!isCompactLayout() && document.body.classList.contains('sidebar-collapsed')) {
+            document.body.classList.remove('sidebar-collapsed');
+            updateCollapseIcon();
+          }
           var title = prompt('文件夹名称:');
           if (!title) return;
           appData.folders.push({ id: uid('f'), title: title, isOpen: true });

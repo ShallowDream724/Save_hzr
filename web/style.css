@@ -437,7 +437,9 @@ body.sidebar-collapsed .icon-btn { width: 44px; height: 44px; flex: none; border
     border-radius: 14px;
     box-shadow: 0 24px 70px rgba(15,23,42,0.18);
     backdrop-filter: blur(10px);
+    transition: opacity 160ms ease, transform 160ms ease;
 }
+.toast.closing { opacity: 0; transform: translateY(6px); }
 .toast .toast-msg { color: #334155; font-weight: 600; flex: 1; }
 .toast .toast-btn {
     border: 1px solid rgba(148,163,184,0.35);
@@ -568,6 +570,8 @@ h2 {
 .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(17,24,39,0.46); z-index: 1000; display: none; justify-content: center; align-items: center; backdrop-filter: blur(6px); }
 .modal-overlay.open { display: flex; }
 .modal-box { background: white; padding: 20px; width: 92%; max-width: 520px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.35); box-shadow: 0 28px 70px rgba(17,24,39,0.28); }
+.modal-overlay.open { cursor: pointer; }
+.modal-box { cursor: default; }
 .modal-box textarea { width: 100%; height: 200px; border: 1px solid rgba(148,163,184,0.55); border-radius: 12px; padding: 12px; margin-bottom: 15px; background: rgba(248,250,252,0.72); }
 .modal-box textarea:focus { outline: none; border-color: rgba(75,143,226,0.55); box-shadow: 0 0 0 4px rgba(75,143,226,0.14); }
 .modal-box input {
@@ -605,5 +609,5 @@ h2 {
     .main-content { margin-left: 0; }
     .fab-menu { display: inline-flex; }
     .menu-toggle { display: inline-flex; }
-    .top-bar { position: sticky; top: 10px; z-index: 60; }
+    .top-bar { position: static; }
 }
