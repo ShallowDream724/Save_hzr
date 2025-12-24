@@ -186,6 +186,9 @@ body.home-transitioning .home-hud { opacity: 0; pointer-events: none; transition
     display: flex;
     flex-direction: column;
     gap: 10px;
+    max-width: min(92vw, 560px);
+    transform: translateZ(80px);
+    transform-style: preserve-3d;
 }
 .home-hud.collapsed .home-hud-actions { display: none; }
 .home-hud-title {
@@ -503,7 +506,7 @@ body.home-mode .home-hud .modal-btn.primary {
 }
 
 /* During immersive transition: keep only the active book visible */
-body.home-transitioning .shelf .book-container { pointer-events: none; opacity: 0.10; filter: blur(1.2px); }
+body.home-transitioning .shelf .book-container { pointer-events: none; opacity: 0; filter: blur(1.2px); }
 body.home-transitioning .shelf .book-container.book-opening { opacity: 1; filter: none; }
 body.home-transitioning .shelf .book-more { opacity: 0 !important; }
 

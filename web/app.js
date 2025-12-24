@@ -1599,7 +1599,7 @@
       var menu = document.createElement('div');
       menu.className = 'book-menu';
       menu.innerHTML =
-        '<button type="button" data-act="rename">重命名</button>' +
+        '<button type="button" data-act="rename">自定义</button>' +
         '<button type="button" data-act="open">打开</button>';
 
       document.body.appendChild(menu);
@@ -1786,6 +1786,8 @@
 
         try { el.classList.add('book-opening'); } catch (_) {}
         try { el.style.zIndex = '2500'; } catch (_) {}
+        // Hide other books immediately to avoid z-order artifacts during the cover flip.
+        try { document.body.classList.add('home-transitioning'); } catch (_) {}
 
         el.style.position = 'fixed';
         // If fixed is relative to a transformed ancestor, offset by its rect.
@@ -1806,25 +1808,43 @@
 
         // Phase 1: straighten + open cover
         el.classList.add('open-state');
+        // Phase 1 should be visually "in place": keep screen rect stable while straightening.
+        var targetNoTranslate = 'translate3d(0px, 0px, 0px) rotateY(0deg) rotateX(0deg)';
+        var dx = 0;
+        var dy = 0;
+        try {
+          el.style.transition = 'none';
+          el.style.transform = targetNoTranslate;
+          el.offsetHeight;
+          var r2 = el.getBoundingClientRect();
+          dx = rect.left - r2.left;
+          dy = rect.top - r2.top;
+        } catch (_) { dx = 0; dy = 0; }
+
+        try {
+          el.style.transform = originalState;
+          el.offsetHeight;
+        } catch (_) {}
+
         el.style.transition = 'transform 0.5s ease-out';
-        // Phase 1 should open "in place" (no X/Y nudge), only straighten for the cover flip.
-        el.style.transform = 'translate3d(0, 0px, 0px) rotateY(0deg) rotateX(0deg)';
+        el.style.transform = 'translate3d(' + dx + 'px, ' + dy + 'px, 0px) rotateY(0deg) rotateX(0deg)';
 
         setTimeout(function () {
           if (!bookOpenAnim || !bookOpenAnim.active || bookOpenAnim.el !== el) return;
           el.classList.add('zooming');
-          try { document.body.classList.add('home-transitioning'); } catch (_) {}
           setWhiteOverlayVisible(true);
 
           var winW = window.innerWidth;
           var winH = window.innerHeight;
           var scale = Math.max(winW, winH) / 200;
 
-          var currentCenterX = rect.left + rect.width / 2;
-          var currentCenterY = rect.top + rect.height / 2;
+          // Use current rect after Phase 1 to avoid perceived "jump".
+          var rNow = el.getBoundingClientRect();
+          var currentCenterX = rNow.left + rNow.width / 2;
+          var currentCenterY = rNow.top + rNow.height / 2;
           var moveX = (winW / 2) - currentCenterX;
           var moveY = (winH / 2) - currentCenterY;
-          var offsetX = -(rect.width * 0.25) * scale;
+          var offsetX = -(rNow.width * 0.25) * scale;
 
           el.style.transform = 'translate3d(' + (moveX + offsetX) + 'px,' + moveY + 'px, 100px) scale(' + scale + ')';
 
