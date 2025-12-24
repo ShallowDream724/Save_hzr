@@ -389,6 +389,7 @@
       els.toastHost = document.getElementById('toastHost');
 
       els.addFolderBtn = document.getElementById('addFolderBtn');
+      els.sidebarHomeBtn = document.getElementById('sidebarHomeBtn');
       els.importBtn = document.getElementById('importBtn');
       els.settingsBtn = document.getElementById('settingsBtn');
       els.syncBtn = document.getElementById('syncBtn');
@@ -1764,6 +1765,18 @@
         var rect = el.getBoundingClientRect();
         var originalState = getComputedStyle(el).transform;
 
+        // Find fixed-position containing block (transformed ancestor), so top/left stay "in place".
+        var fixedCB = null;
+        try {
+          var p = el.parentElement;
+          while (p && p !== document.body) {
+            var t = getComputedStyle(p).transform;
+            if (t && t !== 'none') { fixedCB = p; break; }
+            p = p.parentElement;
+          }
+        } catch (_) { fixedCB = null; }
+        var cbRect = fixedCB ? fixedCB.getBoundingClientRect() : null;
+
         var placeholder = el.cloneNode(true);
         placeholder.style.opacity = 0;
         placeholder.style.pointerEvents = 'none';
@@ -1771,9 +1784,19 @@
 
         bookOpenAnim = { active: true, el: el, placeholder: placeholder, originalState: originalState };
 
+        try { el.classList.add('book-opening'); } catch (_) {}
+        try { el.style.zIndex = '2500'; } catch (_) {}
+
         el.style.position = 'fixed';
-        el.style.top = rect.top + 'px';
-        el.style.left = rect.left + 'px';
+        // If fixed is relative to a transformed ancestor, offset by its rect.
+        var topPx = rect.top;
+        var leftPx = rect.left;
+        if (cbRect) {
+          topPx = rect.top - cbRect.top;
+          leftPx = rect.left - cbRect.left;
+        }
+        el.style.top = topPx + 'px';
+        el.style.left = leftPx + 'px';
         el.style.margin = 0;
         el.style.transform = originalState;
         el.classList.remove('idle');
@@ -1839,6 +1862,8 @@
         var placeholder = bookOpenAnim.placeholder;
         if (placeholder && placeholder.remove) placeholder.remove();
         if (el) {
+          try { el.classList.remove('book-opening'); } catch (_) {}
+          try { el.style.zIndex = ''; } catch (_) {}
           el.style.position = '';
           el.style.top = '';
           el.style.left = '';
@@ -3061,6 +3086,12 @@
       if (els.menuToggle && els.sidebar) els.menuToggle.onclick = toggleSidebar;
       if (els.homeBtn) {
         els.homeBtn.onclick = function () {
+          showHomeView();
+          if (els.sidebar && isCompactLayout()) els.sidebar.classList.remove('active');
+        };
+      }
+      if (els.sidebarHomeBtn) {
+        els.sidebarHomeBtn.onclick = function () {
           showHomeView();
           if (els.sidebar && isCompactLayout()) els.sidebar.classList.remove('active');
         };

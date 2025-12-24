@@ -182,7 +182,7 @@ body.home-transitioning .home-hud { opacity: 0; pointer-events: none; transition
     position: fixed;
     left: 18px;
     top: 18px;
-    z-index: 1600;
+    z-index: 2600;
     display: flex;
     flex-direction: column;
     gap: 10px;
@@ -496,6 +496,16 @@ body.home-mode .home-hud .modal-btn.primary {
 }
 .book-container:hover .book-tooltip { opacity: 1; transform: translateY(-100%) translateZ(24px) translateY(-6px); }
 .book-tooltip-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; color: #0f172a; font-weight: 700; font-size: 0.86rem; }
+
+/* Touch devices: disable hover-tooltips (avoids stuck overlays covering HUD buttons) */
+@media (hover: none) {
+    .book-tooltip { display: none !important; }
+}
+
+/* During immersive transition: keep only the active book visible */
+body.home-transitioning .shelf .book-container { pointer-events: none; opacity: 0.10; filter: blur(1.2px); }
+body.home-transitioning .shelf .book-container.book-opening { opacity: 1; filter: none; }
+body.home-transitioning .shelf .book-more { opacity: 0 !important; }
 
 .book-menu {
     position: fixed;
