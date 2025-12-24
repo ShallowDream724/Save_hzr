@@ -1561,6 +1561,14 @@
             e.stopPropagation();
           }
         }, true);
+
+        // Desktop: right-click opens the edit menu (matches "long-press to edit")
+        containerEl.addEventListener('contextmenu', function (e) {
+          if (!e) return;
+          try { e.preventDefault(); e.stopPropagation(); } catch (_) {}
+          try { containerEl.__ignoreClickUntil = Date.now() + 650; } catch (_) {}
+          openBookMenu(book, moreBtn || containerEl, { x: e.clientX, y: e.clientY });
+        }, true);
       } catch (e) {}
     }
 
@@ -1726,7 +1734,7 @@
       bookModalMode = (mode === 'rename') ? 'rename' : 'create';
       bookModalTargetId = (mode === 'rename' && book && book.id) ? book.id : null;
 
-      var title = (mode === 'rename') ? '重命名书' : '新建书';
+      var title = (mode === 'rename') ? '编辑书' : '新建书';
       var btnText = (mode === 'rename') ? '保存' : '创建';
 
       var h3 = els.bookModal.querySelector('h3');
@@ -1836,17 +1844,22 @@
 
           var winW = window.innerWidth;
           var winH = window.innerHeight;
-          var scale = Math.max(winW, winH) / 200;
+          // Target: the *paper page* should cover the whole viewport (avoid edge leaks).
+          var pageEl = null;
+          try { pageEl = el.querySelector('.first-page'); } catch (_) { pageEl = null; }
+          if (!pageEl) pageEl = el;
 
-          // Use current rect after Phase 1 to avoid perceived "jump".
-          var rNow = el.getBoundingClientRect();
-          var currentCenterX = rNow.left + rNow.width / 2;
-          var currentCenterY = rNow.top + rNow.height / 2;
-          var moveX = (winW / 2) - currentCenterX;
-          var moveY = (winH / 2) - currentCenterY;
-          var offsetX = -(rNow.width * 0.25) * scale;
+          var pr = pageEl.getBoundingClientRect();
+          var safeW = Math.max(1, pr.width);
+          var safeH = Math.max(1, pr.height);
+          var scale = Math.max(winW / safeW, winH / safeH) * 1.08;
 
-          el.style.transform = 'translate3d(' + (moveX + offsetX) + 'px,' + moveY + 'px, 100px) scale(' + scale + ')';
+          var pageCenterX = pr.left + pr.width / 2;
+          var pageCenterY = pr.top + pr.height / 2;
+          var moveX = (winW / 2) - pageCenterX;
+          var moveY = (winH / 2) - pageCenterY;
+
+          el.style.transform = 'translate3d(' + moveX + 'px,' + moveY + 'px, 100px) scale(' + scale + ')';
 
           setTimeout(function () {
             if (!bookOpenAnim || !bookOpenAnim.active || bookOpenAnim.el !== el) return;
