@@ -1796,8 +1796,17 @@
         try {
           var p = el.parentElement;
           while (p && p !== document.body) {
-            var t = getComputedStyle(p).transform;
-            if (t && t !== 'none') { fixedCB = p; break; }
+            var cs = getComputedStyle(p);
+            var t = cs.transform;
+            var f = cs.filter;
+            var persp = cs.perspective;
+            var bf = '';
+            try {
+              if (cs.getPropertyValue) {
+                bf = cs.getPropertyValue('backdrop-filter') || cs.getPropertyValue('-webkit-backdrop-filter') || '';
+              }
+            } catch (_) { bf = ''; }
+            if ((t && t !== 'none') || (f && f !== 'none') || (persp && persp !== 'none') || (bf && bf !== 'none')) { fixedCB = p; break; }
             p = p.parentElement;
           }
         } catch (_) { fixedCB = null; }
@@ -1831,6 +1840,21 @@
 
         // force reflow
         el.offsetHeight;
+
+        // Ensure the element is pixel-perfect "in place" after switching to fixed-position.
+        // (Some ancestors create a fixed-position containing block via filter/backdrop-filter/perspective.)
+        try {
+          var rFixed = el.getBoundingClientRect();
+          var ax = rect.left - rFixed.left;
+          var ay = rect.top - rFixed.top;
+          if (Math.abs(ax) > 0.5 || Math.abs(ay) > 0.5) {
+            leftPx += ax;
+            topPx += ay;
+            el.style.left = leftPx + 'px';
+            el.style.top = topPx + 'px';
+            el.offsetHeight;
+          }
+        } catch (_) {}
 
         // Phase 1: straighten + open cover
         el.classList.add('open-state');
