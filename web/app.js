@@ -159,6 +159,7 @@
       els.menuToggle = document.getElementById('menuToggle');
       els.sidebar = document.getElementById('sidebar');
       els.sidebarOverlay = document.getElementById('sidebarOverlay');
+      els.sidebarCollapseBtn = document.getElementById('sidebarCollapseBtn');
       els.fabMenu = document.getElementById('fabMenu');
       els.toastHost = document.getElementById('toastHost');
 
@@ -337,6 +338,13 @@
         toastState.action = null;
       }, ms);
     }
+
+    function hideToast() {
+      if (toastState.timer) { window.clearTimeout(toastState.timer); toastState.timer = 0; }
+      if (toastState.el && toastState.el.remove) toastState.el.remove();
+      toastState.el = null;
+      toastState.action = null;
+    }
   
     /** ---------------------------
      * 4) 本地存储
@@ -385,7 +393,8 @@
       version: 0,
       savingTimer: 0,
       isSaving: false,
-      authMode: 'login' // login | register
+      authMode: 'login', // login | register
+      bootstrapDone: false
     };
 
     function getToken() {
@@ -504,6 +513,7 @@
 
     function scheduleCloudSave() {
       if (!getToken()) return;
+      if (!cloud.bootstrapDone) return;
       if (cloud.savingTimer) window.clearTimeout(cloud.savingTimer);
       cloud.savingTimer = window.setTimeout(function () {
         cloud.savingTimer = 0;
@@ -513,6 +523,7 @@
 
     function doCloudSave() {
       if (!getToken()) return;
+      if (!cloud.bootstrapDone) return;
       if (cloud.isSaving) return;
       cloud.isSaving = true;
       updateSyncStatus('同步中…');
@@ -543,6 +554,7 @@
 
     function tryBootstrapFromCloud() {
       if (!getToken()) { updateSyncStatus(); return Promise.resolve(false); }
+      cloud.bootstrapDone = false;
       updateSyncStatus('同步中…');
 
       return cloudLoadLibrary().then(function (j) {
@@ -554,10 +566,11 @@
 
         if (!remote) {
           // 云端无数据：若本地有数据则推送本地；否则不做事
-          if (!localHas) { updateSyncStatus(); return false; }
+          if (!localHas) { updateSyncStatus(); cloud.bootstrapDone = true; return false; }
           return cloudSaveLibrary(0, false).then(function (r) {
             cloud.version = r.version || cloud.version;
             updateSyncStatus();
+            cloud.bootstrapDone = true;
             return true;
           }).catch(function () {
             updateSyncStatus('同步失败');
@@ -565,20 +578,38 @@
           });
         }
 
-        // 云端有数据：默认以云端为准（更安全）；若本机也有内容，先把本机打一个云端存档再覆盖
+        // 云端有数据：默认以云端为准（更安全）
+        // 只有“本机与云端内容不同”时才自动备份本机一次，避免每次登录都刷一堆存档
         if (localHas && remoteHas) {
-          var name = '自动备份(首次登录) ' + new Date().toISOString();
-          cloudCreateArchive(name, appData).then(function () {
-            showToast('已自动备份本机数据到“存档”。', { timeoutMs: 3600 });
-          }).catch(function () {});
+          var localJson = '';
+          var remoteJson = '';
+          try { localJson = JSON.stringify(appData); } catch (_) { localJson = ''; }
+          try { remoteJson = JSON.stringify(remote); } catch (_) { remoteJson = ''; }
+
+          if (localJson && remoteJson && localJson !== remoteJson) {
+            var BOOT_KEY = 'hzr_bootstrap_backup_v2';
+            var marker = String(j && j.version ? j.version : 0) + ':' + String(localJson.length);
+            var last = null;
+            try { last = localStorage.getItem(BOOT_KEY); } catch (_) { last = null; }
+
+            if (last !== marker) {
+              try { localStorage.setItem(BOOT_KEY, marker); } catch (_) {}
+              var name = '自动备份(登录覆盖前) ' + new Date().toISOString();
+              cloudCreateArchive(name, appData).then(function () {
+                showToast('本机数据已自动备份到“存档”。', { timeoutMs: 3600 });
+              }).catch(function () {});
+            }
+          }
         }
 
         appData = remote;
         try { localStorage.setItem(STORAGE_KEY, JSON.stringify(appData)); } catch (e) {}
         updateSyncStatus();
+        cloud.bootstrapDone = true;
         return true;
       }).catch(function () {
         updateSyncStatus('同步失败');
+        cloud.bootstrapDone = true;
         return false;
       });
     }
@@ -1805,30 +1836,56 @@
       if (uiBound) return;
       uiBound = true;
 
-      function isMobile() { return window.innerWidth <= 768; }
+      function isCompactLayout() {
+        var coarse = false;
+        try { coarse = !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches); } catch (_) { coarse = false; }
+        return window.innerWidth <= 1024 || coarse;
+      }
 
       function openSidebar() {
         if (!els.sidebar) return;
-        if (isMobile()) els.sidebar.classList.add('active');
+        if (isCompactLayout()) els.sidebar.classList.add('active');
         else document.body.classList.remove('sidebar-collapsed');
       }
       function closeSidebar() {
         if (!els.sidebar) return;
-        if (isMobile()) els.sidebar.classList.remove('active');
+        if (isCompactLayout()) els.sidebar.classList.remove('active');
         else document.body.classList.add('sidebar-collapsed');
       }
       function toggleSidebar() {
         if (!els.sidebar) return;
-        if (isMobile()) els.sidebar.classList.toggle('active');
+        if (isCompactLayout()) els.sidebar.classList.toggle('active');
         else document.body.classList.toggle('sidebar-collapsed');
+      }
+
+      function updateCollapseIcon() {
+        if (!els.sidebarCollapseBtn) return;
+        var i = els.sidebarCollapseBtn.querySelector('i');
+        if (!i) return;
+        if (isCompactLayout()) {
+          i.className = 'fa-solid fa-bars';
+          els.sidebarCollapseBtn.title = '菜单';
+          return;
+        }
+        var collapsed = document.body.classList.contains('sidebar-collapsed');
+        i.className = collapsed ? 'fa-solid fa-angles-right' : 'fa-solid fa-angles-left';
+        els.sidebarCollapseBtn.title = collapsed ? '展开侧边栏' : '折叠侧边栏';
       }
 
       // 菜单
       if (els.menuToggle && els.sidebar) els.menuToggle.onclick = toggleSidebar;
       if (els.sidebarOverlay && els.sidebar) {
         els.sidebarOverlay.onclick = function () {
-          if (isMobile()) els.sidebar.classList.remove('active');
+          if (isCompactLayout()) els.sidebar.classList.remove('active');
         };
+      }
+      if (els.sidebarCollapseBtn) {
+        els.sidebarCollapseBtn.onclick = function () {
+          if (isCompactLayout()) toggleSidebar();
+          else document.body.classList.toggle('sidebar-collapsed');
+          updateCollapseIcon();
+        };
+        updateCollapseIcon();
       }
 
       // 可拖动汉堡按钮（移动端/平板更顺手）
@@ -1890,6 +1947,35 @@
         addEvt(els.fabMenu, 'pointerup', endFab, { passive: true });
         addEvt(els.fabMenu, 'pointercancel', endFab, { passive: true });
       }
+
+      // 点击空白立即收起 toast（但不影响 toast 按钮）
+      addEvt(document, 'pointerdown', function (e) {
+        if (!toastState.el) return;
+        if (e.target && e.target.closest && e.target.closest('.toast-btn')) return;
+        hideToast();
+      }, { passive: true, capture: true });
+
+      // 点击遮罩/空白关闭弹窗
+      function bindOverlayClose(modalEl) {
+        if (!modalEl) return;
+        modalEl.addEventListener('click', function (e) {
+          if (e.target !== modalEl) return;
+          modalEl.classList.remove('open');
+        }, false);
+      }
+      bindOverlayClose(els.pasteModal);
+      bindOverlayClose(els.authModal);
+      bindOverlayClose(els.settingsModal);
+
+      // ESC：关闭 toast + 弹窗 + 侧边栏（移动端）
+      addEvt(document, 'keydown', function (e) {
+        if (!e || e.key !== 'Escape') return;
+        hideToast();
+        if (els.pasteModal) els.pasteModal.classList.remove('open');
+        if (els.authModal) els.authModal.classList.remove('open');
+        if (els.settingsModal) els.settingsModal.classList.remove('open');
+        if (els.sidebar && isCompactLayout()) els.sidebar.classList.remove('active');
+      }, { passive: true });
 
       // 新建文件夹
       if (els.addFolderBtn) {
@@ -2068,6 +2154,7 @@
         els.authLogoutBtn.onclick = function () {
           setToken(null);
           cloud.version = 0;
+          cloud.bootstrapDone = false;
           updateSyncStatus();
           updateAuthModalUI();
           showToast('已退出登录（本地数据仍在）', { timeoutMs: 2600 });

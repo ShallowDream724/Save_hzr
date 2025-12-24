@@ -129,10 +129,10 @@ app.put('/api/library', authMiddleware, (req, res) => {
       db.prepare('INSERT OR IGNORE INTO library_revisions (user_id, version, data_json, saved_at) VALUES (?, ?, ?, ?)')
         .run(req.user.userId, nextVersion, payload, updatedAt);
 
-      // Keep the newest 200 revisions.
+      // Keep the newest 3 revisions.
       const rows = db.prepare('SELECT version FROM library_revisions WHERE user_id = ? ORDER BY version DESC').all(req.user.userId);
-      if (rows.length > 200) {
-        const toDelete = rows.slice(200).map((r) => r.version);
+      if (rows.length > 3) {
+        const toDelete = rows.slice(3).map((r) => r.version);
         const del = db.prepare('DELETE FROM library_revisions WHERE user_id = ? AND version = ?');
         for (const v of toDelete) del.run(req.user.userId, v);
       }
