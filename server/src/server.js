@@ -14,7 +14,24 @@ const app = express();
 const db = openDb();
 
 app.disable('x-powered-by');
-app.use(helmet({ crossOriginResourcePolicy: false }));
+app.use(helmet({
+  crossOriginResourcePolicy: false,
+  contentSecurityPolicy: {
+    useDefaults: true,
+    directives: {
+      "base-uri": ["'self'"],
+      "object-src": ["'none'"],
+      "frame-ancestors": ["'none'"],
+      "img-src": ["'self'", "data:"],
+      // UI 依赖外链 icon font（FontAwesome CDN）+ 页面/脚本会动态写 style（拖拽幽灵等）
+      "style-src": ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com"],
+      "font-src": ["'self'", "https://cdnjs.cloudflare.com", "data:"],
+      // 允许 Cloudflare Insights（若你开启了）不影响主站；未开启也不会有副作用
+      "script-src": ["'self'", "https://static.cloudflareinsights.com"],
+      "connect-src": ["'self'", "https://static.cloudflareinsights.com"],
+    }
+  }
+}));
 
 const corsOrigin = process.env.CORS_ORIGIN || '*';
 app.use(cors({

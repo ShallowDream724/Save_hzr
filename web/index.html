@@ -4,10 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>拯救Hzr</title>
+    <!-- 可选：设置 API_BASE（留空则同源），如：https://qianmeng.me -->
+    <meta name="hzr-api-base" content="">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="./style.css">
-    <!-- CodePen 时可以把 API_BASE 改成你的服务地址，如：https://qianmeng.me -->
-    <script>window.API_BASE = '';</script>
     <script src="./app.js" defer></script>
 </head>
 <body>
@@ -134,7 +134,7 @@
             <div class="seg-tabs" style="margin:12px 0 8px;">
                 <button id="syncTabAccount" class="seg-tab active" type="button">账号</button>
                 <button id="syncTabSaves" class="seg-tab" type="button">存档</button>
-                <button id="authLogoutBtn" class="modal-btn" type="button" style="margin-left:auto; display:none;">退出</button>
+                <button id="authLogoutBtn" class="modal-btn" type="button" style="margin-left:auto; display:none;">退出登录</button>
             </div>
 
             <div id="syncPaneAccount">
@@ -146,6 +146,14 @@
                     <input id="authUsername" class="auth-input" placeholder="用户名（3-32位，字母数字._-）">
                     <input id="authPassword" class="auth-input" placeholder="密码（>=8位）" type="password">
                     <div id="authHint" style="color:#667085; font-size:0.9rem;"></div>
+                </div>
+                <div id="syncEnableRow" style="display:none; margin-top:12px; padding:10px 12px; border:1px solid rgba(197,74,90,0.22); background:rgba(197,74,90,0.06); border-radius:12px;">
+                    <div style="font-weight:700; color:#7b2c36;">云同步未启用</div>
+                    <div style="margin-top:6px; color:#667085; font-size:0.92rem;">云端为空或同步未完成初始化时，为避免误覆盖，系统不会自动上传本机。</div>
+                    <div class="modal-actions" style="margin-top:10px; justify-content:flex-start;">
+                        <button id="enableSyncUploadBtn" class="modal-btn primary" type="button">上传本机到云端（启用同步）</button>
+                    </div>
+                    <div id="enableSyncHint" style="margin-top:6px; color:#667085; font-size:0.9rem;"></div>
                 </div>
                 <div class="modal-actions" style="margin-top:14px;">
                     <button id="authCancelBtn" class="modal-btn">关闭</button>

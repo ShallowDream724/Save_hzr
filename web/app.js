@@ -69,7 +69,13 @@
      * --------------------------- */
     var STORAGE_KEY = 'pharm_data_v4_1';
     var AUTH_TOKEN_KEY = 'pharm_sync_token_v1';
-    var API_BASE = (typeof window !== 'undefined' && window.API_BASE) ? String(window.API_BASE) : '';
+    var API_BASE = '';
+    try {
+      var metaApi = (typeof document !== 'undefined') ? document.querySelector('meta[name="hzr-api-base"]') : null;
+      if (metaApi && typeof metaApi.content === 'string') API_BASE = metaApi.content.trim();
+    } catch (e) {}
+    if (!API_BASE && typeof window !== 'undefined' && window.API_BASE) API_BASE = String(window.API_BASE).trim();
+    if (API_BASE && API_BASE[API_BASE.length - 1] === '/') API_BASE = API_BASE.slice(0, -1);
 
     var UI_DEFAULTS = {
       analysisColor: '#4b8fe2',
@@ -230,6 +236,9 @@
       els.authUsername = document.getElementById('authUsername');
       els.authPassword = document.getElementById('authPassword');
       els.authHint = document.getElementById('authHint');
+      els.syncEnableRow = document.getElementById('syncEnableRow');
+      els.enableSyncUploadBtn = document.getElementById('enableSyncUploadBtn');
+      els.enableSyncHint = document.getElementById('enableSyncHint');
       els.authCancelBtn = document.getElementById('authCancelBtn');
       els.authSubmitBtn = document.getElementById('authSubmitBtn');
 
@@ -529,6 +538,20 @@
       };
     }
 
+    function hash32(str) {
+      try {
+        var s = String(str || '');
+        var h = 2166136261;
+        for (var i = 0; i < s.length; i++) {
+          h ^= s.charCodeAt(i);
+          h = (h + (h << 1) + (h << 4) + (h << 7) + (h << 8) + (h << 24)) >>> 0; // FNV-1a
+        }
+        return h >>> 0;
+      } catch (e) {
+        return 0;
+      }
+    }
+
     function librarySignature(data) {
       // 用于“是否需要备份”判断：忽略纯 UI 状态（folder.isOpen）
       try {
@@ -596,7 +619,11 @@
       savingTimer: 0,
       isSaving: false,
       authMode: 'login', // login | register
-      bootstrapDone: false
+      bootstrapDone: false,
+      syncEnabled: false,
+      remoteEmpty: null,
+      bootstrapPromise: null,
+      bootstrapFailed: false
     };
 
     function getToken() {
@@ -606,6 +633,12 @@
     }
     function setToken(token) {
       cloud.token = token || null;
+      cloud.version = 0;
+      cloud.bootstrapDone = false;
+      cloud.syncEnabled = false;
+      cloud.remoteEmpty = null;
+      cloud.bootstrapFailed = false;
+      cloud.bootstrapPromise = null;
       try {
         if (cloud.token) localStorage.setItem(AUTH_TOKEN_KEY, cloud.token);
         else localStorage.removeItem(AUTH_TOKEN_KEY);
@@ -627,8 +660,22 @@
         else dot = getToken() ? 'status-dot--ok' : 'status-dot--off';
       } else {
         var t = getToken();
-        dot = t ? 'status-dot--ok' : 'status-dot--off';
-        label = t ? '已登录 · 自动同步' : '未登录 · 仅本地';
+        if (!t) {
+          dot = 'status-dot--off';
+          label = '未登录 · 仅本地';
+        } else if (cloud.bootstrapFailed) {
+          dot = 'status-dot--err';
+          label = '已登录 · 同步失败（未启用）';
+        } else if (!cloud.bootstrapDone) {
+          dot = 'status-dot--warn';
+          label = '已登录 · 同步初始化中…';
+        } else if (!cloud.syncEnabled) {
+          dot = 'status-dot--warn';
+          label = '已登录 · 未启用云同步';
+        } else {
+          dot = 'status-dot--ok';
+          label = '已登录 · 自动同步';
+        }
       }
 
       els.syncStatus.innerHTML = '<span class="status-dot ' + dot + '"></span>' + escapeHtml(label);
@@ -716,6 +763,7 @@
     function scheduleCloudSave() {
       if (!getToken()) return;
       if (!cloud.bootstrapDone) return;
+      if (!cloud.syncEnabled) return;
       if (cloud.savingTimer) window.clearTimeout(cloud.savingTimer);
       cloud.savingTimer = window.setTimeout(function () {
         cloud.savingTimer = 0;
@@ -726,6 +774,7 @@
     function doCloudSave() {
       if (!getToken()) return;
       if (!cloud.bootstrapDone) return;
+      if (!cloud.syncEnabled) return;
       if (cloud.isSaving) return;
       cloud.isSaving = true;
       updateSyncStatus('同步中…');
@@ -756,29 +805,30 @@
 
     function tryBootstrapFromCloud() {
       if (!getToken()) { updateSyncStatus(); return Promise.resolve(false); }
+      if (cloud.bootstrapPromise) return cloud.bootstrapPromise;
       cloud.bootstrapDone = false;
+      cloud.bootstrapFailed = false;
       updateSyncStatus('同步中…');
 
-      return cloudLoadLibrary().then(function (j) {
+      cloud.bootstrapPromise = cloudLoadLibrary().then(function (j) {
         cloud.version = (j && typeof j.version === 'number') ? j.version : 0;
         var remote = j && j.data ? j.data : null;
 
         var localHas = (appData && ((appData.chapters && appData.chapters.length) || (appData.folders && appData.folders.length)));
         var remoteHas = remote && ((remote.chapters && remote.chapters.length) || (remote.folders && remote.folders.length));
 
-        if (!remote) {
-          // 云端无数据：若本地有数据则推送本地；否则不做事
-          if (!localHas) { updateSyncStatus(); cloud.bootstrapDone = true; return false; }
-          return cloudSaveLibrary(0, false).then(function (r) {
-            cloud.version = r.version || cloud.version;
-            updateSyncStatus();
-            cloud.bootstrapDone = true;
-            return true;
-          }).catch(function () {
-            updateSyncStatus('同步失败');
-            return false;
-          });
+        if (!remote || !remoteHas) {
+          // 云端无数据（或为空库）：绝不自动推送本机，也不自动用“空云端”覆盖本机。
+          // 用户可在“云同步 -> 账号”里手动点“上传本机到云端（启用同步）”。
+          cloud.remoteEmpty = true;
+          cloud.syncEnabled = false;
+          cloud.bootstrapDone = true;
+          updateSyncStatus();
+          if (localHas) showToast('云端暂无数据：已保留本机。若要跨设备同步，请在“云同步-账号”里手动启用。', { timeoutMs: 5600 });
+          return false;
         }
+        cloud.remoteEmpty = false;
+        cloud.syncEnabled = true;
 
         // 云端有数据：默认以云端为准（更安全）
         // 只有“本机与云端内容不同(忽略UI状态)”时才自动备份本机一次，避免每次登录/刷新都刷存档
@@ -786,8 +836,12 @@
           var localSig = librarySignature(appData);
           var remoteSig = librarySignature(remote);
           if (localSig && remoteSig && localSig !== remoteSig) {
+            try {
+              localStorage.setItem('hzr_local_backup_before_cloud_v1', JSON.stringify({ savedAt: new Date().toISOString(), data: appData }));
+            } catch (_) {}
+
             var BOOT_KEY = 'hzr_bootstrap_backup_v3';
-            var marker = String(cloud.version) + ':' + String(localSig.length) + ':' + String(remoteSig.length);
+            var marker = String(cloud.version) + ':' + String(hash32(localSig)) + ':' + String(hash32(remoteSig));
             var last = null;
             try { last = localStorage.getItem(BOOT_KEY); } catch (_) { last = null; }
 
@@ -812,10 +866,15 @@
         cloud.bootstrapDone = true;
         return true;
       }).catch(function () {
+        cloud.bootstrapFailed = true;
+        cloud.syncEnabled = false;
         updateSyncStatus('同步失败');
-        cloud.bootstrapDone = true;
+        cloud.bootstrapDone = false;
         return false;
+      }).finally(function () {
+        cloud.bootstrapPromise = null;
       });
+      return cloud.bootstrapPromise;
     }
   
     /** ---------------------------
@@ -2454,7 +2513,13 @@
         if (!els.authModal) return;
         var loggedIn = !!getToken();
         if (els.authLogoutBtn) els.authLogoutBtn.style.display = loggedIn ? 'inline-block' : 'none';
-        if (els.authHint) els.authHint.textContent = loggedIn ? '已登录：改动会自动同步到云端（云端每5分钟自动备份）。' : '登录后可跨设备同步，并提供自动/手动存档。';
+        if (els.authHint) {
+          if (!loggedIn) els.authHint.textContent = '登录后可跨设备同步，并提供自动/手动存档。';
+          else if (cloud.bootstrapFailed) els.authHint.textContent = '已登录：同步初始化失败（不会上传本机）。请检查网络/反代配置后重试。';
+          else if (!cloud.bootstrapDone) els.authHint.textContent = '已登录：正在从云端拉取数据…（不会上传本机）';
+          else if (!cloud.syncEnabled) els.authHint.textContent = '已登录：云同步未启用（为防误覆盖，不会自动上传本机）。';
+          else els.authHint.textContent = '已登录：默认拉取云端；之后改动会自动同步到云端（云端每5分钟自动备份）。';
+        }
 
         if (els.authTabLogin) els.authTabLogin.classList.toggle('primary', cloud.authMode === 'login');
         if (els.authTabRegister) els.authTabRegister.classList.toggle('primary', cloud.authMode === 'register');
@@ -2463,6 +2528,12 @@
           els.syncTabSaves.disabled = !loggedIn;
           els.syncTabSaves.style.opacity = loggedIn ? '1' : '0.5';
           els.syncTabSaves.style.cursor = loggedIn ? 'pointer' : 'not-allowed';
+        }
+
+        if (els.syncEnableRow) {
+          var show = loggedIn && cloud.bootstrapDone && !cloud.syncEnabled;
+          els.syncEnableRow.style.display = show ? '' : 'none';
+          if (els.enableSyncHint) els.enableSyncHint.textContent = '';
         }
       }
 
@@ -2687,6 +2758,50 @@
             .catch(function () {
               if (els.authHint) els.authHint.textContent = '网络错误';
             });
+        };
+      }
+
+      if (els.enableSyncUploadBtn) {
+        els.enableSyncUploadBtn.onclick = function () {
+          if (!getToken()) { showToast('请先登录', { timeoutMs: 2200 }); return; }
+          if (!cloud.bootstrapDone) { showToast('请稍等：同步初始化中…', { timeoutMs: 2600 }); return; }
+          if (cloud.syncEnabled) { showToast('云同步已启用', { timeoutMs: 2200 }); return; }
+
+          if (els.enableSyncHint) els.enableSyncHint.textContent = '上传中…';
+          updateSyncStatus('同步中…');
+
+          cloudLoadLibrary().then(function (j) {
+            var remote = j && j.data ? j.data : null;
+            var remoteHas = remote && ((remote.chapters && remote.chapters.length) || (remote.folders && remote.folders.length));
+            if (remoteHas) {
+              cloud.version = (j && typeof j.version === 'number') ? j.version : cloud.version;
+              cloud.remoteEmpty = false;
+              cloud.syncEnabled = true;
+              if (els.enableSyncHint) els.enableSyncHint.textContent = '云端已有数据：已启用同步并默认以云端为准。';
+              // 重新走一次引导，确保本机被云端覆盖并自动备份本机
+              return tryBootstrapFromCloud().then(function () {
+                renderSidebar();
+                updateAuthModalUI();
+                updateSyncStatus();
+              });
+            }
+
+            // 云端仍为空：把本机上传为初始云端数据（显式操作）
+            cloud.version = (j && typeof j.version === 'number') ? j.version : 0;
+            return cloudSaveLibrary(0, false).then(function (r) {
+              cloud.version = r && r.version ? r.version : cloud.version;
+              cloud.remoteEmpty = false;
+              cloud.syncEnabled = true;
+              if (els.enableSyncHint) els.enableSyncHint.textContent = '上传完成：已启用云同步。';
+              updateAuthModalUI();
+              updateSyncStatus();
+              showToast('已上传本机并启用云同步', { timeoutMs: 2600 });
+            });
+          }).catch(function () {
+            if (els.enableSyncHint) els.enableSyncHint.textContent = '上传失败：请检查网络/反代配置。';
+            cloud.syncEnabled = false;
+            updateSyncStatus('同步失败');
+          });
         };
       }
     }
