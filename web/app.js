@@ -947,8 +947,8 @@
         if (!appData.ui) appData.ui = keepUi;
         appData.ui = normalizeUi(appData.ui);
         try { localStorage.setItem(STORAGE_KEY, JSON.stringify(appData)); } catch (e) {}
-        updateSyncStatus();
         cloud.bootstrapDone = true;
+        updateSyncStatus();
         return true;
       }).catch(function () {
         cloud.bootstrapFailed = true;
