@@ -1618,6 +1618,26 @@
       bookMenuEl = null;
     }
 
+    function removeBookById(bookId) {
+      if (!bookId) return null;
+      var books = getBooks();
+      if (!books || books.length <= 1) return null;
+
+      var idx = -1;
+      for (var i = 0; i < books.length; i++) {
+        if (books[i] && books[i].id === bookId) { idx = i; break; }
+      }
+      if (idx < 0) return null;
+
+      var removed = books.splice(idx, 1)[0];
+      if (appData && appData.currentBookId === bookId) {
+        var next = books[Math.min(idx, books.length - 1)];
+        appData.currentBookId = next ? next.id : null;
+        currentChapterId = null;
+      }
+      return { index: idx, book: removed };
+    }
+
     function openBookMenu(book, anchorEl, atPoint) {
       closeBookMenu();
       if (!book || !anchorEl) return;
@@ -1626,7 +1646,8 @@
       menu.className = 'book-menu';
       menu.innerHTML =
         '<button type="button" data-act="rename">自定义</button>' +
-        '<button type="button" data-act="open">打开</button>';
+        '<button type="button" data-act="open">打开</button>' +
+        '<button type="button" data-act="delete">删除</button>';
 
       document.body.appendChild(menu);
       bookMenuEl = menu;
@@ -1667,6 +1688,45 @@
         }
         if (act === 'rename') {
           openRenameBookModal(book);
+          return;
+        }
+        if (act === 'delete') {
+          var books = getBooks();
+          if (!books || books.length <= 1) {
+            showToast('至少保留一本书');
+            return;
+          }
+
+          var title = (book && typeof book.title === 'string' && book.title.trim()) ? book.title.trim() : '未命名书';
+          var ok = false;
+          try { ok = confirm('确定删除《' + title + '》？'); } catch (_) { ok = false; }
+          if (!ok) return;
+
+          var removed = removeBookById(book.id);
+          if (!removed || !removed.book) {
+            showToast('删除失败');
+            return;
+          }
+
+          saveData();
+          renderHome();
+          renderSidebar();
+
+          showToast('已删除《' + title + '》', {
+            actionText: '撤销',
+            timeoutMs: 8000,
+            onAction: function () {
+              try {
+                var list = getBooks();
+                if (!Array.isArray(list)) return;
+                list.splice(Math.max(0, Math.min(removed.index, list.length)), 0, normalizeBook(removed.book));
+                if (appData) appData.currentBookId = removed.book.id;
+                saveData();
+                renderHome();
+                renderSidebar();
+              } catch (e) {}
+            }
+          });
           return;
         }
       };

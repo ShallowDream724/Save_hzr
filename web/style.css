@@ -732,6 +732,8 @@ body.home-transitioning #booksGrid .book-more { opacity: 0 !important; }
     color: #0f172a;
 }
 .book-menu button:hover { background: rgba(248,250,252,0.9); }
+.book-menu button[data-act="delete"] { color: #9c2f3b; }
+.book-menu button[data-act="delete"]:hover { background: rgba(197, 74, 90, 0.12); }
 
 /* --- 3. 侧边栏整体结构 --- */
 .sidebar {
