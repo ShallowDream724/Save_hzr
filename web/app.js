@@ -849,8 +849,15 @@
 
     function cloudRenameArchive(id, name) {
       return apiFetch('/api/archives/' + encodeURIComponent(String(id)), { method: 'PATCH', body: JSON.stringify({ name: name }) }).then(function (res) {
-        if (!res.ok) throw new Error('rename failed');
-        return res.json();
+        if (res.ok) return res.json();
+        // Some proxies block PATCH; retry with POST.
+        if (res.status === 404 || res.status === 405) {
+          return apiFetch('/api/archives/' + encodeURIComponent(String(id)) + '/rename', { method: 'POST', body: JSON.stringify({ name: name }) }).then(function (res2) {
+            if (!res2.ok) throw new Error('rename failed');
+            return res2.json();
+          });
+        }
+        throw new Error('rename failed');
       });
     }
 

@@ -261,6 +261,21 @@ app.patch('/api/archives/:id', authMiddleware, (req, res) => {
   return res.json({ ok: true });
 });
 
+// Fallback for proxies that block PATCH.
+app.post('/api/archives/:id/rename', authMiddleware, (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isFinite(id) || id <= 0) return res.status(400).json({ error: 'bad id' });
+
+  const name = (req.body && typeof req.body.name === 'string') ? req.body.name.trim() : '';
+  if (!name) return res.status(400).json({ error: 'name required' });
+  if (name.length > 80) return res.status(400).json({ error: 'name too long' });
+
+  const info = db.prepare('UPDATE library_archives SET name = ? WHERE user_id = ? AND id = ?')
+    .run(name, req.user.userId, id);
+  if (!info.changes) return res.status(404).json({ error: 'not found' });
+  return res.json({ ok: true });
+});
+
 app.delete('/api/archives/:id', authMiddleware, (req, res) => {
   const id = Number(req.params.id);
   if (!Number.isFinite(id) || id <= 0) return res.status(400).json({ error: 'bad id' });
