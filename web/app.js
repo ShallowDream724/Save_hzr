@@ -113,7 +113,43 @@
       return out;
     }
 
+    var defaultSeed = null;
+    var defaultSeedLoaded = false;
+    function loadDefaultSeed() {
+      if (defaultSeedLoaded) return Promise.resolve(defaultSeed);
+      defaultSeedLoaded = true;
+      if (typeof fetch !== 'function') return Promise.resolve(null);
+      // Default seed is a renamed local backup JSON:
+      // { exportedAt, app, data: { chapters, folders, layoutMap, deletedChapterIds, ui } }
+      return fetch('./default.json', { cache: 'no-store' })
+        .then(function (res) { return res.ok ? res.json() : null; })
+        .then(function (j) {
+          if (!j || typeof j !== 'object') return null;
+          var data = (j.data && typeof j.data === 'object') ? j.data : j;
+          if (!data || typeof data !== 'object') return null;
+          if (!Array.isArray(data.chapters) || !Array.isArray(data.folders)) return null;
+          if (!data.layoutMap || typeof data.layoutMap !== 'object' || Array.isArray(data.layoutMap)) return null;
+          if (!Array.isArray(data.deletedChapterIds)) data.deletedChapterIds = [];
+          data.ui = normalizeUi(data.ui);
+          defaultSeed = data;
+          return defaultSeed;
+        })
+        .catch(function () { return null; });
+    }
+
     function defaultAppData() {
+      if (defaultSeed && typeof defaultSeed === 'object') {
+        try {
+          // deep clone so mutations don't alter the seed
+          var seed = JSON.parse(JSON.stringify(defaultSeed));
+          if (!Array.isArray(seed.chapters)) seed.chapters = [];
+          if (!Array.isArray(seed.folders)) seed.folders = [];
+          if (!seed.layoutMap || typeof seed.layoutMap !== 'object' || Array.isArray(seed.layoutMap)) seed.layoutMap = {};
+          if (!Array.isArray(seed.deletedChapterIds)) seed.deletedChapterIds = [];
+          seed.ui = normalizeUi(seed.ui);
+          return seed;
+        } catch (e) {}
+      }
       return {
         chapters: [],            // local sheets
         folders: [],             // folders
@@ -3011,7 +3047,7 @@
       cacheEls();
       if (!els.sidebarList) return;
 
-      loadStaticPresets().then(function () {
+      Promise.all([loadStaticPresets(), loadDefaultSeed()]).then(function () {
         loadLocalData();
         if (!appData.ui) appData.ui = defaultUi();
         appData.ui = normalizeUi(appData.ui);
