@@ -1466,7 +1466,9 @@
               '</div>' +
               '<div class="cover-inside"></div>' +
             '</div>' +
-            '<button class="book-more" type="button" aria-label="更多"><i class="fa-solid fa-ellipsis"></i></button>' +
+            '<button class="book-more" type="button" aria-label="更多">' +
+              '<span class="book-more-visual"><i class="fa-solid fa-ellipsis"></i></span>' +
+            '</button>' +
             '<div class="book-tooltip"><div class="book-tooltip-row"></div></div>';
 
           var spineText = el.querySelector('.spine-text');
@@ -1499,8 +1501,10 @@
           }
 
           installBookLongPress(b, el, moreBtn);
+          installBookMoreHitZone(b, el, moreBtn);
 
           el.onclick = function () {
+            if (Date.now() < (el.__ignoreClickUntil || 0)) return;
             openBookWithAnimation(b, el);
           };
 
@@ -1532,7 +1536,9 @@
           clear();
           timer = setTimeout(function () {
             fired = true;
-            openBookMenu(book, moreBtn || containerEl);
+            // Mobile UX: long-press directly opens rename (no extra menu step)
+            try { containerEl.__ignoreClickUntil = Date.now() + 650; } catch (_) {}
+            openRenameBookModal(book);
           }, 520);
         }, { passive: true });
 
@@ -1549,6 +1555,28 @@
           if (e) {
             e.preventDefault();
             e.stopPropagation();
+          }
+        }, true);
+      } catch (e) {}
+    }
+
+    function installBookMoreHitZone(book, containerEl, moreBtn) {
+      try {
+        if (!containerEl) return;
+        containerEl.addEventListener('pointerup', function (e) {
+          if (!e) return;
+          if (e.button !== 0) return;
+          if (e.pointerType === 'mouse') return; // desktop: precise enough
+          if (e.target && e.target.closest && e.target.closest('.book-more')) return;
+
+          var rect = containerEl.getBoundingClientRect();
+          var x = e.clientX - rect.left;
+          var y = e.clientY - rect.top;
+          var zone = Math.min(78, Math.max(56, Math.min(rect.width, rect.height) * 0.28));
+          if (x >= rect.width - zone && y >= rect.height - zone) {
+            try { containerEl.__ignoreClickUntil = Date.now() + 650; } catch (_) {}
+            openBookMenu(book, moreBtn || containerEl);
+            try { e.preventDefault(); e.stopPropagation(); } catch (_) {}
           }
         }, true);
       } catch (e) {}
@@ -1575,7 +1603,9 @@
 
       var rect = anchorEl.getBoundingClientRect();
       var left = Math.min(window.innerWidth - menu.offsetWidth - 12, Math.max(12, rect.right - menu.offsetWidth));
-      var top = Math.min(window.innerHeight - menu.offsetHeight - 12, Math.max(12, rect.bottom + 8));
+      var preferDown = rect.bottom + 8 + menu.offsetHeight <= window.innerHeight - 12;
+      var top = preferDown ? (rect.bottom + 8) : (rect.top - menu.offsetHeight - 8);
+      top = Math.min(window.innerHeight - menu.offsetHeight - 12, Math.max(12, top));
       menu.style.left = left + 'px';
       menu.style.top = top + 'px';
 

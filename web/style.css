@@ -440,11 +440,10 @@ body.home-mode .home-hud .modal-btn.primary {
     position: absolute;
     right: 10px;
     bottom: 10px;
-    width: 34px;
-    height: 34px;
-    border-radius: 999px;
-    border: 1px solid rgba(255,255,255,0.28);
-    background: rgba(15,23,42,0.22);
+    width: 56px;
+    height: 56px;
+    border: none;
+    background: transparent;
     color: rgba(255,255,255,0.92);
     display: grid;
     place-items: center;
@@ -453,10 +452,27 @@ body.home-mode .home-hud .modal-btn.primary {
     backdrop-filter: blur(10px);
     opacity: 0;
     transition: opacity 220ms ease, transform 220ms ease, background 220ms ease;
+    transform: translateZ(26px);
 }
 .book-container:hover .book-more { opacity: 1; }
 @media (hover: none) { .book-more { opacity: 1; } }
-.book-more:hover { transform: translateY(-2px); background: rgba(15,23,42,0.30); }
+.book-more:hover { transform: translateZ(26px) translateY(-2px); }
+
+.book-more-visual {
+    width: 36px;
+    height: 36px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,0.28);
+    background: rgba(15,23,42,0.22);
+    display: grid;
+    place-items: center;
+    box-shadow: 0 16px 30px rgba(15,23,42,0.18);
+    transition: background 220ms ease, box-shadow 220ms ease, transform 220ms ease;
+}
+.book-more:hover .book-more-visual {
+    background: rgba(15,23,42,0.30);
+    box-shadow: 0 20px 36px rgba(15,23,42,0.22);
+}
 
 .book-tooltip {
     position: absolute;
