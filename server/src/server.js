@@ -45,7 +45,11 @@ app.use(morgan('combined'));
 
 function getDeviceMeta(req) {
   const rawId = String(req.headers['x-device-id'] || '').trim();
-  const rawLabel = String(req.headers['x-device-label'] || '').trim();
+  let rawLabel = String(req.headers['x-device-label'] || '').trim();
+  try {
+    // Client sends encodeURIComponent(label) to keep it ASCII-safe.
+    if (rawLabel && rawLabel.includes('%')) rawLabel = decodeURIComponent(rawLabel);
+  } catch (_) {}
   const deviceId = rawId && rawId.length <= 64 ? rawId : (rawId ? rawId.slice(0, 64) : null);
   const deviceLabel = rawLabel && rawLabel.length <= 140 ? rawLabel : (rawLabel ? rawLabel.slice(0, 140) : null);
   return { deviceId, deviceLabel };

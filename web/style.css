@@ -536,6 +536,22 @@ body.sidebar-collapsed .icon-btn { width: 44px; height: 44px; flex: none; border
     overflow: hidden;
     text-overflow: ellipsis;
 }
+.tag--date { background: rgba(219, 234, 254, 0.85); border-color: rgba(59, 130, 246, 0.18); color: #1e3a8a; }
+.tag--device { background: rgba(236, 253, 245, 0.9); border-color: rgba(16, 185, 129, 0.18); color: #065f46; }
+.tag--muted { background: rgba(241, 245, 249, 0.9); border-color: rgba(148, 163, 184, 0.25); color: #64748b; }
+
+.save-item--editing .save-time { opacity: 0.8; }
+.save-rename-input {
+    width: 100%;
+    padding: 8px 10px;
+    border-radius: 10px;
+    border: 1px solid rgba(148, 163, 184, 0.55);
+    background: rgba(255,255,255,0.95);
+    font-weight: 800;
+    color: #0f172a;
+    outline: none;
+}
+.save-rename-input:focus { border-color: rgba(75, 143, 226, 0.45); box-shadow: 0 0 0 4px rgba(75, 143, 226, 0.12); }
 .save-time { font-size: 0.86rem; color: #64748b; margin-top: 2px; }
 .save-actions { display: flex; gap: 8px; }
 .save-actions .modal-btn { padding: 8px 12px; }

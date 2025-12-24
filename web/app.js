@@ -526,6 +526,10 @@
       return '';
     }
 
+    function escapeAttr(s) {
+      return escapeHtml(s).replace(/"/g, '&quot;');
+    }
+
     function downloadJson(filename, obj) {
       try {
         var blob = new Blob([JSON.stringify(obj, null, 2)], { type: 'application/json;charset=utf-8' });
@@ -765,7 +769,12 @@
       var t = getToken();
       if (t) headers['Authorization'] = 'Bearer ' + t;
       headers['X-Device-Id'] = headers['X-Device-Id'] || getOrCreateDeviceId();
-      headers['X-Device-Label'] = headers['X-Device-Label'] || getDeviceLabel();
+      // Header values must be ASCII-safe in fetch; encode label to avoid "Invalid character in header field".
+      try {
+        headers['X-Device-Label'] = headers['X-Device-Label'] || encodeURIComponent(getDeviceLabel());
+      } catch (_) {
+        headers['X-Device-Label'] = headers['X-Device-Label'] || '';
+      }
       options.headers = headers;
       return fetch(API_BASE + path, options);
     }
@@ -2700,10 +2709,13 @@
 
                 var tags = [];
                 var dateTag = formatDateTag(a.createdAt);
-                if (dateTag) tags.push(dateTag);
+                if (dateTag) tags.push({ text: dateTag, kind: 'date' });
                 var deviceTag = deviceLabelFromArchive(a);
-                if (deviceTag) tags.push(deviceTag);
-                if (saveTags) saveTags.innerHTML = tags.map(function (t) { return '<span class="tag">' + escapeHtml(t) + '</span>'; }).join('');
+                if (deviceTag) tags.push({ text: deviceTag, kind: 'device' });
+                else tags.push({ text: '未记录设备', kind: 'muted' });
+                if (saveTags) saveTags.innerHTML = tags.map(function (t) {
+                  return '<span class="tag tag--' + escapeAttr(t.kind) + '">' + escapeHtml(t.text) + '</span>';
+                }).join('');
 
                 var btnRestore = row.querySelectorAll('button')[0];
                 var btnRename = row.querySelectorAll('button')[1];
@@ -2742,17 +2754,72 @@
 
                 btnRename.onclick = function () {
                   var currentName = (a.name && String(a.name).trim()) ? String(a.name).trim() : ('存档 #' + a.id);
-                  var next = prompt('重命名存档：', currentName);
-                  if (next === null) return;
-                  next = String(next || '').trim();
-                  if (!next) { showToast('名称不能为空', { timeoutMs: 2200 }); return; }
-                  if (next.length > 80) { showToast('名称太长（最多80字）', { timeoutMs: 2400 }); return; }
-                  cloudRenameArchive(a.id, next).then(function () {
-                    showToast('已重命名', { timeoutMs: 2200 });
-                    refreshSaves();
-                  }).catch(function () {
-                    showToast('重命名失败', { timeoutMs: 2400 });
-                  });
+                  if (row.classList.contains('save-item--editing')) return;
+                  row.classList.add('save-item--editing');
+
+                  var input = document.createElement('input');
+                  input.className = 'save-rename-input';
+                  input.value = currentName;
+                  input.maxLength = 80;
+
+                  var old = saveName.textContent;
+                  saveName.textContent = '';
+                  saveName.appendChild(input);
+
+                  var btnOk = document.createElement('button');
+                  btnOk.type = 'button';
+                  btnOk.className = 'modal-btn primary';
+                  btnOk.textContent = '保存';
+
+                  var btnCancel = document.createElement('button');
+                  btnCancel.type = 'button';
+                  btnCancel.className = 'modal-btn';
+                  btnCancel.textContent = '取消';
+
+                  var actions = row.querySelector('.save-actions');
+                  var restoreBtn = btnRestore;
+                  var renameBtn = btnRename;
+                  var deleteBtn = btnDelete;
+
+                  restoreBtn.style.display = 'none';
+                  renameBtn.style.display = 'none';
+                  deleteBtn.style.display = 'none';
+                  actions.appendChild(btnOk);
+                  actions.appendChild(btnCancel);
+
+                  var cleanup = function () {
+                    row.classList.remove('save-item--editing');
+                    if (btnOk && btnOk.remove) btnOk.remove();
+                    if (btnCancel && btnCancel.remove) btnCancel.remove();
+                    restoreBtn.style.display = '';
+                    renameBtn.style.display = '';
+                    deleteBtn.style.display = '';
+                    saveName.textContent = old;
+                  };
+
+                  var submit = function () {
+                    var next = String(input.value || '').trim();
+                    if (!next) { showToast('名称不能为空', { timeoutMs: 2200 }); return; }
+                    if (next.length > 80) { showToast('名称太长（最多80字）', { timeoutMs: 2400 }); return; }
+                    btnOk.disabled = true;
+                    cloudRenameArchive(a.id, next).then(function () {
+                      showToast('已重命名', { timeoutMs: 2200 });
+                      refreshSaves();
+                    }).catch(function () {
+                      btnOk.disabled = false;
+                      showToast('重命名失败', { timeoutMs: 2400 });
+                    });
+                  };
+
+                  btnOk.onclick = submit;
+                  btnCancel.onclick = cleanup;
+                  input.onkeydown = function (ev) {
+                    if (!ev) return;
+                    if (ev.key === 'Enter') submit();
+                    else if (ev.key === 'Escape') cleanup();
+                  };
+
+                  try { input.focus(); input.select(); } catch (_) {}
                 };
 
                 btnDelete.onclick = function () {
@@ -2790,9 +2857,12 @@
                 var saveTags2 = row2.querySelector('.save-tags');
                 var tags2 = [];
                 var dateTag2 = formatDateTag(rv.savedAt);
-                if (dateTag2) tags2.push(dateTag2);
-                if (rv.deviceLabel && String(rv.deviceLabel).trim()) tags2.push(String(rv.deviceLabel).trim());
-                if (saveTags2) saveTags2.innerHTML = tags2.map(function (t) { return '<span class="tag">' + escapeHtml(t) + '</span>'; }).join('');
+                if (dateTag2) tags2.push({ text: dateTag2, kind: 'date' });
+                if (rv.deviceLabel && String(rv.deviceLabel).trim()) tags2.push({ text: String(rv.deviceLabel).trim(), kind: 'device' });
+                else tags2.push({ text: '未记录设备', kind: 'muted' });
+                if (saveTags2) saveTags2.innerHTML = tags2.map(function (t) {
+                  return '<span class="tag tag--' + escapeAttr(t.kind) + '">' + escapeHtml(t.text) + '</span>';
+                }).join('');
 
                 var btn = row2.querySelector('button');
                 btn.onclick = function () {
