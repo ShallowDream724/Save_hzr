@@ -2,6 +2,11 @@
 
 一个可自建部署的题库/复习小站：前端单页 + 后端同步服务（Node + SQLite + JWT）。支持手机/电脑/平板数据互通（每个用户独立数据）。
 
+## 存档（防误操作）
+- 自动存档：服务端每 **5 分钟**自动保存一次快照（可在“云同步 → 存档”里恢复）。
+- 手动存档：你可随时点“新建存档”，并支持命名/删除/恢复。
+- 多设备冲突：默认**以当前设备为准**继续同步；服务端会把旧云端自动存成“冲突自动备份”，不会悄悄丢数据。
+
 ## 端口
 - 后端服务监听：`8787`（项目内默认）
 - 建议仅绑定到本机：由 `docker-compose.yml` 已设置为 `127.0.0.1:8787:8787`，再用 Nginx 反代到公网域名
@@ -16,6 +21,10 @@ nano .env
 docker compose up -d --build
 curl -s http://127.0.0.1:8787/api/health
 ```
+
+## 数据库会不会丢？
+- 不会：只要你不删 `pharm_sync_data` volume，重新 `git pull/clone` + `docker compose up -d --build` 都不会影响数据库。
+- 会丢的情况：`docker compose down -v`、`docker volume rm pharm_sync_data`、或你把 DB 改到别处但没迁移。
 
 ## 纯 npm 启动（不用 Docker）
 ```bash
@@ -72,4 +81,3 @@ sudo certbot --nginx -d qianmeng.me
 CodePen 也能用，但**默认只能本地保存**；想跨设备同步，需要把 `API_BASE` 指向你的服务：
 - 在 HTML 里设置：`window.API_BASE = 'https://qianmeng.me';`
 - 前端文件依赖：`web/index.html` 依赖 `web/style.css`、`web/app.js`、以及同源的 `web/presets.json`
-

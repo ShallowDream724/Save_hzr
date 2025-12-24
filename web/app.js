@@ -158,6 +158,9 @@
       els.chapterTitle = document.getElementById('currentChapterTitle');
       els.menuToggle = document.getElementById('menuToggle');
       els.sidebar = document.getElementById('sidebar');
+      els.sidebarOverlay = document.getElementById('sidebarOverlay');
+      els.fabMenu = document.getElementById('fabMenu');
+      els.toastHost = document.getElementById('toastHost');
 
       els.addFolderBtn = document.getElementById('addFolderBtn');
       els.openPasteModalBtn = document.getElementById('openPasteModalBtn');
@@ -181,6 +184,27 @@
       els.authHint = document.getElementById('authHint');
       els.authCancelBtn = document.getElementById('authCancelBtn');
       els.authSubmitBtn = document.getElementById('authSubmitBtn');
+
+      // sync modal extended UI
+      els.syncModalStatus = document.getElementById('syncModalStatus');
+      els.syncTabAccount = document.getElementById('syncTabAccount');
+      els.syncTabSaves = document.getElementById('syncTabSaves');
+      els.syncPaneAccount = document.getElementById('syncPaneAccount');
+      els.syncPaneSaves = document.getElementById('syncPaneSaves');
+      els.archiveName = document.getElementById('archiveName');
+      els.createArchiveBtn = document.getElementById('createArchiveBtn');
+      els.refreshSavesBtn = document.getElementById('refreshSavesBtn');
+      els.archivesList = document.getElementById('archivesList');
+      els.revisionsList = document.getElementById('revisionsList');
+      els.savesHint = document.getElementById('savesHint');
+      els.savesCloseBtn = document.getElementById('savesCloseBtn');
+
+      // settings modal
+      els.settingsModal = document.getElementById('settingsModal');
+      els.exportLocalBtn = document.getElementById('exportLocalBtn');
+      els.resetToDefaultBtn = document.getElementById('resetToDefaultBtn');
+      els.settingsCloseBtn = document.getElementById('settingsCloseBtn');
+      els.resetHint = document.getElementById('resetHint');
     }
   
     /** ---------------------------
@@ -245,6 +269,73 @@
   
     function getScrollY() {
       return window.scrollY || document.documentElement.scrollTop || document.body.scrollTop || 0;
+    }
+
+    function formatLocalTime(iso) {
+      if (!iso) return '';
+      var d = new Date(iso);
+      if (Number.isNaN(d.getTime())) return String(iso);
+      var pad = function (n) { return (n < 10 ? '0' : '') + n; };
+      return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+    }
+
+    function downloadJson(filename, obj) {
+      try {
+        var blob = new Blob([JSON.stringify(obj, null, 2)], { type: 'application/json;charset=utf-8' });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      } catch (e) {
+        alert('导出失败');
+      }
+    }
+
+    var toastState = { timer: 0, el: null, action: null };
+    function showToast(message, opts) {
+      opts = opts || {};
+      if (!els.toastHost) return;
+
+      if (toastState.timer) { window.clearTimeout(toastState.timer); toastState.timer = 0; }
+      if (toastState.el && toastState.el.remove) toastState.el.remove();
+      toastState.el = null;
+      toastState.action = null;
+
+      var el = document.createElement('div');
+      el.className = 'toast';
+      el.innerHTML = '<div class="toast-msg"></div>';
+      el.querySelector('.toast-msg').textContent = String(message || '');
+
+      if (opts.actionText && typeof opts.onAction === 'function') {
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'toast-btn';
+        btn.textContent = opts.actionText;
+        btn.onclick = function () {
+          try { opts.onAction(); } catch (e) {}
+          if (toastState.timer) window.clearTimeout(toastState.timer);
+          if (el.remove) el.remove();
+          toastState.timer = 0;
+          toastState.el = null;
+          toastState.action = null;
+        };
+        el.appendChild(btn);
+      }
+
+      els.toastHost.appendChild(el);
+      toastState.el = el;
+
+      var ms = typeof opts.timeoutMs === 'number' ? opts.timeoutMs : 4200;
+      toastState.timer = window.setTimeout(function () {
+        if (el.remove) el.remove();
+        toastState.timer = 0;
+        toastState.el = null;
+        toastState.action = null;
+      }, ms);
     }
   
     /** ---------------------------
@@ -313,12 +404,24 @@
 
     function updateSyncStatus(text) {
       if (!els.syncStatus) return;
+
+      var dot = 'status-dot--off';
+      var label = '';
+
       if (text) {
-        els.syncStatus.textContent = text;
-        return;
+        label = String(text);
+        if (label.indexOf('失败') !== -1) dot = 'status-dot--err';
+        else if (label.indexOf('冲突') !== -1) dot = 'status-dot--warn';
+        else if (label.indexOf('同步中') !== -1) dot = 'status-dot--warn';
+        else dot = getToken() ? 'status-dot--ok' : 'status-dot--off';
+      } else {
+        var t = getToken();
+        dot = t ? 'status-dot--ok' : 'status-dot--off';
+        label = t ? '已登录 · 自动同步' : '未登录 · 仅本地';
       }
-      var t = getToken();
-      els.syncStatus.textContent = t ? '已登录 · 自动同步' : '未登录 · 仅本地';
+
+      els.syncStatus.innerHTML = '<span class="status-dot ' + dot + '"></span>' + escapeHtml(label);
+      if (els.syncModalStatus) els.syncModalStatus.textContent = getToken() ? '已登录 · 自动同步' : '未登录 · 仅本地';
     }
 
     function apiFetch(path, options) {
@@ -338,16 +441,63 @@
       });
     }
 
-    function cloudSaveLibrary(expectedVersion) {
+    function cloudSaveLibrary(expectedVersion, force) {
       var headers = {};
-      if (typeof expectedVersion === 'number') headers['If-Match'] = String(expectedVersion);
-      return apiFetch('/api/library', {
+      if (typeof expectedVersion === 'number' && !force) headers['If-Match'] = String(expectedVersion);
+      if (force) headers['X-Force'] = '1';
+      return apiFetch('/api/library' + (force ? '?force=1' : ''), {
         method: 'PUT',
         headers: headers,
         body: JSON.stringify({ data: appData })
       }).then(function (res) {
         if (res.status === 409) return res.json().then(function (j) { var e = new Error('conflict'); e.conflict = j; throw e; });
         if (!res.ok) throw new Error('save failed');
+        return res.json();
+      });
+    }
+
+    function cloudListRevisions() {
+      return apiFetch('/api/revisions?limit=20', { method: 'GET' }).then(function (res) {
+        if (!res.ok) throw new Error('revisions failed');
+        return res.json();
+      });
+    }
+
+    function cloudRestoreRevision(version) {
+      return apiFetch('/api/revisions/' + encodeURIComponent(String(version)) + '/restore', { method: 'POST', body: '{}' })
+        .then(function (res) {
+          if (!res.ok) throw new Error('restore failed');
+          return res.json();
+        });
+    }
+
+    function cloudListArchives() {
+      return apiFetch('/api/archives?limit=50', { method: 'GET' }).then(function (res) {
+        if (!res.ok) throw new Error('archives failed');
+        return res.json();
+      });
+    }
+
+    function cloudCreateArchive(name, data) {
+      var body = {};
+      if (name) body.name = name;
+      if (data && typeof data === 'object') body.data = data;
+      return apiFetch('/api/archives', { method: 'POST', body: JSON.stringify(body) }).then(function (res) {
+        if (!res.ok) throw new Error('archive failed');
+        return res.json();
+      });
+    }
+
+    function cloudDeleteArchive(id) {
+      return apiFetch('/api/archives/' + encodeURIComponent(String(id)), { method: 'DELETE' }).then(function (res) {
+        if (!res.ok) throw new Error('delete failed');
+        return res.json();
+      });
+    }
+
+    function cloudRestoreArchive(id) {
+      return apiFetch('/api/archives/' + encodeURIComponent(String(id)) + '/restore', { method: 'POST', body: '{}' }).then(function (res) {
+        if (!res.ok) throw new Error('restore failed');
         return res.json();
       });
     }
@@ -367,35 +517,27 @@
       cloud.isSaving = true;
       updateSyncStatus('同步中…');
 
-      cloudSaveLibrary(cloud.version).then(function (r) {
+      cloudSaveLibrary(cloud.version, false).then(function (r) {
         cloud.version = r.version || cloud.version;
         cloud.isSaving = false;
         updateSyncStatus();
       }).catch(function (err) {
         cloud.isSaving = false;
         if (err && err.message === 'conflict') {
-          updateSyncStatus('同步冲突');
-          // 简易冲突处理：提示用户选覆盖/拉取
-          var overwrite = confirm('检测到云端已更新（版本冲突）。\n确定=用本地覆盖云端\n取消=拉取云端覆盖本地');
-          if (overwrite) {
-            cloudSaveLibrary(null).then(function (r2) {
-              cloud.version = r2.version || cloud.version;
-              updateSyncStatus();
-            }).catch(function () { updateSyncStatus('同步失败'); });
-          } else {
-            cloudLoadLibrary().then(function (j) {
-              if (j && j.data) {
-                appData = j.data;
-                cloud.version = j.version || 0;
-                try { localStorage.setItem(STORAGE_KEY, JSON.stringify(appData)); } catch (e2) {}
-                renderSidebar();
-              }
-              updateSyncStatus();
-            }).catch(function () { updateSyncStatus('同步失败'); });
-          }
+          updateSyncStatus('同步冲突 · 已自动处理');
+          // 无弹窗：默认以本机为准覆盖云端，同时服务端会自动把旧云端做成“冲突自动备份”存档
+          cloudSaveLibrary(null, true).then(function (r2) {
+            cloud.version = r2.version || cloud.version;
+            updateSyncStatus();
+            showToast('检测到多设备冲突：已自动同步当前设备，旧云端已备份到“存档”。', { timeoutMs: 5200 });
+          }).catch(function () {
+            updateSyncStatus('同步失败');
+            showToast('同步失败：请检查网络/反代配置', { timeoutMs: 5200 });
+          });
           return;
         }
         updateSyncStatus('同步失败');
+        showToast('同步失败：请检查网络/反代配置', { timeoutMs: 5200 });
       });
     }
 
@@ -407,9 +549,13 @@
         cloud.version = (j && typeof j.version === 'number') ? j.version : 0;
         var remote = j && j.data ? j.data : null;
 
+        var localHas = (appData && ((appData.chapters && appData.chapters.length) || (appData.folders && appData.folders.length)));
+        var remoteHas = remote && ((remote.chapters && remote.chapters.length) || (remote.folders && remote.folders.length));
+
         if (!remote) {
-          // 云端无数据：推送本地（若本地为空则也无所谓）
-          return cloudSaveLibrary(0).then(function (r) {
+          // 云端无数据：若本地有数据则推送本地；否则不做事
+          if (!localHas) { updateSyncStatus(); return false; }
+          return cloudSaveLibrary(0, false).then(function (r) {
             cloud.version = r.version || cloud.version;
             updateSyncStatus();
             return true;
@@ -419,22 +565,12 @@
           });
         }
 
-        // 云端有数据：如本地也有内容，询问用哪边
-        var localHas = (appData && ((appData.chapters && appData.chapters.length) || (appData.folders && appData.folders.length)));
-        var remoteHas = (remote.chapters && remote.chapters.length) || (remote.folders && remote.folders.length);
-
+        // 云端有数据：默认以云端为准（更安全）；若本机也有内容，先把本机打一个云端存档再覆盖
         if (localHas && remoteHas) {
-          var useRemote = confirm('检测到云端和本地都有数据。\n确定=使用云端覆盖本地\n取消=保留本地并覆盖云端');
-          if (!useRemote) {
-            return cloudSaveLibrary(cloud.version).then(function (r2) {
-              cloud.version = r2.version || cloud.version;
-              updateSyncStatus();
-              return true;
-            }).catch(function () {
-              updateSyncStatus('同步失败');
-              return false;
-            });
-          }
+          var name = '自动备份(首次登录) ' + new Date().toISOString();
+          cloudCreateArchive(name, appData).then(function () {
+            showToast('已自动备份本机数据到“存档”。', { timeoutMs: 3600 });
+          }).catch(function () {});
         }
 
         appData = remote;
@@ -612,7 +748,10 @@
   
         if (delBtn) delBtn.onclick = function (e) {
           e.stopPropagation();
-          if (!confirm('删除文件夹？(内部章节将移回根目录)')) return;
+
+          var removedFolder = { id: folder.id, title: folder.title, isOpen: folder.isOpen };
+          var moved = [];
+
           // remove folder
           var newFolders = [];
           for (var i = 0; i < appData.folders.length; i++) {
@@ -623,12 +762,28 @@
           // cleanup layoutMap
           var map = appData.layoutMap || {};
           for (var chId in map) {
-            if (map[chId] === folder.id) delete map[chId];
+            if (map[chId] === folder.id) {
+              moved.push(chId);
+              delete map[chId];
+            }
           }
           appData.layoutMap = map;
   
           saveData();
           renderSidebar();
+
+          showToast('已删除文件夹：' + removedFolder.title, {
+            actionText: '撤销',
+            timeoutMs: 6500,
+            onAction: function () {
+              appData.folders.push(removedFolder);
+              if (!appData.layoutMap) appData.layoutMap = {};
+              for (var k = 0; k < moved.length; k++) appData.layoutMap[moved[k]] = removedFolder.id;
+              saveData();
+              renderSidebar();
+              showToast('已撤销', { timeoutMs: 2200 });
+            }
+          });
         };
       }
   
@@ -743,38 +898,64 @@
      * 9) 删除章节（static/local 一视同仁）
      * --------------------------- */
     function deleteChapter(id) {
-      if (!confirm('删除此章节？')) return;
-  
-      // remove from local chapters if exists
-      var isLocal = false;
+      var prevFolder = (appData.layoutMap && appData.layoutMap[id]) ? appData.layoutMap[id] : null;
+      var wasCurrent = currentChapterId === id;
+
+      var localIndex = -1;
+      var localChapter = null;
       for (var i = 0; i < appData.chapters.length; i++) {
-        if (appData.chapters[i].id === id) { isLocal = true; break; }
+        if (appData.chapters[i].id === id) { localIndex = i; localChapter = appData.chapters[i]; break; }
       }
-  
-      if (isLocal) {
+
+      if (localIndex !== -1) {
         var kept = [];
         for (var j = 0; j < appData.chapters.length; j++) {
           if (appData.chapters[j].id !== id) kept.push(appData.chapters[j]);
         }
         appData.chapters = kept;
       } else {
-        // static: mark deleted
         if (!appData.deletedChapterIds) appData.deletedChapterIds = [];
         if (appData.deletedChapterIds.indexOf(id) === -1) appData.deletedChapterIds.push(id);
       }
-  
-      // cleanup layout
+
       if (appData.layoutMap && appData.layoutMap[id]) delete appData.layoutMap[id];
-  
-      // clear view if current
-      if (currentChapterId === id) {
+
+      if (wasCurrent) {
         currentChapterId = null;
         if (els.chapterTitle) els.chapterTitle.innerText = '请选择章节';
         if (els.questionsContainer) els.questionsContainer.innerHTML = '';
       }
-  
+
       saveData();
       renderSidebar();
+
+      var chObj = localChapter || findChapterById(id) || { id: id, title: '章节' };
+      showToast('已删除：' + (chObj.title || '章节'), {
+        actionText: '撤销',
+        timeoutMs: 6500,
+        onAction: function () {
+          if (localChapter) {
+            var idx = localIndex;
+            if (idx < 0 || idx > appData.chapters.length) idx = appData.chapters.length;
+            appData.chapters.splice(idx, 0, localChapter);
+          } else {
+            var del = appData.deletedChapterIds || [];
+            var next = [];
+            for (var k = 0; k < del.length; k++) if (del[k] !== id) next.push(del[k]);
+            appData.deletedChapterIds = next;
+          }
+
+          if (prevFolder) {
+            if (!appData.layoutMap) appData.layoutMap = {};
+            appData.layoutMap[id] = prevFolder;
+          }
+
+          saveData();
+          renderSidebar();
+          if (wasCurrent) loadChapter(id);
+          showToast('已撤销', { timeoutMs: 2200 });
+        }
+      });
     }
   
     /** ---------------------------
@@ -1623,14 +1804,93 @@
     function bindUIOnce() {
       if (uiBound) return;
       uiBound = true;
-  
+
+      function isMobile() { return window.innerWidth <= 768; }
+
+      function openSidebar() {
+        if (!els.sidebar) return;
+        if (isMobile()) els.sidebar.classList.add('active');
+        else document.body.classList.remove('sidebar-collapsed');
+      }
+      function closeSidebar() {
+        if (!els.sidebar) return;
+        if (isMobile()) els.sidebar.classList.remove('active');
+        else document.body.classList.add('sidebar-collapsed');
+      }
+      function toggleSidebar() {
+        if (!els.sidebar) return;
+        if (isMobile()) els.sidebar.classList.toggle('active');
+        else document.body.classList.toggle('sidebar-collapsed');
+      }
+
       // 菜单
-      if (els.menuToggle && els.sidebar) {
-        els.menuToggle.onclick = function () {
-          els.sidebar.classList.toggle('active');
+      if (els.menuToggle && els.sidebar) els.menuToggle.onclick = toggleSidebar;
+      if (els.sidebarOverlay && els.sidebar) {
+        els.sidebarOverlay.onclick = function () {
+          if (isMobile()) els.sidebar.classList.remove('active');
         };
       }
-  
+
+      // 可拖动汉堡按钮（移动端/平板更顺手）
+      if (els.fabMenu) {
+        var FAB_KEY = 'hzr_fab_pos_v1';
+        var fabDrag = { active: false, moved: false, pid: null, startX: 0, startY: 0, left: 0, top: 0 };
+
+        function clamp(n, min, max) { return Math.max(min, Math.min(max, n)); }
+        function placeFab(left, top) {
+          var w = 52, h = 52;
+          var maxL = Math.max(0, window.innerWidth - w - 8);
+          var maxT = Math.max(0, window.innerHeight - h - 8);
+          var l = clamp(left, 8, maxL);
+          var t = clamp(top, 8, maxT);
+          els.fabMenu.style.left = l + 'px';
+          els.fabMenu.style.top = t + 'px';
+          els.fabMenu.style.right = 'auto';
+          els.fabMenu.style.bottom = 'auto';
+          return { left: l, top: t };
+        }
+
+        try {
+          var saved = localStorage.getItem(FAB_KEY);
+          if (saved) {
+            var p = JSON.parse(saved);
+            if (p && typeof p.left === 'number' && typeof p.top === 'number') placeFab(p.left, p.top);
+          }
+        } catch (e) {}
+
+        addEvt(els.fabMenu, 'pointerdown', function (e) {
+          fabDrag.active = true;
+          fabDrag.moved = false;
+          fabDrag.pid = e.pointerId;
+          fabDrag.startX = e.clientX;
+          fabDrag.startY = e.clientY;
+          var rect = els.fabMenu.getBoundingClientRect();
+          fabDrag.left = rect.left;
+          fabDrag.top = rect.top;
+          try { els.fabMenu.setPointerCapture(e.pointerId); } catch (_) {}
+          e.preventDefault();
+        }, { passive: false });
+
+        addEvt(els.fabMenu, 'pointermove', function (e) {
+          if (!fabDrag.active || fabDrag.pid !== e.pointerId) return;
+          var dx = e.clientX - fabDrag.startX;
+          var dy = e.clientY - fabDrag.startY;
+          if (!fabDrag.moved && (Math.abs(dx) + Math.abs(dy) > 6)) fabDrag.moved = true;
+          if (!fabDrag.moved) return;
+          var pos = placeFab(fabDrag.left + dx, fabDrag.top + dy);
+          try { localStorage.setItem(FAB_KEY, JSON.stringify(pos)); } catch (_) {}
+        }, { passive: false });
+
+        function endFab(e) {
+          if (!fabDrag.active || fabDrag.pid !== e.pointerId) return;
+          fabDrag.active = false;
+          try { els.fabMenu.releasePointerCapture(e.pointerId); } catch (_) {}
+          if (!fabDrag.moved) toggleSidebar();
+        }
+        addEvt(els.fabMenu, 'pointerup', endFab, { passive: true });
+        addEvt(els.fabMenu, 'pointercancel', endFab, { passive: true });
+      }
+
       // 新建文件夹
       if (els.addFolderBtn) {
         els.addFolderBtn.onclick = function () {
@@ -1688,30 +1948,66 @@
       // 清空
       if (els.clearDataBtn) {
         els.clearDataBtn.onclick = function () {
-          // 1) 全部删除：清空导入+文件夹，并隐藏所有预设章节（可通过“清除本地数据”恢复）
-          if (confirm('【全部删除】所有章节/文件夹（含预设章节）？\n\n确定=全部删除\n取消=不执行')) {
-            appData.chapters = [];
-            appData.folders = [];
-            appData.layoutMap = {};
+          if (!els.settingsModal) return;
+          if (els.resetHint) els.resetHint.textContent = '';
+          if (els.resetToDefaultBtn) els.resetToDefaultBtn.textContent = '重置到默认';
+          els.settingsModal.classList.add('open');
+        };
+      }
 
-            // 预设章节无法“真删”（在代码里），用 deletedChapterIds 隐藏
-            appData.deletedChapterIds = [];
-            for (var i = 0; i < staticData.length; i++) appData.deletedChapterIds.push(staticData[i].id);
+      if (els.settingsCloseBtn && els.settingsModal) {
+        els.settingsCloseBtn.onclick = function () { els.settingsModal.classList.remove('open'); };
+      }
+      if (els.exportLocalBtn) {
+        els.exportLocalBtn.onclick = function () {
+          var payload = {
+            exportedAt: new Date().toISOString(),
+            app: '拯救Hzr',
+            data: appData
+          };
+          downloadJson('拯救Hzr-本地备份-' + new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-') + '.json', payload);
+          showToast('已导出本地备份', { timeoutMs: 2600 });
+        };
+      }
 
-            currentChapterId = null;
-            if (els.chapterTitle) els.chapterTitle.innerText = '请选择章节';
-            if (els.questionsContainer) els.questionsContainer.innerHTML = '';
-
-            saveData();
-            renderSidebar();
+      if (els.resetToDefaultBtn) {
+        var resetArmed = false;
+        var resetTimer = 0;
+        els.resetToDefaultBtn.onclick = function () {
+          if (!resetArmed) {
+            resetArmed = true;
+            els.resetToDefaultBtn.textContent = '确认重置';
+            if (els.resetHint) els.resetHint.textContent = '再次点击“确认重置”将清空自建/导入并恢复预设（云端也会自动同步）。';
+            if (resetTimer) window.clearTimeout(resetTimer);
+            resetTimer = window.setTimeout(function () {
+              resetArmed = false;
+              els.resetToDefaultBtn.textContent = '重置到默认';
+              if (els.resetHint) els.resetHint.textContent = '';
+            }, 6500);
             return;
           }
 
-          // 2) 清除本地存储：恢复到初始状态（预设章节会重新出现）
-          if (confirm('清除所有本地数据并刷新？（恢复预设章节）')) {
-            localStorage.removeItem(STORAGE_KEY);
-            location.reload();
-          }
+          resetArmed = false;
+          if (resetTimer) window.clearTimeout(resetTimer);
+          resetTimer = 0;
+          els.resetToDefaultBtn.textContent = '重置到默认';
+          if (els.resetHint) els.resetHint.textContent = '';
+
+          appData = defaultAppData();
+          currentChapterId = null;
+          if (els.chapterTitle) els.chapterTitle.innerText = '请选择章节';
+          if (els.questionsContainer) els.questionsContainer.innerHTML = '';
+
+          try {
+            if (staticData.length && typeof window.addChaptersToFolder === 'function' && typeof window.getStaticChapterIds === 'function') {
+              window.addChaptersToFolder('预设题库', window.getStaticChapterIds());
+            }
+          } catch (e) {}
+
+          saveData();
+          renderSidebar();
+          showToast('已重置到默认（可在“存档”找回旧版本）', { timeoutMs: 4200 });
+          if (els.settingsModal) els.settingsModal.classList.remove('open');
         };
       }
 
@@ -1719,22 +2015,50 @@
       if (els.syncBtn && els.authModal) {
         els.syncBtn.onclick = function () {
           updateAuthModalUI();
+          // 默认：未登录先看账号；已登录直接看存档
+          switchSyncTab(getToken() ? 'saves' : 'account');
           els.authModal.classList.add('open');
         };
       }
+
+      if (els.savesCloseBtn && els.authModal) els.savesCloseBtn.onclick = function () { els.authModal.classList.remove('open'); };
 
       function updateAuthModalUI() {
         if (!els.authModal) return;
         var loggedIn = !!getToken();
         if (els.authLogoutBtn) els.authLogoutBtn.style.display = loggedIn ? 'inline-block' : 'none';
-        if (els.authHint) els.authHint.textContent = loggedIn ? '已登录：自动同步开启。' : '登录后会在多设备间同步。';
+        if (els.authHint) els.authHint.textContent = loggedIn ? '已登录：改动会自动同步到云端（云端每5分钟自动备份）。' : '登录后可跨设备同步，并提供自动/手动存档。';
 
         if (els.authTabLogin) els.authTabLogin.classList.toggle('primary', cloud.authMode === 'login');
         if (els.authTabRegister) els.authTabRegister.classList.toggle('primary', cloud.authMode === 'register');
+
+        if (els.syncTabSaves) {
+          els.syncTabSaves.disabled = !loggedIn;
+          els.syncTabSaves.style.opacity = loggedIn ? '1' : '0.5';
+          els.syncTabSaves.style.cursor = loggedIn ? 'pointer' : 'not-allowed';
+        }
       }
 
       if (els.authTabLogin) els.authTabLogin.onclick = function () { cloud.authMode = 'login'; updateAuthModalUI(); };
       if (els.authTabRegister) els.authTabRegister.onclick = function () { cloud.authMode = 'register'; updateAuthModalUI(); };
+
+      function switchSyncTab(which) {
+        if (!els.syncPaneAccount || !els.syncPaneSaves) return;
+        var loggedIn = !!getToken();
+        if (which === 'saves' && !loggedIn) which = 'account';
+
+        var isAccount = which !== 'saves';
+        els.syncPaneAccount.style.display = isAccount ? '' : 'none';
+        els.syncPaneSaves.style.display = isAccount ? 'none' : '';
+
+        if (els.syncTabAccount) els.syncTabAccount.classList.toggle('active', isAccount);
+        if (els.syncTabSaves) els.syncTabSaves.classList.toggle('active', !isAccount);
+
+        if (!isAccount) refreshSaves();
+      }
+
+      if (els.syncTabAccount) els.syncTabAccount.onclick = function () { switchSyncTab('account'); };
+      if (els.syncTabSaves) els.syncTabSaves.onclick = function () { switchSyncTab('saves'); };
 
       if (els.authCancelBtn && els.authModal) {
         els.authCancelBtn.onclick = function () { els.authModal.classList.remove('open'); };
@@ -1742,11 +2066,149 @@
 
       if (els.authLogoutBtn) {
         els.authLogoutBtn.onclick = function () {
-          if (!confirm('退出登录并停止云端同步？')) return;
           setToken(null);
           cloud.version = 0;
           updateSyncStatus();
           updateAuthModalUI();
+          showToast('已退出登录（本地数据仍在）', { timeoutMs: 2600 });
+          switchSyncTab('account');
+        };
+      }
+
+      function refreshSaves() {
+        if (!els.archivesList || !els.revisionsList) return;
+        if (!getToken()) {
+          if (els.savesHint) els.savesHint.textContent = '登录后可使用云端存档。';
+          els.archivesList.innerHTML = '';
+          els.revisionsList.innerHTML = '';
+          return;
+        }
+        if (els.savesHint) els.savesHint.textContent = '加载中…';
+        els.archivesList.innerHTML = '';
+        els.revisionsList.innerHTML = '';
+
+        Promise.all([cloudListArchives(), cloudListRevisions()]).then(function (results) {
+          var archives = (results[0] && results[0].items) ? results[0].items : [];
+          var revisions = (results[1] && results[1].items) ? results[1].items : [];
+
+          if (!archives.length) els.archivesList.innerHTML = '<div style="color:#64748b; font-size:0.92rem;">暂无手动存档</div>';
+          else {
+            for (var i = 0; i < archives.length; i++) {
+              (function (a) {
+                var row = document.createElement('div');
+                row.className = 'save-item';
+                row.innerHTML =
+                  '<div class="save-meta">' +
+                    '<div class="save-name"></div>' +
+                    '<div class="save-time"></div>' +
+                  '</div>' +
+                  '<div class="save-actions">' +
+                    '<button class="modal-btn primary" type="button">恢复</button>' +
+                    '<button class="modal-btn danger" type="button">删除</button>' +
+                  '</div>';
+                row.querySelector('.save-name').textContent = a.name || ('存档 #' + a.id);
+                row.querySelector('.save-time').textContent = formatLocalTime(a.createdAt);
+
+                var btnRestore = row.querySelectorAll('button')[0];
+                var btnDelete = row.querySelectorAll('button')[1];
+
+                btnRestore.onclick = function () {
+                  var name = '自动备份(恢复前) ' + new Date().toISOString();
+                  cloudCreateArchive(name, appData).catch(function () {});
+                  cloudRestoreArchive(a.id).then(function () {
+                    return cloudLoadLibrary();
+                  }).then(function (j) {
+                    if (j && j.data) {
+                      appData = j.data;
+                      cloud.version = j.version || cloud.version;
+                      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(appData)); } catch (_) {}
+                      renderSidebar();
+                      if (currentChapterId) loadChapter(currentChapterId);
+                    }
+                    showToast('已恢复存档（恢复前已自动备份）', { timeoutMs: 4200 });
+                    updateSyncStatus();
+                    refreshSaves();
+                  }).catch(function () {
+                    showToast('恢复失败', { timeoutMs: 4200 });
+                  });
+                };
+
+                btnDelete.onclick = function () {
+                  cloudDeleteArchive(a.id).then(function () {
+                    showToast('已删除存档', { timeoutMs: 2600 });
+                    refreshSaves();
+                  }).catch(function () {
+                    showToast('删除失败', { timeoutMs: 2600 });
+                  });
+                };
+
+                els.archivesList.appendChild(row);
+              })(archives[i]);
+            }
+          }
+
+          if (!revisions.length) els.revisionsList.innerHTML = '<div style="color:#64748b; font-size:0.92rem;">暂无自动存档</div>';
+          else {
+            for (var r = 0; r < revisions.length; r++) {
+              (function (rv) {
+                var row2 = document.createElement('div');
+                row2.className = 'save-item';
+                row2.innerHTML =
+                  '<div class="save-meta">' +
+                    '<div class="save-name"></div>' +
+                    '<div class="save-time"></div>' +
+                  '</div>' +
+                  '<div class="save-actions">' +
+                    '<button class="modal-btn primary" type="button">恢复</button>' +
+                  '</div>';
+                row2.querySelector('.save-name').textContent = '自动存档 v' + rv.version;
+                row2.querySelector('.save-time').textContent = formatLocalTime(rv.savedAt);
+
+                var btn = row2.querySelector('button');
+                btn.onclick = function () {
+                  var name = '自动备份(恢复前) ' + new Date().toISOString();
+                  cloudCreateArchive(name, appData).catch(function () {});
+                  cloudRestoreRevision(rv.version).then(function () {
+                    return cloudLoadLibrary();
+                  }).then(function (j) {
+                    if (j && j.data) {
+                      appData = j.data;
+                      cloud.version = j.version || cloud.version;
+                      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(appData)); } catch (_) {}
+                      renderSidebar();
+                      if (currentChapterId) loadChapter(currentChapterId);
+                    }
+                    showToast('已恢复自动存档（恢复前已自动备份）', { timeoutMs: 4200 });
+                    updateSyncStatus();
+                    refreshSaves();
+                  }).catch(function () {
+                    showToast('恢复失败', { timeoutMs: 4200 });
+                  });
+                };
+
+                els.revisionsList.appendChild(row2);
+              })(revisions[r]);
+            }
+          }
+
+          if (els.savesHint) els.savesHint.textContent = '提示：自动存档每 5 分钟生成一次；冲突时会额外生成“冲突自动备份”。';
+        }).catch(function () {
+          if (els.savesHint) els.savesHint.textContent = '加载失败，请检查网络/反代配置。';
+        });
+      }
+
+      if (els.refreshSavesBtn) els.refreshSavesBtn.onclick = refreshSaves;
+      if (els.createArchiveBtn) {
+        els.createArchiveBtn.onclick = function () {
+          if (!getToken()) { showToast('请先登录', { timeoutMs: 2200 }); return; }
+          var name = els.archiveName ? els.archiveName.value.trim() : '';
+          cloudCreateArchive(name || null, appData).then(function () {
+            if (els.archiveName) els.archiveName.value = '';
+            showToast('已保存存档', { timeoutMs: 2600 });
+            refreshSaves();
+          }).catch(function () {
+            showToast('保存失败', { timeoutMs: 2600 });
+          });
         };
       }
 
@@ -1771,6 +2233,7 @@
                 renderSidebar();
                 updateAuthModalUI();
                 updateSyncStatus();
+                switchSyncTab('saves');
               });
             })
             .catch(function () {

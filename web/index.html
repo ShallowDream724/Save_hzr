@@ -53,6 +53,8 @@
             </div>
         </aside>
 
+        <div class="sidebar-overlay" id="sidebarOverlay" aria-hidden="true"></div>
+
         <main class="main-content">
             <header class="top-bar">
                 <button id="menuToggle" class="menu-toggle"><i class="fa-solid fa-bars"></i></button>
@@ -74,6 +76,12 @@
         </main>
     </div>
 
+    <button id="fabMenu" class="fab-menu" type="button" aria-label="菜单">
+        <i class="fa-solid fa-bars"></i>
+    </button>
+
+    <div class="toast-host" id="toastHost" aria-live="polite" aria-atomic="true"></div>
+
     <!-- 粘贴文本弹窗 (保持不变) -->
     <div class="modal-overlay" id="pasteModal">
         <div class="modal-box">
@@ -88,20 +96,73 @@
 
     <div class="modal-overlay" id="authModal">
         <div class="modal-box">
-            <h3>同步账号</h3>
-            <div style="display:flex; gap:10px; margin:10px 0;">
-                <button id="authTabLogin" class="modal-btn primary" type="button">登录</button>
-                <button id="authTabRegister" class="modal-btn" type="button">注册</button>
+            <h3 style="display:flex; align-items:center; gap:10px; justify-content:space-between;">
+                <span>云同步</span>
+                <span id="syncModalStatus" style="font-size:0.9rem; font-weight:600; color:#667085;"></span>
+            </h3>
+
+            <div class="seg-tabs" style="margin:12px 0 8px;">
+                <button id="syncTabAccount" class="seg-tab active" type="button">账号</button>
+                <button id="syncTabSaves" class="seg-tab" type="button">存档</button>
                 <button id="authLogoutBtn" class="modal-btn" type="button" style="margin-left:auto; display:none;">退出</button>
             </div>
-            <div style="display:grid; gap:10px;">
-                <input id="authUsername" class="auth-input" placeholder="用户名（3-32位，字母数字._-）">
-                <input id="authPassword" class="auth-input" placeholder="密码（>=8位）" type="password">
-                <div id="authHint" style="color:#888; font-size:0.9rem;"></div>
+
+            <div id="syncPaneAccount">
+                <div style="display:flex; gap:10px; margin:10px 0;">
+                    <button id="authTabLogin" class="modal-btn primary" type="button">登录</button>
+                    <button id="authTabRegister" class="modal-btn" type="button">注册</button>
+                </div>
+                <div style="display:grid; gap:10px;">
+                    <input id="authUsername" class="auth-input" placeholder="用户名（3-32位，字母数字._-）">
+                    <input id="authPassword" class="auth-input" placeholder="密码（>=8位）" type="password">
+                    <div id="authHint" style="color:#667085; font-size:0.9rem;"></div>
+                </div>
+                <div class="modal-actions" style="margin-top:14px;">
+                    <button id="authCancelBtn" class="modal-btn">关闭</button>
+                    <button id="authSubmitBtn" class="modal-btn primary">提交</button>
+                </div>
             </div>
-            <div class="modal-actions">
-                <button id="authCancelBtn" class="modal-btn">关闭</button>
-                <button id="authSubmitBtn" class="modal-btn primary">提交</button>
+
+            <div id="syncPaneSaves" style="display:none;">
+                <div style="display:flex; gap:10px; align-items:center; margin:10px 0;">
+                    <input id="archiveName" class="auth-input" placeholder="存档名（可选）">
+                    <button id="createArchiveBtn" class="modal-btn primary" type="button">新建存档</button>
+                    <button id="refreshSavesBtn" class="modal-btn" type="button">刷新</button>
+                </div>
+
+                <div class="save-section">
+                    <div class="save-title">手动存档</div>
+                    <div id="archivesList" class="save-list"></div>
+                </div>
+
+                <div class="save-section" style="margin-top:14px;">
+                    <div class="save-title">自动存档（每 5 分钟）</div>
+                    <div id="revisionsList" class="save-list"></div>
+                </div>
+
+                <div id="savesHint" style="margin-top:10px; color:#667085; font-size:0.9rem;"></div>
+                <div class="modal-actions" style="margin-top:14px;">
+                    <button id="savesCloseBtn" class="modal-btn">关闭</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="settingsModal">
+        <div class="modal-box">
+            <h3>设置</h3>
+            <div style="display:grid; gap:10px; margin-top:10px;">
+                <button id="exportLocalBtn" class="modal-btn" type="button">导出本地备份（JSON）</button>
+            </div>
+
+            <div class="danger-zone" style="margin-top:14px;">
+                <div class="danger-title">危险操作</div>
+                <div class="danger-desc">重置会清空本地导入/自建内容，并恢复预设题库。</div>
+                <div class="modal-actions" style="justify-content:space-between; margin-top:10px;">
+                    <button id="settingsCloseBtn" class="modal-btn" type="button">关闭</button>
+                    <button id="resetToDefaultBtn" class="modal-btn danger" type="button">重置到默认</button>
+                </div>
+                <div id="resetHint" style="margin-top:10px; color:#667085; font-size:0.9rem;"></div>
             </div>
         </div>
     </div>

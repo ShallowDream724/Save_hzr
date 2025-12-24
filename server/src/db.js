@@ -25,6 +25,24 @@ function openDb() {
       updated_at TEXT NOT NULL DEFAULT (datetime('now')),
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     );
+
+    CREATE TABLE IF NOT EXISTS library_revisions (
+      user_id INTEGER NOT NULL,
+      version INTEGER NOT NULL,
+      data_json TEXT NOT NULL,
+      saved_at TEXT NOT NULL DEFAULT (datetime('now')),
+      PRIMARY KEY (user_id, version),
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS library_archives (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      name TEXT NOT NULL,
+      data_json TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
   `);
 
   return db;

@@ -1,5 +1,10 @@
 # 拯救Hzr：同步服务（Node + SQLite）
 
+## 特性（防误操作）
+- 自动存档：服务端每 **5 分钟**保存一次快照（`/api/revisions`）。
+- 手动存档：支持命名/删除/恢复（`/api/archives`）。
+- 多设备冲突：客户端默认无弹窗继续同步（以当前设备为准），服务端会把旧云端数据写入“冲突自动备份”存档，避免静默丢失。
+
 ## 1) Docker Compose（推荐）
 1. 复制环境变量：把仓库根目录的 `.env.example` 复制为 `.env`，并设置强随机 `JWT_SECRET`。
 2. 启动（需要 Docker Compose v2）：`docker compose up -d --build`
@@ -28,3 +33,10 @@ node src/server.js
 - `POST /api/auth/login` `{username,password}` -> `{token}`
 - `GET /api/library`（Bearer token）-> `{data, version, updatedAt}`
 - `PUT /api/library`（Bearer token + 可选 `If-Match: <version>`）`{data}` -> `{ok, version, updatedAt}`
+  - 强制覆盖：`PUT /api/library?force=1`（或 `X-Force: 1`），会额外生成一条“冲突自动备份”存档
+- `GET /api/revisions?limit=20` -> `{items:[{version,savedAt}]}`
+- `POST /api/revisions/:version/restore` -> `{ok, version, updatedAt}`
+- `GET /api/archives?limit=50` -> `{items:[{id,name,createdAt}]}`
+- `POST /api/archives` `{name?, data?}` -> `{ok, id, createdAt}`
+- `DELETE /api/archives/:id` -> `{ok}`
+- `POST /api/archives/:id/restore` -> `{ok, version, updatedAt}`
