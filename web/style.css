@@ -589,16 +589,28 @@ body.home-transitioning .home-hud { opacity: 0; pointer-events: none; }
 /* Theme colors - ARTIFACT EXACT */
 .theme-blue .back-cover, .theme-blue .cover-face { background: #1e3a8a; }
 .theme-blue .spine { background: #172554; }
+.theme-indigo .back-cover, .theme-indigo .cover-face { background: #3730a3; }
+.theme-indigo .spine { background: #1e1b4b; }
 .theme-red .back-cover, .theme-red .cover-face { background: #881337; }
 .theme-red .spine { background: #4c0519; }
+.theme-rose .back-cover, .theme-rose .cover-face { background: #9f1239; }
+.theme-rose .spine { background: #500724; }
 .theme-teal .back-cover, .theme-teal .cover-face { background: #0f766e; }
 .theme-teal .spine { background: #134e4a; }
+.theme-emerald .back-cover, .theme-emerald .cover-face { background: #047857; }
+.theme-emerald .spine { background: #064e3b; }
 .theme-sage .back-cover, .theme-sage .cover-face { background: #4d7c0f; }
 .theme-sage .spine { background: #365314; }
+.theme-amber .back-cover, .theme-amber .cover-face { background: #92400e; }
+.theme-amber .spine { background: #78350f; }
+.theme-cocoa .back-cover, .theme-cocoa .cover-face { background: #7c2d12; }
+.theme-cocoa .spine { background: #431407; }
 .theme-plum .back-cover, .theme-plum .cover-face { background: #6d28d9; }
 .theme-plum .spine { background: #4c1d95; }
 .theme-slate .back-cover, .theme-slate .cover-face { background: #334155; }
 .theme-slate .spine { background: #1f2937; }
+.theme-midnight .back-cover, .theme-midnight .cover-face { background: #0f172a; }
+.theme-midnight .spine { background: #020617; }
 
 /* Animation states */
 .book-container.open-state { z-index: 999; }
@@ -1368,11 +1380,17 @@ h2 {
     border: 1px solid rgba(255,255,255,0.35);
 }
 .choice-dot.theme-blue { background: #1e3a8a; }
+.choice-dot.theme-indigo { background: #3730a3; }
 .choice-dot.theme-red { background: #881337; }
+.choice-dot.theme-rose { background: #9f1239; }
 .choice-dot.theme-teal { background: #0f766e; }
+.choice-dot.theme-emerald { background: #047857; }
 .choice-dot.theme-sage { background: #4d7c0f; }
+.choice-dot.theme-amber { background: #92400e; }
+.choice-dot.theme-cocoa { background: #7c2d12; }
 .choice-dot.theme-plum { background: #6d28d9; }
 .choice-dot.theme-slate { background: #334155; }
+.choice-dot.theme-midnight { background: #0f172a; }
 .choice-label { font-weight: 800; color: #334155; font-size: 0.95rem; }
 .choice-icon { font-size: 22px; line-height: 1; }
 
