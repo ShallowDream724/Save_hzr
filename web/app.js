@@ -450,6 +450,82 @@
       return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
     }
 
+    function formatDateTag(iso) {
+      if (!iso) return '';
+      var d = new Date(iso);
+      if (Number.isNaN(d.getTime())) return '';
+      var pad = function (n) { return (n < 10 ? '0' : '') + n; };
+      return d.getFullYear() + '.' + pad(d.getMonth() + 1) + '.' + pad(d.getDate());
+    }
+
+    function shortId(id) {
+      try {
+        var s = String(id || '').trim();
+        if (!s) return '';
+        s = s.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+        if (s.length <= 5) return s;
+        return s.slice(-5);
+      } catch (e) {
+        return '';
+      }
+    }
+
+    function detectPlatformLabel() {
+      var ua = '';
+      try { ua = String(navigator.userAgent || ''); } catch (e) { ua = ''; }
+      var lower = ua.toLowerCase();
+
+      if (lower.indexOf('iphone') !== -1) return 'iPhone';
+      if (lower.indexOf('ipad') !== -1) return 'iPad';
+      if (lower.indexOf('android') !== -1) {
+        // Very rough: Android tablet tends to lack 'mobile'
+        return (lower.indexOf('mobile') !== -1) ? 'Android手机' : 'Android平板';
+      }
+      if (lower.indexOf('windows') !== -1) return 'Windows';
+      if (lower.indexOf('macintosh') !== -1 || lower.indexOf('mac os') !== -1) return 'macOS';
+      if (lower.indexOf('linux') !== -1) return 'Linux';
+      return '未知设备';
+    }
+
+    function detectBrowserLabel() {
+      var ua = '';
+      try { ua = String(navigator.userAgent || ''); } catch (e) { ua = ''; }
+      var lower = ua.toLowerCase();
+      if (lower.indexOf('edg/') !== -1) return 'Edge';
+      if (lower.indexOf('chrome/') !== -1 && lower.indexOf('chromium') === -1) return 'Chrome';
+      if (lower.indexOf('safari/') !== -1 && lower.indexOf('chrome/') === -1) return 'Safari';
+      if (lower.indexOf('firefox/') !== -1) return 'Firefox';
+      return 'Browser';
+    }
+
+    function getOrCreateDeviceId() {
+      var KEY = 'hzr_device_id_v1';
+      try {
+        var existing = localStorage.getItem(KEY);
+        if (existing && String(existing).trim()) return String(existing).trim();
+      } catch (e) {}
+
+      var id = 'd_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 10);
+      try { localStorage.setItem(KEY, id); } catch (e2) {}
+      return id;
+    }
+
+    function getDeviceLabel() {
+      var name = '';
+      try { name = String(localStorage.getItem('hzr_device_name_v1') || '').trim(); } catch (e) { name = ''; }
+      var base = detectPlatformLabel() + ' · ' + detectBrowserLabel();
+      var sid = shortId(getOrCreateDeviceId());
+      var suffix = sid ? ('#' + sid) : '';
+      if (name) return name + '（' + base + (suffix ? (' ' + suffix) : '') + '）';
+      return base + (suffix ? (' ' + suffix) : '');
+    }
+
+    function deviceLabelFromArchive(a) {
+      if (!a) return '';
+      if (a.deviceLabel && String(a.deviceLabel).trim()) return String(a.deviceLabel).trim();
+      return '';
+    }
+
     function downloadJson(filename, obj) {
       try {
         var blob = new Blob([JSON.stringify(obj, null, 2)], { type: 'application/json;charset=utf-8' });
@@ -688,6 +764,8 @@
       headers['Content-Type'] = headers['Content-Type'] || 'application/json';
       var t = getToken();
       if (t) headers['Authorization'] = 'Bearer ' + t;
+      headers['X-Device-Id'] = headers['X-Device-Id'] || getOrCreateDeviceId();
+      headers['X-Device-Label'] = headers['X-Device-Label'] || getDeviceLabel();
       options.headers = headers;
       return fetch(API_BASE + path, options);
     }
@@ -756,6 +834,13 @@
     function cloudRestoreArchive(id) {
       return apiFetch('/api/archives/' + encodeURIComponent(String(id)) + '/restore', { method: 'POST', body: '{}' }).then(function (res) {
         if (!res.ok) throw new Error('restore failed');
+        return res.json();
+      });
+    }
+
+    function cloudRenameArchive(id, name) {
+      return apiFetch('/api/archives/' + encodeURIComponent(String(id)), { method: 'PATCH', body: JSON.stringify({ name: name }) }).then(function (res) {
+        if (!res.ok) throw new Error('rename failed');
         return res.json();
       });
     }
@@ -2599,17 +2684,30 @@
                 row.innerHTML =
                   '<div class="save-meta">' +
                     '<div class="save-name"></div>' +
+                    '<div class="save-tags"></div>' +
                     '<div class="save-time"></div>' +
                   '</div>' +
                   '<div class="save-actions">' +
                     '<button class="modal-btn primary" type="button">恢复</button>' +
+                    '<button class="modal-btn" type="button">重命名</button>' +
                     '<button class="modal-btn danger" type="button">删除</button>' +
                   '</div>';
-                row.querySelector('.save-name').textContent = a.name || ('存档 #' + a.id);
-                row.querySelector('.save-time').textContent = formatLocalTime(a.createdAt);
+                var saveName = row.querySelector('.save-name');
+                var saveTags = row.querySelector('.save-tags');
+                var saveTime = row.querySelector('.save-time');
+                saveName.textContent = a.name || ('存档 #' + a.id);
+                saveTime.textContent = formatLocalTime(a.createdAt);
+
+                var tags = [];
+                var dateTag = formatDateTag(a.createdAt);
+                if (dateTag) tags.push(dateTag);
+                var deviceTag = deviceLabelFromArchive(a);
+                if (deviceTag) tags.push(deviceTag);
+                if (saveTags) saveTags.innerHTML = tags.map(function (t) { return '<span class="tag">' + escapeHtml(t) + '</span>'; }).join('');
 
                 var btnRestore = row.querySelectorAll('button')[0];
-                var btnDelete = row.querySelectorAll('button')[1];
+                var btnRename = row.querySelectorAll('button')[1];
+                var btnDelete = row.querySelectorAll('button')[2];
 
                 btnRestore.onclick = function () {
                   var before = appData;
@@ -2642,6 +2740,21 @@
                   });
                 };
 
+                btnRename.onclick = function () {
+                  var currentName = (a.name && String(a.name).trim()) ? String(a.name).trim() : ('存档 #' + a.id);
+                  var next = prompt('重命名存档：', currentName);
+                  if (next === null) return;
+                  next = String(next || '').trim();
+                  if (!next) { showToast('名称不能为空', { timeoutMs: 2200 }); return; }
+                  if (next.length > 80) { showToast('名称太长（最多80字）', { timeoutMs: 2400 }); return; }
+                  cloudRenameArchive(a.id, next).then(function () {
+                    showToast('已重命名', { timeoutMs: 2200 });
+                    refreshSaves();
+                  }).catch(function () {
+                    showToast('重命名失败', { timeoutMs: 2400 });
+                  });
+                };
+
                 btnDelete.onclick = function () {
                   cloudDeleteArchive(a.id).then(function () {
                     showToast('已删除存档', { timeoutMs: 2600 });
@@ -2665,6 +2778,7 @@
                 row2.innerHTML =
                   '<div class="save-meta">' +
                     '<div class="save-name"></div>' +
+                    '<div class="save-tags"></div>' +
                     '<div class="save-time"></div>' +
                   '</div>' +
                   '<div class="save-actions">' +
@@ -2672,6 +2786,13 @@
                   '</div>';
                 row2.querySelector('.save-name').textContent = '自动存档 v' + rv.version;
                 row2.querySelector('.save-time').textContent = formatLocalTime(rv.savedAt);
+
+                var saveTags2 = row2.querySelector('.save-tags');
+                var tags2 = [];
+                var dateTag2 = formatDateTag(rv.savedAt);
+                if (dateTag2) tags2.push(dateTag2);
+                if (rv.deviceLabel && String(rv.deviceLabel).trim()) tags2.push(String(rv.deviceLabel).trim());
+                if (saveTags2) saveTags2.innerHTML = tags2.map(function (t) { return '<span class="tag">' + escapeHtml(t) + '</span>'; }).join('');
 
                 var btn = row2.querySelector('button');
                 btn.onclick = function () {

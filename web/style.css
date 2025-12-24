@@ -520,6 +520,22 @@ body.sidebar-collapsed .icon-btn { width: 44px; height: 44px; flex: none; border
 .save-meta { flex: 1; overflow: hidden; min-width: 0; }
 .save-actions { flex-shrink: 0; }
 .save-name { font-weight: 800; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.save-tags { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 6px; }
+.tag {
+    display: inline-flex;
+    align-items: center;
+    max-width: 100%;
+    padding: 4px 8px;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 800;
+    color: #334155;
+    background: rgba(226, 232, 240, 0.75);
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
 .save-time { font-size: 0.86rem; color: #64748b; margin-top: 2px; }
 .save-actions { display: flex; gap: 8px; }
 .save-actions .modal-btn { padding: 8px 12px; }

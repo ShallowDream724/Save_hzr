@@ -45,6 +45,13 @@ function openDb() {
     );
   `);
 
+  // Lightweight migrations (safe to re-run).
+  // Device metadata is used to label archives/revisions without storing IP.
+  try { db.exec(`ALTER TABLE library_archives ADD COLUMN device_id TEXT`); } catch (_) {}
+  try { db.exec(`ALTER TABLE library_archives ADD COLUMN device_label TEXT`); } catch (_) {}
+  try { db.exec(`ALTER TABLE library_revisions ADD COLUMN device_id TEXT`); } catch (_) {}
+  try { db.exec(`ALTER TABLE library_revisions ADD COLUMN device_label TEXT`); } catch (_) {}
+
   return db;
 }
 

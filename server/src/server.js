@@ -36,12 +36,20 @@ app.use(helmet({
 const corsOrigin = process.env.CORS_ORIGIN || '*';
 app.use(cors({
   origin: corsOrigin,
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'If-Match', 'X-Force'],
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'If-Match', 'X-Force', 'X-Device-Id', 'X-Device-Label'],
 }));
 
 app.use(express.json({ limit: '10mb' }));
 app.use(morgan('combined'));
+
+function getDeviceMeta(req) {
+  const rawId = String(req.headers['x-device-id'] || '').trim();
+  const rawLabel = String(req.headers['x-device-label'] || '').trim();
+  const deviceId = rawId && rawId.length <= 64 ? rawId : (rawId ? rawId.slice(0, 64) : null);
+  const deviceLabel = rawLabel && rawLabel.length <= 140 ? rawLabel : (rawLabel ? rawLabel.slice(0, 140) : null);
+  return { deviceId, deviceLabel };
+}
 
 app.get('/api/health', (req, res) => res.json({ ok: true }));
 
@@ -106,6 +114,7 @@ app.put('/api/library', authMiddleware, (req, res) => {
 
   const expected = req.headers['if-match'] ? Number(req.headers['if-match']) : null;
   const force = (req.query && String(req.query.force) === '1') || String(req.headers['x-force'] || '') === '1';
+  const { deviceId, deviceLabel } = getDeviceMeta(req);
 
   const current = db.prepare('SELECT data_json, version FROM libraries WHERE user_id = ?').get(req.user.userId);
   const currentVersion = current ? current.version : 0;
@@ -121,8 +130,8 @@ app.put('/api/library', authMiddleware, (req, res) => {
     // If force overwrite, keep a copy of the old cloud data as an archive (no popups on client).
     if (force && current && current.data_json) {
       const name = `冲突自动备份 ${updatedAt}`;
-      db.prepare('INSERT INTO library_archives (user_id, name, data_json, created_at) VALUES (?, ?, ?, ?)')
-        .run(req.user.userId, name, current.data_json, updatedAt);
+      db.prepare('INSERT INTO library_archives (user_id, name, data_json, created_at, device_id, device_label) VALUES (?, ?, ?, ?, ?, ?)')
+        .run(req.user.userId, name, current.data_json, updatedAt, deviceId, deviceLabel);
     }
 
     db.prepare(`
@@ -143,8 +152,8 @@ app.put('/api/library', authMiddleware, (req, res) => {
     const shouldSnapshot = !Number.isFinite(lastMs) || (Date.now() - lastMs) >= FIVE_MIN;
 
     if (shouldSnapshot) {
-      db.prepare('INSERT OR IGNORE INTO library_revisions (user_id, version, data_json, saved_at) VALUES (?, ?, ?, ?)')
-        .run(req.user.userId, nextVersion, payload, updatedAt);
+      db.prepare('INSERT OR IGNORE INTO library_revisions (user_id, version, data_json, saved_at, device_id, device_label) VALUES (?, ?, ?, ?, ?, ?)')
+        .run(req.user.userId, nextVersion, payload, updatedAt, deviceId, deviceLabel);
 
       // Keep the newest 3 revisions.
       const rows = db.prepare('SELECT version FROM library_revisions WHERE user_id = ? ORDER BY version DESC').all(req.user.userId);
@@ -167,9 +176,9 @@ app.put('/api/library', authMiddleware, (req, res) => {
 
 app.get('/api/revisions', authMiddleware, (req, res) => {
   const limit = Math.max(1, Math.min(50, Number(req.query && req.query.limit) || 20));
-  const items = db.prepare('SELECT version, saved_at FROM library_revisions WHERE user_id = ? ORDER BY version DESC LIMIT ?')
+  const items = db.prepare('SELECT version, saved_at, device_id, device_label FROM library_revisions WHERE user_id = ? ORDER BY version DESC LIMIT ?')
     .all(req.user.userId, limit)
-    .map((r) => ({ version: r.version, savedAt: r.saved_at }));
+    .map((r) => ({ version: r.version, savedAt: r.saved_at, deviceId: r.device_id, deviceLabel: r.device_label }));
   return res.json({ items });
 });
 
@@ -207,15 +216,16 @@ app.post('/api/revisions/:version/restore', authMiddleware, (req, res) => {
 
 app.get('/api/archives', authMiddleware, (req, res) => {
   const limit = Math.max(1, Math.min(100, Number(req.query && req.query.limit) || 50));
-  const items = db.prepare('SELECT id, name, created_at FROM library_archives WHERE user_id = ? ORDER BY id DESC LIMIT ?')
+  const items = db.prepare('SELECT id, name, created_at, device_id, device_label FROM library_archives WHERE user_id = ? ORDER BY id DESC LIMIT ?')
     .all(req.user.userId, limit)
-    .map((r) => ({ id: r.id, name: r.name, createdAt: r.created_at }));
+    .map((r) => ({ id: r.id, name: r.name, createdAt: r.created_at, deviceId: r.device_id, deviceLabel: r.device_label }));
   return res.json({ items });
 });
 
 app.post('/api/archives', authMiddleware, (req, res) => {
   const name = (req.body && typeof req.body.name === 'string' && req.body.name.trim()) ? req.body.name.trim() : null;
   const data = (req.body && req.body.data && typeof req.body.data === 'object') ? req.body.data : null;
+  const { deviceId, deviceLabel } = getDeviceMeta(req);
 
   let payload = null;
   if (data) payload = JSON.stringify(data);
@@ -227,10 +237,24 @@ app.post('/api/archives', authMiddleware, (req, res) => {
 
   const createdAt = new Date().toISOString();
   const archiveName = name || `手动存档 ${createdAt}`;
-  const info = db.prepare('INSERT INTO library_archives (user_id, name, data_json, created_at) VALUES (?, ?, ?, ?)')
-    .run(req.user.userId, archiveName, payload, createdAt);
+  const info = db.prepare('INSERT INTO library_archives (user_id, name, data_json, created_at, device_id, device_label) VALUES (?, ?, ?, ?, ?, ?)')
+    .run(req.user.userId, archiveName, payload, createdAt, deviceId, deviceLabel);
 
   return res.json({ ok: true, id: info.lastInsertRowid, createdAt });
+});
+
+app.patch('/api/archives/:id', authMiddleware, (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isFinite(id) || id <= 0) return res.status(400).json({ error: 'bad id' });
+
+  const name = (req.body && typeof req.body.name === 'string') ? req.body.name.trim() : '';
+  if (!name) return res.status(400).json({ error: 'name required' });
+  if (name.length > 80) return res.status(400).json({ error: 'name too long' });
+
+  const info = db.prepare('UPDATE library_archives SET name = ? WHERE user_id = ? AND id = ?')
+    .run(name, req.user.userId, id);
+  if (!info.changes) return res.status(404).json({ error: 'not found' });
+  return res.json({ ok: true });
 });
 
 app.delete('/api/archives/:id', authMiddleware, (req, res) => {
