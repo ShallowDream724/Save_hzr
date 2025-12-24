@@ -2113,8 +2113,7 @@
                 var btnDelete = row.querySelectorAll('button')[1];
 
                 btnRestore.onclick = function () {
-                  var name = '自动备份(恢复前) ' + new Date().toISOString();
-                  cloudCreateArchive(name, appData).catch(function () {});
+                  var before = appData;
                   cloudRestoreArchive(a.id).then(function () {
                     return cloudLoadLibrary();
                   }).then(function (j) {
@@ -2125,7 +2124,18 @@
                       renderSidebar();
                       if (currentChapterId) loadChapter(currentChapterId);
                     }
-                    showToast('已恢复存档（恢复前已自动备份）', { timeoutMs: 4200 });
+                    showToast('已恢复存档', {
+                      actionText: '撤销',
+                      timeoutMs: 6500,
+                      onAction: function () {
+                        appData = before;
+                        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(appData)); } catch (_) {}
+                        renderSidebar();
+                        if (currentChapterId) loadChapter(currentChapterId);
+                        saveData();
+                        showToast('已撤销恢复', { timeoutMs: 2400 });
+                      }
+                    });
                     updateSyncStatus();
                     refreshSaves();
                   }).catch(function () {
@@ -2166,8 +2176,7 @@
 
                 var btn = row2.querySelector('button');
                 btn.onclick = function () {
-                  var name = '自动备份(恢复前) ' + new Date().toISOString();
-                  cloudCreateArchive(name, appData).catch(function () {});
+                  var before2 = appData;
                   cloudRestoreRevision(rv.version).then(function () {
                     return cloudLoadLibrary();
                   }).then(function (j) {
@@ -2178,7 +2187,18 @@
                       renderSidebar();
                       if (currentChapterId) loadChapter(currentChapterId);
                     }
-                    showToast('已恢复自动存档（恢复前已自动备份）', { timeoutMs: 4200 });
+                    showToast('已恢复自动存档', {
+                      actionText: '撤销',
+                      timeoutMs: 6500,
+                      onAction: function () {
+                        appData = before2;
+                        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(appData)); } catch (_) {}
+                        renderSidebar();
+                        if (currentChapterId) loadChapter(currentChapterId);
+                        saveData();
+                        showToast('已撤销恢复', { timeoutMs: 2400 });
+                      }
+                    });
                     updateSyncStatus();
                     refreshSaves();
                   }).catch(function () {

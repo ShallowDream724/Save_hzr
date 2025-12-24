@@ -177,10 +177,6 @@ app.post('/api/revisions/:version/restore', authMiddleware, (req, res) => {
         version = excluded.version,
         updated_at = excluded.updated_at
     `).run(req.user.userId, rev.data_json, nextVersion, updatedAt);
-
-    const name = `手动恢复(自动存档 v${version}) ${updatedAt}`;
-    db.prepare('INSERT INTO library_archives (user_id, name, data_json, created_at) VALUES (?, ?, ?, ?)')
-      .run(req.user.userId, name, rev.data_json, updatedAt);
   });
 
   try {
