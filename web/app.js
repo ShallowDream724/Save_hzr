@@ -787,7 +787,7 @@
           label = '已登录 · 同步初始化中…';
         } else if (!cloud.syncEnabled) {
           dot = 'status-dot--warn';
-          label = '已登录 · 未启用云同步';
+          label = '已登录 · 未启用自动同步';
         } else {
           dot = 'status-dot--ok';
           label = '已登录 · 自动同步';
@@ -2657,6 +2657,13 @@
           else if (!cloud.syncEnabled) els.authHint.textContent = '已登录：云同步未启用（为防误覆盖，不会自动上传本机）。';
           else els.authHint.textContent = '已登录：默认拉取云端；之后改动会自动同步到云端（云端每5分钟自动备份）。';
         }
+
+        // Logged-in users should not see the login/register form (avoid confusion).
+        if (els.authTabLogin) els.authTabLogin.style.display = loggedIn ? 'none' : '';
+        if (els.authTabRegister) els.authTabRegister.style.display = loggedIn ? 'none' : '';
+        if (els.authUsername) els.authUsername.style.display = loggedIn ? 'none' : '';
+        if (els.authPassword) els.authPassword.style.display = loggedIn ? 'none' : '';
+        if (els.authSubmitBtn) els.authSubmitBtn.style.display = loggedIn ? 'none' : '';
 
         if (els.authTabLogin) els.authTabLogin.classList.toggle('primary', cloud.authMode === 'login');
         if (els.authTabRegister) els.authTabRegister.classList.toggle('primary', cloud.authMode === 'register');
