@@ -1049,7 +1049,13 @@
         headers['X-Device-Label'] = headers['X-Device-Label'] || '';
       }
       options.headers = headers;
-      return fetch(API_BASE + path, options);
+      return fetch(API_BASE + path, options).then(function (res) {
+        if (res.status === 401) {
+          setToken(null);
+          updateSyncStatus('登录失效');
+        }
+        return res;
+      });
     }
 
     function cloudLoadLibrary() {

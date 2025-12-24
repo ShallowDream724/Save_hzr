@@ -68,18 +68,22 @@
                 <div id="syncStatus" style="margin-left:auto; font-size:0.9rem; color:#888;"></div>
             </header>
             
-            <div id="homeView" class="home-view" style="display:none;">
-                <div class="home-hud">
-                    <div class="home-hud-title">我的题库</div>
-                    <div class="home-hud-actions">
-                        <button id="homeSyncBtn" class="modal-btn" type="button" title="云同步"><i class="fa-solid fa-cloud" style="margin-right:8px;"></i>云同步</button>
-                        <button id="homeSavesBtn" class="modal-btn" type="button" title="存档"><i class="fa-solid fa-box-archive" style="margin-right:8px;"></i>存档</button>
-                        <button id="homeSettingsBtn" class="modal-btn" type="button" title="设置"><i class="fa-solid fa-gear" style="margin-right:8px;"></i>设置</button>
-                        <button id="importBookBtn" class="modal-btn" type="button"><i class="fa-solid fa-file-import" style="margin-right:8px;"></i>导入书</button>
-                        <button id="newBookBtn" class="modal-btn primary" type="button"><i class="fa-solid fa-plus" style="margin-right:8px;"></i>新建书</button>
+            <div id="homeView" class="home-view">
+                <div class="home-bg" aria-hidden="true"></div>
+                <div class="home-scroll">
+                    <div class="home-hud">
+                        <div class="home-hud-title">拯救Hzr</div>
+                        <div class="home-hud-subtitle">你的题库与笔记，像一本书一样被珍藏。</div>
+                        <div class="home-hud-actions" aria-label="主页操作">
+                            <button id="homeSyncBtn" class="modal-btn" type="button" title="云同步"><i class="fa-solid fa-cloud" style="margin-right:8px;"></i>云同步</button>
+                            <button id="homeSavesBtn" class="modal-btn" type="button" title="存档"><i class="fa-solid fa-box-archive" style="margin-right:8px;"></i>存档</button>
+                            <button id="homeSettingsBtn" class="modal-btn" type="button" title="设置"><i class="fa-solid fa-gear" style="margin-right:8px;"></i>设置</button>
+                            <button id="importBookBtn" class="modal-btn" type="button"><i class="fa-solid fa-file-import" style="margin-right:8px;"></i>导入书</button>
+                            <button id="newBookBtn" class="modal-btn primary" type="button"><i class="fa-solid fa-plus" style="margin-right:8px;"></i>新建书</button>
+                        </div>
                     </div>
+                    <div id="booksGrid" class="shelf" aria-label="书架"></div>
                 </div>
-                <div id="booksGrid" class="shelf" aria-label="书架"></div>
             </div>
 
             <div class="questions-container" id="questionsContainer">
