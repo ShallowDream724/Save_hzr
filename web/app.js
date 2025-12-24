@@ -1437,7 +1437,11 @@
       var books = getBooks();
       els.booksGrid.innerHTML = '';
       if (!books.length) {
-        els.booksGrid.innerHTML = '<div style="color:#64748b; font-family:\'Segoe UI\', \'Microsoft YaHei\', sans-serif;">暂无书籍</div>';
+        els.booksGrid.innerHTML =
+          '<div class="home-empty">' +
+            '<div class="home-empty-title">还没有书</div>' +
+            '<div class="home-empty-desc">点击上方“新建书”或“导入书”，开始整理你的题库。</div>' +
+          '</div>';
         return;
       }
 
