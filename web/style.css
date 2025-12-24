@@ -158,7 +158,7 @@ body.home-mode .fab-menu { display: inline-flex; }
 
 .home-view::after {
     content:'';
-    position: absolute;
+    position: fixed;
     inset: 0;
     background: radial-gradient(circle at 50% 50%, #ffffff, #cbd5e1);
     z-index: -1;
@@ -214,13 +214,69 @@ body.home-mode .home-hud .modal-btn.primary {
 }
 
 .shelf {
-    display: flex;
-    gap: clamp(18px, 4.6vw, 68px);
+    --shelf-gap-x: clamp(16px, 3.8vw, 52px);
+    --shelf-gap-y: clamp(24px, 4.2vw, 56px);
+    --shelf-pad-top: 148px;
+    --shelf-step: calc(var(--book-h) + var(--shelf-gap-y));
+
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(var(--book-w), 1fr));
+    grid-auto-rows: var(--book-h);
+    column-gap: var(--shelf-gap-x);
+    row-gap: var(--shelf-gap-y);
+    justify-items: center;
+    align-items: end;
+
     transform: rotateX(14deg) translateY(42px);
     transform-style: preserve-3d;
-    padding: 148px 18px 56px;
-    flex-wrap: wrap;
-    justify-content: center;
+    padding: var(--shelf-pad-top) 18px 56px;
+    width: min(1200px, 100%);
+    margin: 0 auto;
+    isolation: isolate;
+}
+
+/* Shelf planks (behind books) */
+.shelf::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: var(--shelf-pad-top);
+    bottom: 0;
+    z-index: 0;
+    pointer-events: none;
+    background:
+      repeating-linear-gradient(
+        to bottom,
+        transparent 0,
+        transparent calc(var(--book-h) - 18px),
+        rgba(255,255,255,0.72) calc(var(--book-h) - 18px),
+        rgba(255,255,255,0.72) calc(var(--book-h) - 14px),
+        rgba(15,23,42,0.06) calc(var(--book-h) - 14px),
+        rgba(15,23,42,0.06) calc(var(--book-h) - 10px),
+        transparent calc(var(--book-h) - 10px),
+        transparent var(--shelf-step)
+      ),
+      repeating-linear-gradient(
+        to bottom,
+        transparent 0,
+        transparent calc(var(--book-h) - 26px),
+        rgba(15,23,42,0.06) calc(var(--book-h) - 26px),
+        transparent calc(var(--book-h) - 24px),
+        transparent var(--shelf-step)
+      );
+    opacity: 0.95;
+}
+
+.shelf::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background: radial-gradient(80% 60% at 50% 20%, rgba(255,255,255,0.50), transparent 60%);
+    opacity: 0.7;
 }
 
 /* === 3D Book === */
@@ -235,6 +291,7 @@ body.home-mode .home-hud .modal-btn.primary {
     cursor: pointer;
     -webkit-user-select: none;
     user-select: none;
+    z-index: 1; /* above shelf planks */
 }
 
 .book-container.idle:hover {
@@ -289,7 +346,8 @@ body.home-mode .home-hud .modal-btn.primary {
     .shelf {
         gap: 16px;
         transform: rotateX(10deg) translateY(26px);
-        padding: 152px 14px 44px;
+        --shelf-pad-top: 152px;
+        padding: var(--shelf-pad-top) 14px 44px;
     }
     .home-hud { left: 14px; top: 14px; }
 }
