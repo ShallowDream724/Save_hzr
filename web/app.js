@@ -70,13 +70,50 @@
     var STORAGE_KEY = 'pharm_data_v4_1';
     var AUTH_TOKEN_KEY = 'pharm_sync_token_v1';
     var API_BASE = (typeof window !== 'undefined' && window.API_BASE) ? String(window.API_BASE) : '';
-  
+
+    var UI_DEFAULTS = {
+      analysisColor: '#4b8fe2',
+      knowledgeColor: '#0c5460',
+      emphasisColor: '#c54a5a',
+      highlightPalette: ['#FFE08A', '#F7B4C9', '#FFD0A6', '#BFEBDD', '#BFD9FF', '#D8C7FF'],
+      highlightIntensity: 0.55,
+      highlightMode: 'stable' // stable | random
+    };
+
+    function defaultUi() {
+      return {
+        analysisColor: UI_DEFAULTS.analysisColor,
+        knowledgeColor: UI_DEFAULTS.knowledgeColor,
+        emphasisColor: UI_DEFAULTS.emphasisColor,
+        highlightPalette: UI_DEFAULTS.highlightPalette.slice(),
+        highlightIntensity: UI_DEFAULTS.highlightIntensity,
+        highlightMode: UI_DEFAULTS.highlightMode
+      };
+    }
+
+    function normalizeUi(ui) {
+      if (!ui || typeof ui !== 'object') ui = {};
+      var out = defaultUi();
+      if (typeof ui.analysisColor === 'string') out.analysisColor = ui.analysisColor;
+      if (typeof ui.knowledgeColor === 'string') out.knowledgeColor = ui.knowledgeColor;
+      if (typeof ui.emphasisColor === 'string') out.emphasisColor = ui.emphasisColor;
+      if (Array.isArray(ui.highlightPalette) && ui.highlightPalette.length) {
+        out.highlightPalette = ui.highlightPalette.filter(function (x) { return typeof x === 'string' && x; }).slice(0, 12);
+        if (!out.highlightPalette.length) out.highlightPalette = UI_DEFAULTS.highlightPalette.slice();
+      }
+      var a = Number(ui.highlightIntensity);
+      if (Number.isFinite(a)) out.highlightIntensity = Math.max(0.22, Math.min(0.85, a));
+      if (ui.highlightMode === 'random' || ui.highlightMode === 'stable') out.highlightMode = ui.highlightMode;
+      return out;
+    }
+
     function defaultAppData() {
       return {
         chapters: [],            // local sheets
         folders: [],             // folders
         layoutMap: {},           // { chapterId: folderId }
-        deletedChapterIds: []    // deleted ids (static/local)
+        deletedChapterIds: [],   // deleted ids (static/local)
+        ui: defaultUi()
       };
     }
   
@@ -164,16 +201,21 @@
       els.toastHost = document.getElementById('toastHost');
 
       els.addFolderBtn = document.getElementById('addFolderBtn');
-      els.openPasteModalBtn = document.getElementById('openPasteModalBtn');
-      els.clearDataBtn = document.getElementById('clearDataBtn');
-      els.fileInput = document.getElementById('fileInput');
+      els.importBtn = document.getElementById('importBtn');
+      els.settingsBtn = document.getElementById('settingsBtn');
       els.syncBtn = document.getElementById('syncBtn');
       els.syncStatus = document.getElementById('syncStatus');
 
-      els.pasteModal = document.getElementById('pasteModal');
-      els.pasteTextarea = document.getElementById('pasteTextarea');
-      els.cancelPasteBtn = document.getElementById('cancelPasteBtn');
-      els.confirmPasteBtn = document.getElementById('confirmPasteBtn');
+      els.importModal = document.getElementById('importModal');
+      els.importTabFile = document.getElementById('importTabFile');
+      els.importTabPaste = document.getElementById('importTabPaste');
+      els.importPaneFile = document.getElementById('importPaneFile');
+      els.importPanePaste = document.getElementById('importPanePaste');
+      els.importFileInput = document.getElementById('importFileInput');
+      els.importTextarea = document.getElementById('importTextarea');
+      els.cancelImportBtn = document.getElementById('cancelImportBtn');
+      els.confirmImportBtn = document.getElementById('confirmImportBtn');
+      els.closeImportBtn = document.getElementById('closeImportBtn');
 
       els.folderModal = document.getElementById('folderModal');
       els.folderNameInput = document.getElementById('folderNameInput');
@@ -208,6 +250,13 @@
       // settings modal
       els.settingsModal = document.getElementById('settingsModal');
       els.exportLocalBtn = document.getElementById('exportLocalBtn');
+      els.resetUiBtn = document.getElementById('resetUiBtn');
+      els.uiAnalysisColor = document.getElementById('uiAnalysisColor');
+      els.uiKnowledgeColor = document.getElementById('uiKnowledgeColor');
+      els.uiEmphasisColor = document.getElementById('uiEmphasisColor');
+      els.uiHighlightPalette = document.getElementById('uiHighlightPalette');
+      els.uiHighlightIntensity = document.getElementById('uiHighlightIntensity');
+      els.uiHighlightMode = document.getElementById('uiHighlightMode');
       els.resetToDefaultBtn = document.getElementById('resetToDefaultBtn');
       els.settingsCloseBtn = document.getElementById('settingsCloseBtn');
       els.resetHint = document.getElementById('resetHint');
@@ -229,24 +278,62 @@
       });
     }
 
+    function hashStr(str) {
+      str = String(str || '');
+      var h = 5381;
+      for (var i = 0; i < str.length; i++) h = ((h << 5) + h) ^ str.charCodeAt(i);
+      return h >>> 0;
+    }
+
+    function pickHighlightColor(seed, text) {
+      var ui = appData && appData.ui ? normalizeUi(appData.ui) : defaultUi();
+      var palette = (ui.highlightPalette && ui.highlightPalette.length) ? ui.highlightPalette : UI_DEFAULTS.highlightPalette;
+      if (!palette.length) palette = UI_DEFAULTS.highlightPalette;
+
+      if (ui.highlightMode === 'random') {
+        return palette[Math.floor(Math.random() * palette.length)];
+      }
+      var h = hashStr(String(seed || '') + '|' + String(text || ''));
+      return palette[h % palette.length];
+    }
+
     function applyRandomHighlights(rootEl) {
       if (!rootEl || !rootEl.querySelectorAll) return;
       var spans = rootEl.querySelectorAll('span.highlight');
       if (!spans || !spans.length) return;
 
-      var colorClasses = ['highlight--yellow', 'highlight--pink', 'highlight--orange'];
+      var ui = appData && appData.ui ? normalizeUi(appData.ui) : defaultUi();
+      var alpha = Number(ui.highlightIntensity);
+      if (!Number.isFinite(alpha)) alpha = UI_DEFAULTS.highlightIntensity;
+
+      var seed = (rootEl && rootEl.dataset && rootEl.dataset.hzrSeed) ? rootEl.dataset.hzrSeed : 'seed';
+
       for (var i = 0; i < spans.length; i++) {
         var el = spans[i];
-        if (!el || !el.classList) continue;
-        // 如果作者已经指定了颜色，就不改
-        if (el.classList.contains('highlight--yellow') ||
+        if (!el) continue;
+
+        // 如果作者已经指定了颜色，就不改（兼容旧数据）
+        if (el.classList && (el.classList.contains('highlight--yellow') ||
             el.classList.contains('highlight--pink') ||
-            el.classList.contains('highlight--orange')) {
+            el.classList.contains('highlight--orange'))) {
           continue;
         }
-        var idx = Math.floor(Math.random() * colorClasses.length);
-        el.classList.add(colorClasses[idx]);
+
+        var hex = pickHighlightColor(seed, el.textContent || '');
+        var bg = rgba(hex, alpha);
+        if (!bg) continue;
+        el.style.backgroundColor = bg;
+        el.dataset.hzrHl = hex;
       }
+    }
+
+    function refreshHighlightsInDocument() {
+      if (typeof document === 'undefined') return;
+      // question cards
+      var cards = document.querySelectorAll('.question-card');
+      for (var i = 0; i < cards.length; i++) applyRandomHighlights(cards[i]);
+      // settings preview (and other modal content)
+      if (els.settingsModal) applyRandomHighlights(els.settingsModal);
     }
 
     function formatInlineEmphasis(html) {
@@ -267,6 +354,75 @@
   
     function isObject(x) {
       return x && typeof x === 'object' && !Array.isArray(x);
+    }
+
+    function normalizeHex(hex) {
+      if (typeof hex !== 'string') return null;
+      var s = hex.trim();
+      if (!s) return null;
+      if (s[0] !== '#') s = '#' + s;
+      if (!/^#[0-9a-fA-F]{6}$/.test(s)) return null;
+      return s.toUpperCase();
+    }
+
+    function hexToRgb(hex) {
+      var h = normalizeHex(hex);
+      if (!h) return null;
+      return {
+        r: parseInt(h.slice(1, 3), 16),
+        g: parseInt(h.slice(3, 5), 16),
+        b: parseInt(h.slice(5, 7), 16)
+      };
+    }
+
+    function rgba(hex, alpha) {
+      var c = hexToRgb(hex);
+      if (!c) return null;
+      var a = Math.max(0, Math.min(1, Number(alpha)));
+      return 'rgba(' + c.r + ',' + c.g + ',' + c.b + ',' + a + ')';
+    }
+
+    function mixRgb(a, b, t) {
+      t = Math.max(0, Math.min(1, t));
+      return {
+        r: Math.round(a.r + (b.r - a.r) * t),
+        g: Math.round(a.g + (b.g - a.g) * t),
+        b: Math.round(a.b + (b.b - a.b) * t)
+      };
+    }
+
+    function rgbToHex(c) {
+      var to = function (n) { var s = n.toString(16); return s.length === 1 ? '0' + s : s; };
+      return '#' + to(c.r) + to(c.g) + to(c.b);
+    }
+
+    function darken(hex, t) {
+      var c = hexToRgb(hex);
+      if (!c) return hex;
+      return rgbToHex(mixRgb(c, { r: 0, g: 0, b: 0 }, Math.max(0, Math.min(1, t)))).toUpperCase();
+    }
+
+    function applyUiToDocument() {
+      var ui = appData && appData.ui ? normalizeUi(appData.ui) : defaultUi();
+      if (!appData.ui) appData.ui = ui;
+
+      var root = document.documentElement;
+      root.style.setProperty('--emphasis-color', ui.emphasisColor);
+
+      root.style.setProperty('--analysis-color', ui.analysisColor);
+      root.style.setProperty('--analysis-bg-1', rgba(ui.analysisColor, 0.10) || 'rgba(75,143,226,0.10)');
+      root.style.setProperty('--analysis-bg-2', rgba(ui.analysisColor, 0.04) || 'rgba(75,143,226,0.04)');
+      root.style.setProperty('--analysis-border', rgba(ui.analysisColor, 0.18) || 'rgba(75,143,226,0.18)');
+      root.style.setProperty('--analysis-bar', rgba(ui.analysisColor, 0.70) || 'rgba(75,143,226,0.70)');
+      root.style.setProperty('--analysis-title', darken(ui.analysisColor, 0.18));
+
+      root.style.setProperty('--knowledge-color', ui.knowledgeColor);
+      root.style.setProperty('--knowledge-bg-1', rgba(ui.knowledgeColor, 0.10) || 'rgba(12,84,96,0.10)');
+      root.style.setProperty('--knowledge-bg-2', rgba(ui.knowledgeColor, 0.04) || 'rgba(12,84,96,0.04)');
+      root.style.setProperty('--knowledge-border', rgba(ui.knowledgeColor, 0.18) || 'rgba(12,84,96,0.18)');
+      root.style.setProperty('--knowledge-title', darken(ui.knowledgeColor, 0.10));
+
+      refreshHighlightsInDocument();
     }
   
     function pointInRect(x, y, rect) {
@@ -410,7 +566,8 @@
           layoutMap: isObject(parsed.layoutMap) ? parsed.layoutMap : {},
           deletedChapterIds: Array.isArray(parsed.deletedChapterIds)
             ? parsed.deletedChapterIds
-            : (Array.isArray(parsed.deleted) ? parsed.deleted : [])
+            : (Array.isArray(parsed.deleted) ? parsed.deleted : []),
+          ui: normalizeUi(parsed.ui)
         };
       } catch (e) {
         console.error('Data load error', e);
@@ -646,7 +803,10 @@
           }
         }
 
+        var keepUi = appData && appData.ui ? normalizeUi(appData.ui) : defaultUi();
         appData = remote;
+        if (!appData.ui) appData.ui = keepUi;
+        appData.ui = normalizeUi(appData.ui);
         try { localStorage.setItem(STORAGE_KEY, JSON.stringify(appData)); } catch (e) {}
         updateSyncStatus();
         cloud.bootstrapDone = true;
@@ -944,6 +1104,7 @@
     function createQuestionCard(q) {
       var card = document.createElement('div');
       card.className = 'question-card';
+      if (q && q.id !== undefined && q.id !== null) card.dataset.hzrSeed = 'q:' + String(q.id);
   
       var html = '<div class="q-header"><span class="q-id">' + q.id + '</span><div class="q-text">' + q.text + '</div></div><ul class="options-list">';
       for (var i = 0; i < (q.options || []).length; i++) {
@@ -2007,7 +2168,7 @@
           modalEl.classList.remove('open');
         }, false);
       }
-      bindOverlayClose(els.pasteModal);
+      bindOverlayClose(els.importModal);
       bindOverlayClose(els.folderModal);
       bindOverlayClose(els.authModal);
       bindOverlayClose(els.settingsModal);
@@ -2016,7 +2177,7 @@
       addEvt(document, 'keydown', function (e) {
         if (!e || e.key !== 'Escape') return;
         hideToast();
-        if (els.pasteModal) els.pasteModal.classList.remove('open');
+        if (els.importModal) els.importModal.classList.remove('open');
         if (els.authModal) els.authModal.classList.remove('open');
         if (els.settingsModal) els.settingsModal.classList.remove('open');
         if (els.sidebar && isCompactLayout()) els.sidebar.classList.remove('active');
@@ -2034,6 +2195,60 @@
           if (els.folderNameInput) els.folderNameInput.value = '';
           els.folderModal.classList.add('open');
           try { if (els.folderNameInput) els.folderNameInput.focus(); } catch (_) {}
+        };
+      }
+
+      function switchImportTab(which) {
+        if (!els.importPaneFile || !els.importPanePaste) return;
+        var isFile = which !== 'paste';
+        els.importPaneFile.style.display = isFile ? '' : 'none';
+        els.importPanePaste.style.display = isFile ? 'none' : '';
+        if (els.importTabFile) els.importTabFile.classList.toggle('active', isFile);
+        if (els.importTabPaste) els.importTabPaste.classList.toggle('active', !isFile);
+      }
+
+      if (els.importBtn && els.importModal) {
+        els.importBtn.onclick = function () {
+          switchImportTab('file');
+          els.importModal.classList.add('open');
+        };
+      }
+      if (els.importTabFile) els.importTabFile.onclick = function () { switchImportTab('file'); };
+      if (els.importTabPaste) els.importTabPaste.onclick = function () { switchImportTab('paste'); };
+      if (els.closeImportBtn && els.importModal) els.closeImportBtn.onclick = function () { els.importModal.classList.remove('open'); };
+
+      if (els.importFileInput) {
+        els.importFileInput.onchange = function (e) {
+          var f = e.target.files && e.target.files[0];
+          if (!f) return;
+          var r = new FileReader();
+          r.onload = function (ev) {
+            try {
+              var data = JSON.parse(ev.target.result);
+              importAnyJSON(data);
+              if (els.importModal) els.importModal.classList.remove('open');
+            } catch (err) {
+              alert('文件无效');
+            }
+          };
+          r.readAsText(f);
+          els.importFileInput.value = '';
+        };
+      }
+
+      if (els.cancelImportBtn && els.importModal) {
+        els.cancelImportBtn.onclick = function () { els.importModal.classList.remove('open'); };
+      }
+      if (els.confirmImportBtn && els.importTextarea && els.importModal) {
+        els.confirmImportBtn.onclick = function () {
+          try {
+            var data = JSON.parse(els.importTextarea.value);
+            importAnyJSON(data);
+            els.importModal.classList.remove('open');
+            els.importTextarea.value = '';
+          } catch (e) {
+            alert('JSON解析失败');
+          }
         };
       }
 
@@ -2057,54 +2272,12 @@
           if (e && e.key === 'Enter') createFolderFromModal();
         });
       }
-  
-      // 粘贴导入
-      if (els.openPasteModalBtn && els.pasteModal) {
-        els.openPasteModalBtn.onclick = function () {
-          els.pasteModal.classList.add('open');
-        };
-      }
-      if (els.cancelPasteBtn && els.pasteModal) {
-        els.cancelPasteBtn.onclick = function () {
-          els.pasteModal.classList.remove('open');
-        };
-      }
-      if (els.confirmPasteBtn && els.pasteTextarea && els.pasteModal) {
-        els.confirmPasteBtn.onclick = function () {
-          try {
-            var data = JSON.parse(els.pasteTextarea.value);
-            importAnyJSON(data);
-            els.pasteModal.classList.remove('open');
-            els.pasteTextarea.value = '';
-          } catch (e) {
-            alert('JSON解析失败');
-          }
-        };
-      }
-  
-      // 文件导入
-      if (els.fileInput) {
-        els.fileInput.onchange = function (e) {
-          var f = e.target.files && e.target.files[0];
-          if (!f) return;
-          var r = new FileReader();
-          r.onload = function (ev) {
-            try {
-              var data = JSON.parse(ev.target.result);
-              importAnyJSON(data);
-            } catch (err) {
-              alert('文件无效');
-            }
-          };
-          r.readAsText(f);
-          els.fileInput.value = '';
-        };
-      }
-  
-      // 清空
-      if (els.clearDataBtn) {
-        els.clearDataBtn.onclick = function () {
+
+      // 设置
+      if (els.settingsBtn) {
+        els.settingsBtn.onclick = function () {
           if (!els.settingsModal) return;
+          populateSettingsUi();
           if (els.resetHint) els.resetHint.textContent = '';
           if (els.resetToDefaultBtn) els.resetToDefaultBtn.textContent = '重置到默认';
           els.settingsModal.classList.add('open');
@@ -2149,7 +2322,9 @@
           els.resetToDefaultBtn.textContent = '重置到默认';
           if (els.resetHint) els.resetHint.textContent = '';
 
+          var keepUi = appData && appData.ui ? normalizeUi(appData.ui) : defaultUi();
           appData = defaultAppData();
+          appData.ui = keepUi;
           currentChapterId = null;
           if (els.chapterTitle) els.chapterTitle.innerText = '请选择章节';
           if (els.questionsContainer) els.questionsContainer.innerHTML = '';
@@ -2164,6 +2339,102 @@
           renderSidebar();
           showToast('已重置到默认（可在“存档”找回旧版本）', { timeoutMs: 4200 });
           if (els.settingsModal) els.settingsModal.classList.remove('open');
+        };
+      }
+
+      // UI 配色设置
+      var highlightOptions = [
+        { hex: '#FFE08A', name: '柠檬黄' },
+        { hex: '#F7B4C9', name: '樱花粉' },
+        { hex: '#FFD0A6', name: '蜜桃橘' },
+        { hex: '#BFEBDD', name: '薄荷绿' },
+        { hex: '#BFD9FF', name: '雾霾蓝' },
+        { hex: '#D8C7FF', name: '淡紫' },
+        { hex: '#F2E6D8', name: '奶油米' },
+        { hex: '#BFEAF2', name: '浅青' }
+      ];
+
+      function populateSettingsUi() {
+        if (!appData.ui) appData.ui = defaultUi();
+        appData.ui = normalizeUi(appData.ui);
+
+        if (els.uiAnalysisColor) els.uiAnalysisColor.value = normalizeHex(appData.ui.analysisColor) || UI_DEFAULTS.analysisColor;
+        if (els.uiKnowledgeColor) els.uiKnowledgeColor.value = normalizeHex(appData.ui.knowledgeColor) || UI_DEFAULTS.knowledgeColor;
+        if (els.uiEmphasisColor) els.uiEmphasisColor.value = normalizeHex(appData.ui.emphasisColor) || UI_DEFAULTS.emphasisColor;
+        if (els.uiHighlightIntensity) els.uiHighlightIntensity.value = String(appData.ui.highlightIntensity);
+        if (els.uiHighlightMode) els.uiHighlightMode.value = appData.ui.highlightMode;
+
+        if (els.uiHighlightPalette) {
+          els.uiHighlightPalette.innerHTML = '';
+          var selected = {};
+          for (var i = 0; i < appData.ui.highlightPalette.length; i++) selected[String(appData.ui.highlightPalette[i]).toUpperCase()] = true;
+
+          for (var j = 0; j < highlightOptions.length; j++) {
+            (function (opt) {
+              var item = document.createElement('label');
+              item.className = 'swatch-item';
+              item.title = opt.name + ' ' + opt.hex;
+
+              var sw = document.createElement('span');
+              sw.className = 'swatch';
+              sw.style.background = opt.hex;
+
+              var ck = document.createElement('input');
+              ck.type = 'checkbox';
+              ck.checked = !!selected[opt.hex.toUpperCase()];
+              ck.onchange = function () {
+                var ui = normalizeUi(appData.ui);
+                var map = {};
+                for (var k = 0; k < ui.highlightPalette.length; k++) map[String(ui.highlightPalette[k]).toUpperCase()] = true;
+                if (ck.checked) map[opt.hex.toUpperCase()] = true;
+                else delete map[opt.hex.toUpperCase()];
+                var next = [];
+                for (var m = 0; m < highlightOptions.length; m++) {
+                  var h = highlightOptions[m].hex.toUpperCase();
+                  if (map[h]) next.push(h);
+                }
+                if (!next.length) next = UI_DEFAULTS.highlightPalette.slice();
+                ui.highlightPalette = next;
+                appData.ui = ui;
+                applyUiToDocument();
+                saveData();
+              };
+
+              item.appendChild(sw);
+              item.appendChild(ck);
+              els.uiHighlightPalette.appendChild(item);
+            })(highlightOptions[j]);
+          }
+        }
+
+        applyUiToDocument();
+      }
+
+      function onUiChange() {
+        if (!appData.ui) appData.ui = defaultUi();
+        var ui = normalizeUi(appData.ui);
+        if (els.uiAnalysisColor) ui.analysisColor = normalizeHex(els.uiAnalysisColor.value) || ui.analysisColor;
+        if (els.uiKnowledgeColor) ui.knowledgeColor = normalizeHex(els.uiKnowledgeColor.value) || ui.knowledgeColor;
+        if (els.uiEmphasisColor) ui.emphasisColor = normalizeHex(els.uiEmphasisColor.value) || ui.emphasisColor;
+        if (els.uiHighlightIntensity) ui.highlightIntensity = Number(els.uiHighlightIntensity.value);
+        if (els.uiHighlightMode) ui.highlightMode = els.uiHighlightMode.value === 'random' ? 'random' : 'stable';
+        appData.ui = normalizeUi(ui);
+        applyUiToDocument();
+        saveData();
+      }
+
+      if (els.uiAnalysisColor) els.uiAnalysisColor.oninput = onUiChange;
+      if (els.uiKnowledgeColor) els.uiKnowledgeColor.oninput = onUiChange;
+      if (els.uiEmphasisColor) els.uiEmphasisColor.oninput = onUiChange;
+      if (els.uiHighlightIntensity) els.uiHighlightIntensity.onchange = onUiChange;
+      if (els.uiHighlightMode) els.uiHighlightMode.onchange = onUiChange;
+
+      if (els.resetUiBtn) {
+        els.resetUiBtn.onclick = function () {
+          appData.ui = defaultUi();
+          populateSettingsUi();
+          saveData();
+          showToast('已恢复默认配色', { timeoutMs: 2200 });
         };
       }
 
@@ -2429,6 +2700,9 @@
 
       loadStaticPresets().then(function () {
         loadLocalData();
+        if (!appData.ui) appData.ui = defaultUi();
+        appData.ui = normalizeUi(appData.ui);
+        applyUiToDocument();
         try {
           if (staticData.length && typeof window.addChaptersToFolder === 'function' && typeof window.getStaticChapterIds === 'function') {
             window.addChaptersToFolder('预设题库', window.getStaticChapterIds());
@@ -2439,6 +2713,9 @@
         installGuardsOnce();
         updateSyncStatus();
         tryBootstrapFromCloud().then(function () {
+          if (!appData.ui) appData.ui = defaultUi();
+          appData.ui = normalizeUi(appData.ui);
+          applyUiToDocument();
           renderSidebar();
         });
 

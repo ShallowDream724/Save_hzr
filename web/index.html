@@ -36,15 +36,9 @@
                     <i class="fa-solid fa-folder-plus"></i>
                 </button>
 
-                <!-- 导入文件 -->
-                <label for="fileInput" class="action-btn icon-btn" title="导入JSON文件">
+                <!-- 导入（文件/粘贴合并） -->
+                <button id="importBtn" class="action-btn icon-btn" title="导入（文件/粘贴）">
                     <i class="fa-solid fa-file-import"></i>
-                </label>
-                <input type="file" id="fileInput" accept=".json" style="display: none;">
-                
-                <!-- 粘贴文本 -->
-                <button id="openPasteModalBtn" class="action-btn icon-btn" title="粘贴文本导入">
-                    <i class="fa-regular fa-clipboard"></i>
                 </button>
 
                 <!-- 同步/账号 -->
@@ -52,9 +46,9 @@
                     <i class="fa-solid fa-cloud"></i>
                 </button>
 
-                <!-- 清空 -->
-                <button id="clearDataBtn" class="action-btn icon-btn danger" title="清除所有本地数据">
-                    <i class="fa-solid fa-trash-can"></i>
+                <!-- 设置 -->
+                <button id="settingsBtn" class="action-btn icon-btn" title="设置">
+                    <i class="fa-solid fa-gear"></i>
                 </button>
             </div>
         </aside>
@@ -88,14 +82,31 @@
 
     <div class="toast-host" id="toastHost" aria-live="polite" aria-atomic="true"></div>
 
-    <!-- 粘贴文本弹窗 (保持不变) -->
-    <div class="modal-overlay" id="pasteModal">
+    <div class="modal-overlay" id="importModal">
         <div class="modal-box">
-            <h3>粘贴 JSON 数据</h3>
-            <textarea id="pasteTextarea" placeholder='{"title": "...", "questions": [...]}'></textarea>
-            <div class="modal-actions">
-                <button id="cancelPasteBtn" class="modal-btn">取消</button>
-                <button id="confirmPasteBtn" class="modal-btn primary">确认导入</button>
+            <h3>导入题库</h3>
+            <div class="seg-tabs" style="margin:12px 0 8px;">
+                <button id="importTabFile" class="seg-tab active" type="button">文件</button>
+                <button id="importTabPaste" class="seg-tab" type="button">粘贴</button>
+            </div>
+
+            <div id="importPaneFile">
+                <div style="display:flex; gap:10px; align-items:center; margin:10px 0;">
+                    <input type="file" id="importFileInput" accept=".json">
+                </div>
+                <div style="color:#667085; font-size:0.92rem;">支持 JSON：单章节/多章节/文件夹树/完整结构。</div>
+            </div>
+
+            <div id="importPanePaste" style="display:none;">
+                <textarea id="importTextarea" placeholder='{"title": "...", "questions": [...]}'></textarea>
+                <div class="modal-actions">
+                    <button id="cancelImportBtn" class="modal-btn">取消</button>
+                    <button id="confirmImportBtn" class="modal-btn primary">导入</button>
+                </div>
+            </div>
+
+            <div class="modal-actions" style="margin-top:14px;">
+                <button id="closeImportBtn" class="modal-btn">关闭</button>
             </div>
         </div>
     </div>
@@ -170,8 +181,68 @@
     <div class="modal-overlay" id="settingsModal">
         <div class="modal-box">
             <h3>设置</h3>
-            <div style="display:grid; gap:10px; margin-top:10px;">
-                <button id="exportLocalBtn" class="modal-btn" type="button">导出本地备份（JSON）</button>
+
+            <div class="settings-section" style="margin-top:10px;">
+                <div class="settings-title">外观（可自定义）</div>
+
+                <div class="settings-row">
+                    <div class="settings-label">解析色</div>
+                    <div class="settings-control">
+                        <input id="uiAnalysisColor" type="color">
+                    </div>
+                </div>
+
+                <div class="settings-row">
+                    <div class="settings-label">知识点色</div>
+                    <div class="settings-control">
+                        <input id="uiKnowledgeColor" type="color">
+                    </div>
+                </div>
+
+                <div class="settings-row">
+                    <div class="settings-label">强调（加粗）色</div>
+                    <div class="settings-control">
+                        <input id="uiEmphasisColor" type="color">
+                    </div>
+                </div>
+
+                <div class="settings-row" style="align-items:flex-start;">
+                    <div class="settings-label">高亮色盘（多选）</div>
+                    <div class="settings-control">
+                        <div id="uiHighlightPalette" class="swatch-grid"></div>
+                        <div class="settings-inline">
+                            <label>强度
+                                <select id="uiHighlightIntensity">
+                                    <option value="0.38">淡</option>
+                                    <option value="0.55" selected>中</option>
+                                    <option value="0.72">深</option>
+                                </select>
+                            </label>
+                            <label>随机
+                                <select id="uiHighlightMode">
+                                    <option value="stable" selected>同题稳定</option>
+                                    <option value="random">每次随机</option>
+                                </select>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-inline" style="margin-top:10px;">
+                    <button id="resetUiBtn" class="modal-btn" type="button">恢复默认配色</button>
+                    <button id="exportLocalBtn" class="modal-btn" type="button">导出本地备份（JSON）</button>
+                </div>
+
+                <div class="settings-preview">
+                    <div class="analysis-box">
+                        <div class="analysis-title"><i class="fa-solid fa-lightbulb"></i> 解析</div>
+                        <div class="analysis-content">示例：<span class="highlight">高亮</span> 与 <span class="bold-em">强调</span>。</div>
+                    </div>
+                    <details class="knowledge-details" open>
+                        <summary class="knowledge-summary"><i class="fa-solid fa-book-medical"></i> 知识点：示例</summary>
+                        <div class="knowledge-content">示例：<span class="highlight">随机高亮</span>、<span class="bold-em">关键词</span>。</div>
+                    </details>
+                </div>
             </div>
 
             <div class="danger-zone" style="margin-top:14px;">
