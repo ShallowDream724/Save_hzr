@@ -385,11 +385,11 @@
       els.sidebar = document.getElementById('sidebar');
       els.sidebarOverlay = document.getElementById('sidebarOverlay');
       els.sidebarCollapseBtn = document.getElementById('sidebarCollapseBtn');
+      els.sidebarHomeTopBtn = document.getElementById('sidebarHomeTopBtn');
       els.fabMenu = document.getElementById('fabMenu');
       els.toastHost = document.getElementById('toastHost');
 
       els.addFolderBtn = document.getElementById('addFolderBtn');
-      els.sidebarHomeBtn = document.getElementById('sidebarHomeBtn');
       els.importBtn = document.getElementById('importBtn');
       els.settingsBtn = document.getElementById('settingsBtn');
       els.syncBtn = document.getElementById('syncBtn');
@@ -3123,8 +3123,8 @@
           if (els.sidebar && isCompactLayout()) els.sidebar.classList.remove('active');
         };
       }
-      if (els.sidebarHomeBtn) {
-        els.sidebarHomeBtn.onclick = function () {
+      if (els.sidebarHomeTopBtn) {
+        els.sidebarHomeTopBtn.onclick = function () {
           showHomeView();
           if (els.sidebar && isCompactLayout()) els.sidebar.classList.remove('active');
         };

@@ -180,17 +180,15 @@ body.home-transitioning .home-hud { opacity: 0; pointer-events: none; transition
 
 .home-hud {
     position: fixed;
-    left: 50%;
+    left: 18px;
     top: 16px;
-    z-index: 2600;
+    z-index: 5000;
     display: flex;
     flex-direction: column;
     gap: 10px;
-    max-width: min(94vw, 640px);
-    align-items: center;
-    text-align: center;
-    transform: translateX(-50%) translateZ(260px);
-    transform-style: preserve-3d;
+    max-width: min(94vw, 720px);
+    align-items: flex-start;
+    text-align: left;
 }
 .home-hud::before {
     content: '';
@@ -214,6 +212,7 @@ body.home-transitioning .home-hud { opacity: 0; pointer-events: none; transition
 }
 .home-hud-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 body.home-mode .home-hud-actions { justify-content: center; }
+body.home-mode #newBookBtn { flex-basis: 100%; justify-content: center; }
 
 body.home-mode .home-hud .modal-btn {
     border-radius: 999px;
@@ -229,70 +228,34 @@ body.home-mode .home-hud .modal-btn.primary {
 }
 
 .shelf {
-    --shelf-gap-x: clamp(16px, 3.8vw, 52px);
-    --shelf-gap-y: clamp(24px, 4.2vw, 56px);
-    --shelf-pad-top: 176px;
-    --shelf-step: calc(var(--book-h) + var(--shelf-gap-y));
-
     position: relative;
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(var(--book-w), 1fr));
-    grid-auto-rows: var(--book-h);
-    column-gap: var(--shelf-gap-x);
-    row-gap: var(--shelf-gap-y);
-    justify-items: center;
-    align-items: end;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: center;
+    gap: clamp(22px, 5.2vw, 80px);
 
-    transform: rotateX(14deg) translateY(42px);
+    transform: rotateX(15deg) translateY(50px);
     transform-style: preserve-3d;
-    padding: var(--shelf-pad-top) 18px 56px;
+    padding: 192px 18px 70px;
     width: min(1200px, 100%);
     margin: 0 auto;
     isolation: isolate;
 }
 
-/* Shelf planks (behind books) */
-.shelf::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    right: 0;
-    top: var(--shelf-pad-top);
-    bottom: 0;
-    z-index: 0;
-    pointer-events: none;
-    /* Plank lives in the *row gap* (below each row of books). */
-    background:
-      repeating-linear-gradient(
-        to bottom,
-        transparent 0,
-        transparent calc(var(--book-h) + 6px),
-        rgba(255,255,255,0.78) calc(var(--book-h) + 6px),
-        rgba(255,255,255,0.78) calc(var(--book-h) + 12px),
-        rgba(15,23,42,0.08) calc(var(--book-h) + 12px),
-        rgba(15,23,42,0.08) calc(var(--book-h) + 16px),
-        transparent calc(var(--book-h) + 16px),
-        transparent var(--shelf-step)
-      ),
-      repeating-linear-gradient(
-        to bottom,
-        transparent 0,
-        transparent calc(var(--book-h) + 2px),
-        rgba(148,163,184,0.22) calc(var(--book-h) + 2px),
-        transparent calc(var(--book-h) + 3px),
-        transparent var(--shelf-step)
-      );
-    opacity: 0.95;
-}
-
 .shelf::after {
     content: '';
     position: absolute;
-    inset: 0;
+    left: -10%;
+    right: -10%;
+    top: 0;
+    bottom: 0;
     z-index: 0;
     pointer-events: none;
-    background: radial-gradient(80% 60% at 50% 20%, rgba(255,255,255,0.50), transparent 60%);
-    opacity: 0.7;
+    background:
+      radial-gradient(72% 52% at 50% 22%, rgba(255,255,255,0.55), transparent 62%),
+      radial-gradient(120% 60% at 50% 100%, rgba(15,23,42,0.10), transparent 70%);
+    opacity: 0.85;
 }
 
 /* === 3D Book === */
@@ -361,11 +324,10 @@ body.home-mode .home-hud .modal-btn.primary {
     }
     .shelf {
         gap: 16px;
-        transform: rotateX(10deg) translateY(26px);
-        --shelf-pad-top: 184px;
-        padding: var(--shelf-pad-top) 14px 44px;
+        transform: rotateX(15deg) translateY(46px);
+        padding: 196px 14px 44px;
     }
-    .home-hud { top: 12px; }
+    .home-hud { left: 12px; top: 12px; }
 }
 
 .text-block {
@@ -634,6 +596,7 @@ body.home-transitioning .shelf .book-more { opacity: 0 !important; }
 }
 .brand-left { display: flex; align-items: center; gap: 10px; overflow: hidden; }
 .brand-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.brand-actions { display: flex; gap: 10px; align-items: center; }
 .collapse-btn {
     border: 1px solid rgba(148,163,184,0.35);
     background: rgba(248,250,252,0.9);
