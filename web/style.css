@@ -154,6 +154,7 @@ body.home-mode .top-bar { display: none; }
     --anim-ease: cubic-bezier(0.4, 0, 0.2, 1);
 }
 body.home-mode .home-view { display: flex; }
+body.home-mode .fab-menu { display: inline-flex; }
 
 .home-view::after {
     content:'';
@@ -186,6 +187,7 @@ body.home-transitioning .home-hud { opacity: 0; pointer-events: none; transition
     flex-direction: column;
     gap: 10px;
 }
+.home-hud.collapsed .home-hud-actions { display: none; }
 .home-hud-title {
     font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
     font-weight: 900;
@@ -213,7 +215,7 @@ body.home-mode .home-hud .modal-btn.primary {
     gap: clamp(18px, 4.6vw, 68px);
     transform: rotateX(14deg) translateY(42px);
     transform-style: preserve-3d;
-    padding: 86px 18px 56px;
+    padding: 148px 18px 56px;
     flex-wrap: wrap;
     justify-content: center;
 }
@@ -284,7 +286,7 @@ body.home-mode .home-hud .modal-btn.primary {
     .shelf {
         gap: 16px;
         transform: rotateX(10deg) translateY(26px);
-        padding: 92px 14px 44px;
+        padding: 152px 14px 44px;
     }
     .home-hud { left: 14px; top: 14px; }
 }
@@ -449,7 +451,6 @@ body.home-mode .home-hud .modal-btn.primary {
     place-items: center;
     cursor: pointer;
     z-index: 20;
-    backdrop-filter: blur(10px);
     opacity: 0;
     transition: opacity 220ms ease, transform 220ms ease, background 220ms ease;
     transform: translateZ(26px);
@@ -464,6 +465,7 @@ body.home-mode .home-hud .modal-btn.primary {
     border-radius: 999px;
     border: 1px solid rgba(255,255,255,0.28);
     background: rgba(15,23,42,0.22);
+    backdrop-filter: blur(10px);
     display: grid;
     place-items: center;
     box-shadow: 0 16px 30px rgba(15,23,42,0.18);

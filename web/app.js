@@ -379,6 +379,9 @@
       els.booksGrid = document.getElementById('booksGrid');
       els.newBookBtn = document.getElementById('newBookBtn');
       els.importBookBtn = document.getElementById('importBookBtn');
+      els.homeSyncBtn = document.getElementById('homeSyncBtn');
+      els.homeSavesBtn = document.getElementById('homeSavesBtn');
+      els.homeSettingsBtn = document.getElementById('homeSettingsBtn');
       els.sidebar = document.getElementById('sidebar');
       els.sidebarOverlay = document.getElementById('sidebarOverlay');
       els.sidebarCollapseBtn = document.getElementById('sidebarCollapseBtn');
@@ -1496,7 +1499,7 @@
           if (moreBtn) {
             moreBtn.onclick = function (ev) {
               ev.stopPropagation();
-              openBookMenu(b, moreBtn);
+              openBookMenu(b, moreBtn, ev ? { x: ev.clientX, y: ev.clientY } : null);
             };
           }
 
@@ -1575,7 +1578,7 @@
           var zone = Math.min(78, Math.max(56, Math.min(rect.width, rect.height) * 0.28));
           if (x >= rect.width - zone && y >= rect.height - zone) {
             try { containerEl.__ignoreClickUntil = Date.now() + 650; } catch (_) {}
-            openBookMenu(book, moreBtn || containerEl);
+            openBookMenu(book, moreBtn || containerEl, { x: e.clientX, y: e.clientY });
             try { e.preventDefault(); e.stopPropagation(); } catch (_) {}
           }
         }, true);
@@ -1588,7 +1591,7 @@
       bookMenuEl = null;
     }
 
-    function openBookMenu(book, anchorEl) {
+    function openBookMenu(book, anchorEl, atPoint) {
       closeBookMenu();
       if (!book || !anchorEl) return;
 
@@ -1602,9 +1605,18 @@
       bookMenuEl = menu;
 
       var rect = anchorEl.getBoundingClientRect();
-      var left = Math.min(window.innerWidth - menu.offsetWidth - 12, Math.max(12, rect.right - menu.offsetWidth));
-      var preferDown = rect.bottom + 8 + menu.offsetHeight <= window.innerHeight - 12;
-      var top = preferDown ? (rect.bottom + 8) : (rect.top - menu.offsetHeight - 8);
+      var ax = rect.right;
+      var ayTop = rect.top;
+      var ayBottom = rect.bottom;
+      if (atPoint && typeof atPoint.x === 'number' && typeof atPoint.y === 'number') {
+        ax = atPoint.x;
+        ayTop = atPoint.y;
+        ayBottom = atPoint.y;
+      }
+
+      var left = Math.min(window.innerWidth - menu.offsetWidth - 12, Math.max(12, ax - menu.offsetWidth));
+      var preferDown = ayBottom + 8 + menu.offsetHeight <= window.innerHeight - 12;
+      var top = preferDown ? (ayBottom + 8) : (ayTop - menu.offsetHeight - 8);
       top = Math.min(window.innerHeight - menu.offsetHeight - 12, Math.max(12, top));
       menu.style.left = left + 'px';
       menu.style.top = top + 'px';
@@ -3053,6 +3065,28 @@
           if (els.sidebar && isCompactLayout()) els.sidebar.classList.remove('active');
         };
       }
+
+      // Home HUD shortcuts (sync / saves / settings)
+      if (els.homeSyncBtn) {
+        els.homeSyncBtn.onclick = function () {
+          if (els.authModal) els.authModal.classList.add('open');
+          // default to account tab
+          try { if (els.syncTabAccount && els.syncTabAccount.click) els.syncTabAccount.click(); } catch (_) {}
+        };
+      }
+      if (els.homeSavesBtn) {
+        els.homeSavesBtn.onclick = function () {
+          if (els.authModal) els.authModal.classList.add('open');
+          try { if (els.syncTabSaves && els.syncTabSaves.click) els.syncTabSaves.click(); } catch (_) {}
+        };
+      }
+      if (els.homeSettingsBtn) {
+        els.homeSettingsBtn.onclick = function () {
+          if (!els.settingsModal) return;
+          populateSettingsUi();
+          els.settingsModal.classList.add('open');
+        };
+      }
       if (els.sidebarOverlay && els.sidebar) {
         els.sidebarOverlay.onclick = function () {
           if (isCompactLayout()) els.sidebar.classList.remove('active');
@@ -3121,7 +3155,17 @@
           if (!fabDrag.active || fabDrag.pid !== e.pointerId) return;
           fabDrag.active = false;
           try { els.fabMenu.releasePointerCapture(e.pointerId); } catch (_) {}
-          if (!fabDrag.moved) toggleSidebar();
+          if (!fabDrag.moved) {
+            // Home page: use the same draggable hamburger as a HUD toggle
+            if (homeVisible) {
+              try {
+                var hud = document.querySelector('.home-hud');
+                if (hud && hud.classList) hud.classList.toggle('collapsed');
+              } catch (_) {}
+              return;
+            }
+            toggleSidebar();
+          }
         }
         addEvt(els.fabMenu, 'pointerup', endFab, { passive: true });
         addEvt(els.fabMenu, 'pointercancel', endFab, { passive: true });
