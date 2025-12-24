@@ -58,10 +58,22 @@
         <main class="main-content">
             <header class="top-bar">
                 <button id="menuToggle" class="menu-toggle"><i class="fa-solid fa-bars"></i></button>
+                <button id="homeBtn" class="menu-toggle" title="主页"><i class="fa-solid fa-book"></i></button>
                 <h2 id="currentChapterTitle">请选择章节</h2>
                 <div id="syncStatus" style="margin-left:auto; font-size:0.9rem; color:#888;"></div>
             </header>
             
+            <div id="homeView" class="home-view" style="display:none;">
+                <div class="home-hud">
+                    <div class="home-hud-title">我的题库</div>
+                    <div class="home-hud-actions">
+                        <button id="importBookBtn" class="modal-btn" type="button"><i class="fa-solid fa-file-import" style="margin-right:8px;"></i>导入书</button>
+                        <button id="newBookBtn" class="modal-btn primary" type="button"><i class="fa-solid fa-plus" style="margin-right:8px;"></i>新建书</button>
+                    </div>
+                </div>
+                <div id="booksGrid" class="shelf" aria-label="书架"></div>
+            </div>
+
             <div class="questions-container" id="questionsContainer">
                 <div class="welcome-message">
                     <h3>欢迎复习</h3>
@@ -120,6 +132,30 @@
             <div class="modal-actions" style="margin-top:14px;">
                 <button id="folderCancelBtn" class="modal-btn">取消</button>
                 <button id="folderCreateBtn" class="modal-btn primary">创建</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="bookModal">
+        <div class="modal-box">
+            <h3>新建书</h3>
+            <div style="display:grid; gap:10px; margin-top:12px;">
+                <input id="bookNameInput" class="auth-input" placeholder="书名（例如：药理学）">
+                <div style="color:#667085; font-size:0.92rem;">新建后进入空白书，可用“导入”导入 JSON 构建题库。</div>
+
+                <div style="margin-top:6px;">
+                    <div style="font-weight:700; color:#334155; margin-bottom:8px;">颜色</div>
+                    <div id="bookThemeChoices" class="choice-grid" aria-label="书本颜色"></div>
+                </div>
+
+                <div style="margin-top:2px;">
+                    <div style="font-weight:700; color:#334155; margin-bottom:8px;">图标</div>
+                    <div id="bookIconChoices" class="choice-grid choice-grid--icons" aria-label="书本图标"></div>
+                </div>
+            </div>
+            <div class="modal-actions" style="margin-top:14px;">
+                <button id="bookCancelBtn" class="modal-btn">取消</button>
+                <button id="bookCreateBtn" class="modal-btn primary">创建</button>
             </div>
         </div>
     </div>

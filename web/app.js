@@ -137,31 +137,136 @@
         .catch(function () { return null; });
     }
 
-    function defaultAppData() {
-      if (defaultSeed && typeof defaultSeed === 'object') {
-        try {
-          // deep clone so mutations don't alter the seed
-          var seed = JSON.parse(JSON.stringify(defaultSeed));
-          if (!Array.isArray(seed.chapters)) seed.chapters = [];
-          if (!Array.isArray(seed.folders)) seed.folders = [];
-          if (!seed.layoutMap || typeof seed.layoutMap !== 'object' || Array.isArray(seed.layoutMap)) seed.layoutMap = {};
-          if (!Array.isArray(seed.deletedChapterIds)) seed.deletedChapterIds = [];
-          seed.ui = normalizeUi(seed.ui);
-          return seed;
-        } catch (e) {}
-      }
+    function normalizeBook(book) {
+      if (!book || typeof book !== 'object') book = {};
+      var theme = (typeof book.theme === 'string' && book.theme) ? book.theme : 'blue';
+      if (!isValidBookTheme(theme)) theme = 'blue';
+
+      var icon = (typeof book.icon === 'string' && book.icon) ? book.icon : '✚';
+      if (!isValidBookIcon(icon)) icon = '✚';
       return {
-        chapters: [],            // local sheets
-        folders: [],             // folders
-        layoutMap: {},           // { chapterId: folderId }
-        deletedChapterIds: [],   // deleted ids (static/local)
-        ui: defaultUi()
+        id: (typeof book.id === 'string' && book.id) ? book.id : uid('b'),
+        title: (typeof book.title === 'string' && book.title.trim()) ? book.title.trim() : '未命名书',
+        theme: theme,
+        icon: icon,
+        includePresets: !!book.includePresets,
+        chapters: Array.isArray(book.chapters) ? book.chapters : [],
+        folders: Array.isArray(book.folders) ? book.folders : [],
+        layoutMap: (book.layoutMap && typeof book.layoutMap === 'object' && !Array.isArray(book.layoutMap)) ? book.layoutMap : {},
+        deletedChapterIds: Array.isArray(book.deletedChapterIds) ? book.deletedChapterIds : [],
+        createdAt: (typeof book.createdAt === 'string' && book.createdAt) ? book.createdAt : new Date().toISOString(),
+        updatedAt: (typeof book.updatedAt === 'string' && book.updatedAt) ? book.updatedAt : new Date().toISOString()
+      };
+    }
+
+    var BOOK_THEMES = [
+      { id: 'blue', name: '深蓝' },
+      { id: 'red', name: '酒红' },
+      { id: 'teal', name: '青绿' },
+      { id: 'sage', name: '豆绿' },
+      { id: 'plum', name: '紫罗兰' },
+      { id: 'slate', name: '墨灰' }
+    ];
+
+    var BOOK_ICONS = [
+      '✚', '⚕️', '🩺', '💊', '🧬', '🔬', '🧫', '🧪', '🩻', '🩹', '🩸', '🫀', '🧠', '🫁', '🦴', '🏥', '📚', '✂'
+    ];
+
+    function isValidBookTheme(id) {
+      for (var i = 0; i < BOOK_THEMES.length; i++) if (BOOK_THEMES[i].id === id) return true;
+      return false;
+    }
+
+    function isValidBookIcon(icon) {
+      if (typeof icon !== 'string') return false;
+      for (var i = 0; i < BOOK_ICONS.length; i++) if (BOOK_ICONS[i] === icon) return true;
+      return false;
+    }
+
+    function bookThemeClass(book) {
+      var id = book && typeof book.theme === 'string' ? book.theme : 'blue';
+      if (!isValidBookTheme(id)) id = 'blue';
+      return 'theme-' + id;
+    }
+
+    function makeBookFromLibrary(lib, title, includePresets) {
+      lib = (lib && typeof lib === 'object') ? lib : {};
+      var b = {
+        id: uid('b'),
+        title: title || '未命名书',
+        includePresets: !!includePresets,
+        chapters: Array.isArray(lib.chapters) ? lib.chapters : [],
+        folders: Array.isArray(lib.folders) ? lib.folders : [],
+        layoutMap: (lib.layoutMap && typeof lib.layoutMap === 'object' && !Array.isArray(lib.layoutMap)) ? lib.layoutMap : {},
+        deletedChapterIds: Array.isArray(lib.deletedChapterIds) ? lib.deletedChapterIds : [],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+      return normalizeBook(b);
+    }
+
+    function hasStaticRefs(layoutMap) {
+      try {
+        if (!layoutMap || typeof layoutMap !== 'object') return false;
+        for (var k in layoutMap) {
+          if (!Object.prototype.hasOwnProperty.call(layoutMap, k)) continue;
+          if (String(k).indexOf('static_') === 0) return true;
+        }
+      } catch (e) {}
+      return false;
+    }
+
+    function normalizeAppData(obj, keepUi) {
+      obj = (obj && typeof obj === 'object') ? obj : {};
+      var ui = (keepUi && typeof keepUi === 'object') ? normalizeUi(keepUi) : normalizeUi(obj.ui);
+
+      if (Array.isArray(obj.books)) {
+        var books = obj.books.map(normalizeBook);
+        var currentBookId = (typeof obj.currentBookId === 'string' && obj.currentBookId) ? obj.currentBookId : (books[0] ? books[0].id : null);
+        var out = { ui: ui, books: books, currentBookId: currentBookId };
+        // ensure currentBookId exists
+        appData = out;
+        getActiveBook();
+        return appData;
+      }
+
+      // Legacy (single library) -> one book
+      var legacy = {
+        chapters: Array.isArray(obj.chapters) ? obj.chapters : [],
+        folders: Array.isArray(obj.folders) ? obj.folders : [],
+        layoutMap: isObject(obj.layoutMap) ? obj.layoutMap : {},
+        deletedChapterIds: Array.isArray(obj.deletedChapterIds)
+          ? obj.deletedChapterIds
+          : (Array.isArray(obj.deleted) ? obj.deleted : [])
+      };
+      var includePresets = hasStaticRefs(legacy.layoutMap);
+      var book = makeBookFromLibrary(legacy, '药理学', includePresets);
+      appData = { ui: ui, books: [book], currentBookId: book.id };
+      return appData;
+    }
+
+    function defaultAppData() {
+      var ui = defaultUi();
+
+      // Default book seed (药理学) comes from packaged default.json (wrapper).
+      var seedBook = null;
+      if (defaultSeed && typeof defaultSeed === 'object') {
+        seedBook = makeBookFromLibrary(defaultSeed, '药理学', true);
+      } else {
+        seedBook = makeBookFromLibrary({ chapters: [], folders: [], layoutMap: {}, deletedChapterIds: [] }, '药理学', true);
+      }
+
+      return {
+        ui: ui,
+        books: [seedBook],
+        currentBookId: seedBook.id
       };
     }
   
     var staticData = []; // preset chapters (read-only)
     var appData = defaultAppData();
     var currentChapterId = null;
+    var homeVisible = false;
 
     var dataLoaded = false;
     var presetsLoaded = false;
@@ -181,6 +286,39 @@
         isStatic: true
       });
       return id;
+    }
+
+    function getBooks() {
+      if (!appData || typeof appData !== 'object') return [];
+      if (!Array.isArray(appData.books)) appData.books = [];
+      return appData.books;
+    }
+
+    function getActiveBook() {
+      var books = getBooks();
+      if (!books.length) {
+        var seed = makeBookFromLibrary(defaultSeed || {}, '药理学', true);
+        books.push(seed);
+        appData.currentBookId = seed.id;
+        return seed;
+      }
+      var id = appData.currentBookId;
+      for (var i = 0; i < books.length; i++) if (books[i] && books[i].id === id) return books[i];
+      // fallback: first
+      appData.currentBookId = books[0].id;
+      return books[0];
+    }
+
+    function setActiveBook(bookId) {
+      var books = getBooks();
+      for (var i = 0; i < books.length; i++) {
+        if (books[i] && books[i].id === bookId) {
+          appData.currentBookId = bookId;
+          currentChapterId = null;
+          return true;
+        }
+      }
+      return false;
     }
 
     function loadStaticPresets() {
@@ -236,6 +374,11 @@
       els.questionsContainer = document.getElementById('questionsContainer');
       els.chapterTitle = document.getElementById('currentChapterTitle');
       els.menuToggle = document.getElementById('menuToggle');
+      els.homeBtn = document.getElementById('homeBtn');
+      els.homeView = document.getElementById('homeView');
+      els.booksGrid = document.getElementById('booksGrid');
+      els.newBookBtn = document.getElementById('newBookBtn');
+      els.importBookBtn = document.getElementById('importBookBtn');
       els.sidebar = document.getElementById('sidebar');
       els.sidebarOverlay = document.getElementById('sidebarOverlay');
       els.sidebarCollapseBtn = document.getElementById('sidebarCollapseBtn');
@@ -263,6 +406,14 @@
       els.folderNameInput = document.getElementById('folderNameInput');
       els.folderCancelBtn = document.getElementById('folderCancelBtn');
       els.folderCreateBtn = document.getElementById('folderCreateBtn');
+
+      // book modal
+      els.bookModal = document.getElementById('bookModal');
+      els.bookNameInput = document.getElementById('bookNameInput');
+      els.bookThemeChoices = document.getElementById('bookThemeChoices');
+      els.bookIconChoices = document.getElementById('bookIconChoices');
+      els.bookCancelBtn = document.getElementById('bookCancelBtn');
+      els.bookCreateBtn = document.getElementById('bookCreateBtn');
 
       // auth modal (optional)
       els.authModal = document.getElementById('authModal');
@@ -566,6 +717,20 @@
       return escapeHtml(s).replace(/"/g, '&quot;');
     }
 
+    function bookCoverColors(id) {
+      var palette = [
+        ['#BFD9FF', '#D8C7FF'], // blue -> lilac
+        ['#BFEBDD', '#BFD9FF'], // mint -> blue
+        ['#F7B4C9', '#FFD0A6'], // pink -> peach
+        ['#FFE08A', '#FFD0A6'], // lemon -> peach
+        ['#D8C7FF', '#F7B4C9'], // lilac -> pink
+        ['#BFEAF2', '#BFEBDD'], // cyan -> mint
+        ['#F2E6D8', '#BFD9FF']  // cream -> blue
+      ];
+      var h = hashStr(String(id || ''));
+      return palette[h % palette.length];
+    }
+
     function downloadJson(filename, obj) {
       try {
         var blob = new Blob([JSON.stringify(obj, null, 2)], { type: 'application/json;charset=utf-8' });
@@ -646,12 +811,40 @@
     }
 
     function summarizeLibrary(data) {
-      if (!data || typeof data !== 'object') return { folders: 0, chapters: 0, deleted: 0 };
+      if (!data || typeof data !== 'object') return { books: 0, folders: 0, chapters: 0, deleted: 0 };
+      // New app format
+      if (Array.isArray(data.books)) {
+        var books = data.books;
+        var totalFolders = 0;
+        var totalChapters = 0;
+        var totalDeleted = 0;
+        for (var i = 0; i < books.length; i++) {
+          var b = books[i] || {};
+          totalFolders += Array.isArray(b.folders) ? b.folders.length : 0;
+          totalChapters += Array.isArray(b.chapters) ? b.chapters.length : 0;
+          totalDeleted += Array.isArray(b.deletedChapterIds) ? b.deletedChapterIds.length : 0;
+        }
+        return { books: books.length, folders: totalFolders, chapters: totalChapters, deleted: totalDeleted };
+      }
+      // Legacy
       return {
+        books: 1,
         folders: Array.isArray(data.folders) ? data.folders.length : 0,
         chapters: Array.isArray(data.chapters) ? data.chapters.length : 0,
         deleted: Array.isArray(data.deletedChapterIds) ? data.deletedChapterIds.length : 0
       };
+    }
+
+    function appHasAnyContent(data) {
+      if (!data || typeof data !== 'object') return false;
+      if (Array.isArray(data.books)) {
+        for (var i = 0; i < data.books.length; i++) {
+          var b = data.books[i] || {};
+          if ((Array.isArray(b.chapters) && b.chapters.length) || (Array.isArray(b.folders) && b.folders.length)) return true;
+        }
+        return false;
+      }
+      return (Array.isArray(data.chapters) && data.chapters.length) || (Array.isArray(data.folders) && data.folders.length);
     }
 
     function hash32(str) {
@@ -669,16 +862,37 @@
     }
 
     function librarySignature(data) {
-      // 用于“是否需要备份”判断：忽略纯 UI 状态（folder.isOpen）
+      // 用于“是否需要备份”判断：忽略纯 UI 状态（folder.isOpen）+ 忽略全局 UI 配色
       try {
         if (!data || typeof data !== 'object') return '';
+        // New app format
+        if (Array.isArray(data.books)) {
+          var sigApp = {
+            books: data.books.map(function (b) {
+              b = b || {};
+              var deleted = Array.isArray(b.deletedChapterIds) ? b.deletedChapterIds.slice() : [];
+              deleted.sort();
+              return {
+                id: b.id,
+                title: b.title,
+                includePresets: !!b.includePresets,
+                folders: Array.isArray(b.folders) ? b.folders.map(function (f) { return { id: f && f.id, title: f && f.title }; }) : [],
+                chapters: Array.isArray(b.chapters) ? b.chapters : [],
+                layoutMap: (b.layoutMap && typeof b.layoutMap === 'object') ? b.layoutMap : {},
+                deletedChapterIds: deleted
+              };
+            }),
+            currentBookId: data.currentBookId || null
+          };
+          return JSON.stringify(sigApp);
+        }
+        // Legacy
         var sig = {
           folders: Array.isArray(data.folders) ? data.folders.map(function (f) { return { id: f && f.id, title: f && f.title }; }) : [],
           chapters: Array.isArray(data.chapters) ? data.chapters : [],
           layoutMap: data.layoutMap && typeof data.layoutMap === 'object' ? data.layoutMap : {},
           deletedChapterIds: Array.isArray(data.deletedChapterIds) ? data.deletedChapterIds.slice() : []
         };
-        // deleted 顺序不重要，排序避免误报
         sig.deletedChapterIds.sort();
         return JSON.stringify(sig);
       } catch (e) {
@@ -699,14 +913,33 @@
           return;
         }
         var parsed = JSON.parse(raw);
-        appData = {
+        // New format: { ui, books, currentBookId }
+        if (parsed && typeof parsed === 'object' && Array.isArray(parsed.books)) {
+          appData = {
+            ui: normalizeUi(parsed.ui),
+            books: parsed.books.map(normalizeBook),
+            currentBookId: (typeof parsed.currentBookId === 'string' && parsed.currentBookId) ? parsed.currentBookId : null
+          };
+          // Ensure active book exists.
+          getActiveBook();
+          return;
+        }
+
+        // Legacy format (single library) -> migrate into a default book.
+        var legacyLib = {
           chapters: Array.isArray(parsed.chapters) ? parsed.chapters : [],
           folders: Array.isArray(parsed.folders) ? parsed.folders : [],
           layoutMap: isObject(parsed.layoutMap) ? parsed.layoutMap : {},
           deletedChapterIds: Array.isArray(parsed.deletedChapterIds)
             ? parsed.deletedChapterIds
-            : (Array.isArray(parsed.deleted) ? parsed.deleted : []),
-          ui: normalizeUi(parsed.ui)
+            : (Array.isArray(parsed.deleted) ? parsed.deleted : [])
+        };
+        var includePresets = hasStaticRefs(legacyLib.layoutMap);
+        var migrated = makeBookFromLibrary(legacyLib, '药理学', includePresets);
+        appData = {
+          ui: normalizeUi(parsed.ui),
+          books: [migrated],
+          currentBookId: migrated.id
         };
       } catch (e) {
         console.error('Data load error', e);
@@ -951,8 +1184,8 @@
         cloud.version = (j && typeof j.version === 'number') ? j.version : 0;
         var remote = j && j.data ? j.data : null;
 
-        var localHas = (appData && ((appData.chapters && appData.chapters.length) || (appData.folders && appData.folders.length)));
-        var remoteHas = remote && ((remote.chapters && remote.chapters.length) || (remote.folders && remote.folders.length));
+        var localHas = appHasAnyContent(appData);
+        var remoteHas = appHasAnyContent(remote);
 
         if (!remote || !remoteHas) {
           // 云端无数据（或为空库）：绝不自动推送本机，也不自动用“空云端”覆盖本机。
@@ -995,9 +1228,7 @@
         }
 
         var keepUi = appData && appData.ui ? normalizeUi(appData.ui) : defaultUi();
-        appData = remote;
-        if (!appData.ui) appData.ui = keepUi;
-        appData.ui = normalizeUi(appData.ui);
+        normalizeAppData(remote, keepUi);
         try { localStorage.setItem(STORAGE_KEY, JSON.stringify(appData)); } catch (e) {}
         cloud.bootstrapDone = true;
         updateSyncStatus();
@@ -1032,6 +1263,7 @@
     // 将指定章节（可含 static_*）放入某个文件夹（不存在则创建）
     window.addChaptersToFolder = function (folderTitle, chapterIds) {
       ensureDataLoaded();
+      var book = getActiveBook();
       if (!folderTitle) folderTitle = '预设题库';
 
       if (!Array.isArray(chapterIds)) chapterIds = [];
@@ -1039,26 +1271,26 @@
       var changed = false;
 
       // find or create folder by title
-      if (!Array.isArray(appData.folders)) appData.folders = [];
+      if (!Array.isArray(book.folders)) book.folders = [];
       var folderId = null;
-      for (var i = 0; i < appData.folders.length; i++) {
-        if (appData.folders[i] && appData.folders[i].title === folderTitle) {
-          folderId = appData.folders[i].id;
+      for (var i = 0; i < book.folders.length; i++) {
+        if (book.folders[i] && book.folders[i].title === folderTitle) {
+          folderId = book.folders[i].id;
           break;
         }
       }
       if (!folderId) {
         folderId = uid('f');
-        appData.folders.push({ id: folderId, title: folderTitle, isOpen: true });
+        book.folders.push({ id: folderId, title: folderTitle, isOpen: true });
         changed = true;
       }
 
-      if (!isObject(appData.layoutMap)) appData.layoutMap = {};
+      if (!isObject(book.layoutMap)) book.layoutMap = {};
       for (var j = 0; j < chapterIds.length; j++) {
         var cid = chapterIds[j];
         if (typeof cid !== 'string' || !cid) continue;
-        if (!appData.layoutMap[cid]) {
-          appData.layoutMap[cid] = folderId;
+        if (!book.layoutMap[cid]) {
+          book.layoutMap[cid] = folderId;
           changed = true;
         }
       }
@@ -1072,7 +1304,8 @@
      * 6) 获取 / 查找章节
      * --------------------------- */
     function isDeleted(id) {
-      var del = appData.deletedChapterIds || [];
+      var book = getActiveBook();
+      var del = book.deletedChapterIds || [];
       for (var i = 0; i < del.length; i++) {
         if (del[i] === id) return true;
       }
@@ -1080,7 +1313,9 @@
     }
   
     function getAllChapters() {
-      var all = staticData.concat(appData.chapters || []);
+      var book = getActiveBook();
+      var locals = book.chapters || [];
+      var all = (book.includePresets ? staticData.concat(locals) : locals.slice());
       var out = [];
       for (var i = 0; i < all.length; i++) {
         if (!isDeleted(all[i].id)) out.push(all[i]);
@@ -1089,8 +1324,11 @@
     }
   
     function findChapterById(id) {
-      for (var i = 0; i < staticData.length; i++) if (staticData[i].id === id) return staticData[i];
-      var chs = appData.chapters || [];
+      var book = getActiveBook();
+      if (book.includePresets) {
+        for (var i = 0; i < staticData.length; i++) if (staticData[i].id === id) return staticData[i];
+      }
+      var chs = book.chapters || [];
       for (var j = 0; j < chs.length; j++) if (chs[j].id === id) return chs[j];
       return null;
     }
@@ -1102,17 +1340,18 @@
       if (!els.sidebarList) return;
       els.sidebarList.innerHTML = '';
   
+      var book = getActiveBook();
       var allChapters = getAllChapters();
   
       var folderContents = {};
       var rootChapters = [];
   
-      var folders = appData.folders || [];
+      var folders = book.folders || [];
       for (var i = 0; i < folders.length; i++) folderContents[folders[i].id] = [];
   
       for (var k = 0; k < allChapters.length; k++) {
         var ch = allChapters[k];
-        var fid = appData.layoutMap ? appData.layoutMap[ch.id] : null;
+        var fid = book.layoutMap ? book.layoutMap[ch.id] : null;
         if (fid && folderContents[fid]) folderContents[fid].push(ch);
         else rootChapters.push(ch);
       }
@@ -1133,6 +1372,443 @@
       for (var r = 0; r < rootChapters.length; r++) {
         els.sidebarList.appendChild(createChapterElement(rootChapters[r]));
       }
+    }
+
+    function showHomeView() {
+      homeVisible = true;
+      currentChapterId = null;
+      if (els.homeView) els.homeView.style.display = '';
+      if (els.questionsContainer) els.questionsContainer.style.display = 'none';
+      if (els.chapterTitle) els.chapterTitle.innerText = '主页';
+      try { document.body.classList.add('home-mode'); } catch (_) {}
+      try { document.body.classList.remove('home-transitioning'); } catch (_) {}
+      setWhiteOverlayVisible(false);
+      renderHome();
+      renderSidebar(); // keep sidebar in sync (shows active book’s chapters when entering a book)
+    }
+
+    function hideHomeView() {
+      homeVisible = false;
+      if (els.homeView) els.homeView.style.display = 'none';
+      if (els.questionsContainer) els.questionsContainer.style.display = '';
+      try { document.body.classList.remove('home-mode'); } catch (_) {}
+      try { document.body.classList.remove('home-transitioning'); } catch (_) {}
+      setWhiteOverlayVisible(false);
+    }
+
+    var whiteOverlayEl = null;
+    function ensureWhiteOverlay() {
+      try {
+        if (whiteOverlayEl) return whiteOverlayEl;
+        var host = els.homeView || document.body;
+        if (!host) host = document.body;
+        var el = document.getElementById('whiteOverlay');
+        if (!el) {
+          el = document.createElement('div');
+          el.id = 'whiteOverlay';
+          el.className = 'white-overlay';
+          host.appendChild(el);
+        } else if (host && el.parentElement !== host) {
+          host.appendChild(el);
+        }
+        whiteOverlayEl = el;
+        return el;
+      } catch (e) { return null; }
+    }
+
+    function setWhiteOverlayVisible(on) {
+      var el = ensureWhiteOverlay();
+      if (!el || !el.classList) return;
+      el.classList.toggle('visible', !!on);
+    }
+
+    function renderHome() {
+      if (!els.booksGrid) return;
+      var books = getBooks();
+      els.booksGrid.innerHTML = '';
+      if (!books.length) {
+        els.booksGrid.innerHTML = '<div style="color:#64748b; font-family:\'Segoe UI\', \'Microsoft YaHei\', sans-serif;">暂无书籍</div>';
+        return;
+      }
+
+      for (var i = 0; i < books.length; i++) {
+        (function (b) {
+          if (!b) return;
+          b = normalizeBook(b);
+          var el = document.createElement('div');
+          el.className = 'book-container idle ' + bookThemeClass(b);
+          el.dataset.bookId = b.id;
+
+          var counts = {
+            chapters: Array.isArray(b.chapters) ? b.chapters.length : 0,
+            folders: Array.isArray(b.folders) ? b.folders.length : 0
+          };
+
+          var introTitle = b.title + '导论';
+          var introText = '共 ' + counts.chapters + ' 章 · ' + counts.folders + ' 夹';
+          if (b.includePresets) introText += ' · 含预设';
+
+          el.innerHTML =
+            '<div class="back-cover"></div>' +
+            '<div class="spine"><span class="spine-text"></span></div>' +
+            '<div class="text-block">' +
+              '<div class="pages-top"></div><div class="pages-right"></div><div class="pages-bottom"></div>' +
+              '<div class="first-page">' +
+                '<div class="chapter-label">CHAPTER 01</div>' +
+                '<h1></h1>' +
+                '<p></p>' +
+              '</div>' +
+            '</div>' +
+            '<div class="front-cover">' +
+              '<div class="cover-face">' +
+                '<h2 class="cover-title"></h2>' +
+                '<div class="cover-icon"></div>' +
+              '</div>' +
+              '<div class="cover-inside"></div>' +
+            '</div>' +
+            '<button class="book-more" type="button" aria-label="更多"><i class="fa-solid fa-ellipsis"></i></button>' +
+            '<div class="book-tooltip"><div class="book-tooltip-row"></div></div>';
+
+          var spineText = el.querySelector('.spine-text');
+          if (spineText) spineText.textContent = b.title;
+          var coverTitle = el.querySelector('.cover-title');
+          if (coverTitle) coverTitle.textContent = b.title;
+          var coverIcon = el.querySelector('.cover-icon');
+          if (coverIcon) coverIcon.textContent = b.icon || '✚';
+          var pageH1 = el.querySelector('.first-page h1');
+          if (pageH1) pageH1.textContent = introTitle;
+          var pageP = el.querySelector('.first-page p');
+          if (pageP) pageP.textContent = introText;
+
+          var tipRow = el.querySelector('.book-tooltip-row');
+          if (tipRow) {
+            var tags = [];
+            tags.push({ text: counts.chapters + ' 章', kind: 'muted' });
+            tags.push({ text: counts.folders + ' 夹', kind: 'muted' });
+            if (b.includePresets) tags.push({ text: '含预设', kind: 'device' });
+            tags.push({ text: '更新：' + (formatDateTag(b.updatedAt) || '—'), kind: 'date' });
+            tipRow.innerHTML = tags.map(function (t) { return '<span class="tag tag--' + escapeAttr(t.kind) + '">' + escapeHtml(t.text) + '</span>'; }).join('');
+          }
+
+          var moreBtn = el.querySelector('.book-more');
+          if (moreBtn) {
+            moreBtn.onclick = function (ev) {
+              ev.stopPropagation();
+              openBookMenu(b, moreBtn);
+            };
+          }
+
+          installBookLongPress(b, el, moreBtn);
+
+          el.onclick = function () {
+            openBookWithAnimation(b, el);
+          };
+
+          els.booksGrid.appendChild(el);
+        })(books[i]);
+      }
+    }
+
+    function installBookLongPress(book, containerEl, moreBtn) {
+      try {
+        if (!containerEl) return;
+        var startX = 0;
+        var startY = 0;
+        var timer = null;
+        var fired = false;
+
+        function clear() {
+          if (timer) clearTimeout(timer);
+          timer = null;
+        }
+
+        containerEl.addEventListener('pointerdown', function (e) {
+          if (!e || e.button !== 0) return;
+          if (moreBtn && (e.target === moreBtn || (e.target && e.target.closest && e.target.closest('.book-more')))) return;
+          if (e.pointerType === 'mouse') return;
+          startX = e.clientX;
+          startY = e.clientY;
+          fired = false;
+          clear();
+          timer = setTimeout(function () {
+            fired = true;
+            openBookMenu(book, moreBtn || containerEl);
+          }, 520);
+        }, { passive: true });
+
+        containerEl.addEventListener('pointermove', function (e) {
+          if (!timer || !e) return;
+          if (Math.abs(e.clientX - startX) > 8 || Math.abs(e.clientY - startY) > 8) clear();
+        }, { passive: true });
+
+        containerEl.addEventListener('pointerup', function () { clear(); }, { passive: true });
+        containerEl.addEventListener('pointercancel', function () { clear(); }, { passive: true });
+
+        containerEl.addEventListener('click', function (e) {
+          if (!fired) return;
+          if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+          }
+        }, true);
+      } catch (e) {}
+    }
+
+    var bookMenuEl = null;
+    function closeBookMenu() {
+      if (bookMenuEl && bookMenuEl.remove) bookMenuEl.remove();
+      bookMenuEl = null;
+    }
+
+    function openBookMenu(book, anchorEl) {
+      closeBookMenu();
+      if (!book || !anchorEl) return;
+
+      var menu = document.createElement('div');
+      menu.className = 'book-menu';
+      menu.innerHTML =
+        '<button type="button" data-act="rename">重命名</button>' +
+        '<button type="button" data-act="open">打开</button>';
+
+      document.body.appendChild(menu);
+      bookMenuEl = menu;
+
+      var rect = anchorEl.getBoundingClientRect();
+      var left = Math.min(window.innerWidth - menu.offsetWidth - 12, Math.max(12, rect.right - menu.offsetWidth));
+      var top = Math.min(window.innerHeight - menu.offsetHeight - 12, Math.max(12, rect.bottom + 8));
+      menu.style.left = left + 'px';
+      menu.style.top = top + 'px';
+
+      var onDoc = function (e) {
+        if (!bookMenuEl) return;
+        if (e && (bookMenuEl === e.target || (e.target && e.target.closest && e.target.closest('.book-menu')))) return;
+        closeBookMenu();
+        document.removeEventListener('click', onDoc, true);
+      };
+      document.addEventListener('click', onDoc, true);
+
+      menu.onclick = function (e) {
+        var btn = e && e.target && e.target.closest ? e.target.closest('button') : null;
+        if (!btn) return;
+        var act = btn.getAttribute('data-act');
+        closeBookMenu();
+        if (act === 'open') {
+          openBookWithAnimation(book, anchorEl.closest('.book-container') || anchorEl);
+          return;
+        }
+        if (act === 'rename') {
+          openRenameBookModal(book);
+          return;
+        }
+      };
+    }
+
+    var bookModalMode = 'create'; // create | rename
+    var bookModalTargetId = null;
+    var bookModalTheme = 'blue';
+    var bookModalIcon = '✚';
+
+    function ensureBookModalChoiceUIs() {
+      if (els.bookThemeChoices && !els.bookThemeChoices.dataset.bound) {
+        els.bookThemeChoices.dataset.bound = '1';
+        els.bookThemeChoices.addEventListener('click', function (e) {
+          var btn = e && e.target && e.target.closest ? e.target.closest('button[data-theme]') : null;
+          if (!btn) return;
+          var v = btn.getAttribute('data-theme');
+          if (!isValidBookTheme(v)) return;
+          bookModalTheme = v;
+          updateBookModalChoiceSelection();
+        });
+      }
+      if (els.bookIconChoices && !els.bookIconChoices.dataset.bound) {
+        els.bookIconChoices.dataset.bound = '1';
+        els.bookIconChoices.addEventListener('click', function (e) {
+          var btn = e && e.target && e.target.closest ? e.target.closest('button[data-icon]') : null;
+          if (!btn) return;
+          var v = btn.getAttribute('data-icon');
+          if (!isValidBookIcon(v)) return;
+          bookModalIcon = v;
+          updateBookModalChoiceSelection();
+        });
+      }
+    }
+
+    function renderBookModalChoices() {
+      if (els.bookThemeChoices) {
+        els.bookThemeChoices.innerHTML = BOOK_THEMES.map(function (t) {
+          return (
+            '<button type="button" class="choice-btn" data-theme="' + escapeAttr(t.id) + '" aria-label="' + escapeAttr(t.name) + '">' +
+              '<span class="choice-dot theme-' + escapeAttr(t.id) + '"></span>' +
+              '<span class="choice-label">' + escapeHtml(t.name) + '</span>' +
+            '</button>'
+          );
+        }).join('');
+      }
+      if (els.bookIconChoices) {
+        els.bookIconChoices.innerHTML = BOOK_ICONS.map(function (ico) {
+          return (
+            '<button type="button" class="choice-btn choice-btn--icon" data-icon="' + escapeAttr(ico) + '" aria-label="' + escapeAttr(ico) + '">' +
+              '<span class="choice-icon">' + escapeHtml(ico) + '</span>' +
+            '</button>'
+          );
+        }).join('');
+      }
+      updateBookModalChoiceSelection();
+    }
+
+    function updateBookModalChoiceSelection() {
+      try {
+        if (els.bookThemeChoices) {
+          var themeBtns = els.bookThemeChoices.querySelectorAll('button[data-theme]');
+          for (var i = 0; i < themeBtns.length; i++) {
+            var btn = themeBtns[i];
+            btn.classList.toggle('selected', btn.getAttribute('data-theme') === bookModalTheme);
+          }
+        }
+        if (els.bookIconChoices) {
+          var iconBtns = els.bookIconChoices.querySelectorAll('button[data-icon]');
+          for (var j = 0; j < iconBtns.length; j++) {
+            var ib = iconBtns[j];
+            ib.classList.toggle('selected', ib.getAttribute('data-icon') === bookModalIcon);
+          }
+        }
+      } catch (e) {}
+    }
+
+    function openBookModalWithMode(mode, book) {
+      if (!els.bookModal) return;
+      ensureBookModalChoiceUIs();
+      renderBookModalChoices();
+
+      bookModalMode = (mode === 'rename') ? 'rename' : 'create';
+      bookModalTargetId = (mode === 'rename' && book && book.id) ? book.id : null;
+
+      var title = (mode === 'rename') ? '重命名书' : '新建书';
+      var btnText = (mode === 'rename') ? '保存' : '创建';
+
+      var h3 = els.bookModal.querySelector('h3');
+      if (h3) h3.textContent = title;
+      if (els.bookCreateBtn) els.bookCreateBtn.textContent = btnText;
+
+      if (els.bookNameInput) els.bookNameInput.value = (book && typeof book.title === 'string') ? book.title : '';
+
+      bookModalTheme = (book && typeof book.theme === 'string' && isValidBookTheme(book.theme)) ? book.theme : 'blue';
+      bookModalIcon = (book && typeof book.icon === 'string' && isValidBookIcon(book.icon)) ? book.icon : '✚';
+      updateBookModalChoiceSelection();
+
+      els.bookModal.classList.add('open');
+      try { if (els.bookNameInput) { els.bookNameInput.focus(); els.bookNameInput.select(); } } catch (_) {}
+    }
+
+    function openRenameBookModal(book) { openBookModalWithMode('rename', book); }
+
+    function openBookWithAnimation(book, cardEl) {
+      if (!book || !cardEl) {
+        if (book && book.id) {
+          setActiveBook(book.id);
+          saveData();
+          hideHomeView();
+          renderSidebar();
+          if (els.chapterTitle) els.chapterTitle.innerText = '请选择章节';
+          if (els.questionsContainer) els.questionsContainer.innerHTML = '';
+        }
+        return;
+      }
+
+      try {
+        if (bookOpenAnim && bookOpenAnim.active) return;
+        var el = cardEl;
+
+        var rect = el.getBoundingClientRect();
+        var originalState = getComputedStyle(el).transform;
+
+        var placeholder = el.cloneNode(true);
+        placeholder.style.opacity = 0;
+        placeholder.style.pointerEvents = 'none';
+        if (el.parentElement) el.parentElement.insertBefore(placeholder, el);
+
+        bookOpenAnim = { active: true, el: el, placeholder: placeholder, originalState: originalState };
+
+        el.style.position = 'fixed';
+        el.style.top = rect.top + 'px';
+        el.style.left = rect.left + 'px';
+        el.style.margin = 0;
+        el.style.transform = originalState;
+        el.classList.remove('idle');
+
+        // force reflow
+        el.offsetHeight;
+
+        // Phase 1: straighten + open cover
+        el.classList.add('open-state');
+        el.style.transition = 'transform 0.5s ease-out';
+        // Phase 1 should open "in place" (no X/Y nudge), only straighten for the cover flip.
+        el.style.transform = 'translate3d(0, 0px, 0px) rotateY(0deg) rotateX(0deg)';
+
+        setTimeout(function () {
+          if (!bookOpenAnim || !bookOpenAnim.active || bookOpenAnim.el !== el) return;
+          el.classList.add('zooming');
+          try { document.body.classList.add('home-transitioning'); } catch (_) {}
+          setWhiteOverlayVisible(true);
+
+          var winW = window.innerWidth;
+          var winH = window.innerHeight;
+          var scale = Math.max(winW, winH) / 200;
+
+          var currentCenterX = rect.left + rect.width / 2;
+          var currentCenterY = rect.top + rect.height / 2;
+          var moveX = (winW / 2) - currentCenterX;
+          var moveY = (winH / 2) - currentCenterY;
+          var offsetX = -(rect.width * 0.25) * scale;
+
+          el.style.transform = 'translate3d(' + (moveX + offsetX) + 'px,' + moveY + 'px, 100px) scale(' + scale + ')';
+
+          setTimeout(function () {
+            if (!bookOpenAnim || !bookOpenAnim.active || bookOpenAnim.el !== el) return;
+            cleanupBookOpenAnim();
+            setActiveBook(book.id);
+            saveData();
+            hideHomeView();
+            renderSidebar();
+            if (els.chapterTitle) els.chapterTitle.innerText = '请选择章节';
+            if (els.questionsContainer) els.questionsContainer.innerHTML = '';
+            setTimeout(function () {
+              setWhiteOverlayVisible(false);
+              try { document.body.classList.remove('home-transitioning'); } catch (_) {}
+            }, 120);
+          }, 1250);
+        }, 450);
+      } catch (e) {
+        cleanupBookOpenAnim();
+        setActiveBook(book.id);
+        saveData();
+        hideHomeView();
+        renderSidebar();
+        if (els.chapterTitle) els.chapterTitle.innerText = '请选择章节';
+        if (els.questionsContainer) els.questionsContainer.innerHTML = '';
+      }
+    }
+
+    var bookOpenAnim = null;
+    function cleanupBookOpenAnim() {
+      try {
+        if (!bookOpenAnim) return;
+        var el = bookOpenAnim.el;
+        var placeholder = bookOpenAnim.placeholder;
+        if (placeholder && placeholder.remove) placeholder.remove();
+        if (el) {
+          el.style.position = '';
+          el.style.top = '';
+          el.style.left = '';
+          el.style.margin = '';
+          el.style.transform = '';
+          el.style.transition = '';
+          el.classList.remove('open-state');
+          el.classList.remove('zooming');
+          el.classList.add('idle');
+        }
+      } catch (e) {}
+      bookOpenAnim = null;
     }
   
     function createFolderElement(folder) {
@@ -1179,26 +1855,27 @@
   
         if (delBtn) delBtn.onclick = function (e) {
           e.stopPropagation();
+          var book = getActiveBook();
 
           var removedFolder = { id: folder.id, title: folder.title, isOpen: folder.isOpen };
           var moved = [];
 
           // remove folder
           var newFolders = [];
-          for (var i = 0; i < appData.folders.length; i++) {
-            if (appData.folders[i].id !== folder.id) newFolders.push(appData.folders[i]);
+          for (var i = 0; i < (book.folders || []).length; i++) {
+            if (book.folders[i].id !== folder.id) newFolders.push(book.folders[i]);
           }
-          appData.folders = newFolders;
+          book.folders = newFolders;
   
           // cleanup layoutMap
-          var map = appData.layoutMap || {};
+          var map = book.layoutMap || {};
           for (var chId in map) {
             if (map[chId] === folder.id) {
               moved.push(chId);
               delete map[chId];
             }
           }
-          appData.layoutMap = map;
+          book.layoutMap = map;
   
           saveData();
           renderSidebar();
@@ -1207,9 +1884,9 @@
             actionText: '撤销',
             timeoutMs: 6500,
             onAction: function () {
-              appData.folders.push(removedFolder);
-              if (!appData.layoutMap) appData.layoutMap = {};
-              for (var k = 0; k < moved.length; k++) appData.layoutMap[moved[k]] = removedFolder.id;
+              book.folders.push(removedFolder);
+              if (!book.layoutMap) book.layoutMap = {};
+              for (var k = 0; k < moved.length; k++) book.layoutMap[moved[k]] = removedFolder.id;
               saveData();
               renderSidebar();
               showToast('已撤销', { timeoutMs: 2200 });
@@ -1278,6 +1955,7 @@
      * 8) 章节加载与题卡（保持你原逻辑）
      * --------------------------- */
     function loadChapter(id) {
+      if (homeVisible) hideHomeView();
       currentChapterId = id;
       var chapter = findChapterById(id);
       if (!chapter || isDeleted(id)) return;
@@ -1330,27 +2008,28 @@
      * 9) 删除章节（static/local 一视同仁）
      * --------------------------- */
     function deleteChapter(id) {
-      var prevFolder = (appData.layoutMap && appData.layoutMap[id]) ? appData.layoutMap[id] : null;
+      var book = getActiveBook();
+      var prevFolder = (book.layoutMap && book.layoutMap[id]) ? book.layoutMap[id] : null;
       var wasCurrent = currentChapterId === id;
 
       var localIndex = -1;
       var localChapter = null;
-      for (var i = 0; i < appData.chapters.length; i++) {
-        if (appData.chapters[i].id === id) { localIndex = i; localChapter = appData.chapters[i]; break; }
+      for (var i = 0; i < (book.chapters || []).length; i++) {
+        if (book.chapters[i].id === id) { localIndex = i; localChapter = book.chapters[i]; break; }
       }
 
       if (localIndex !== -1) {
         var kept = [];
-        for (var j = 0; j < appData.chapters.length; j++) {
-          if (appData.chapters[j].id !== id) kept.push(appData.chapters[j]);
+        for (var j = 0; j < book.chapters.length; j++) {
+          if (book.chapters[j].id !== id) kept.push(book.chapters[j]);
         }
-        appData.chapters = kept;
+        book.chapters = kept;
       } else {
-        if (!appData.deletedChapterIds) appData.deletedChapterIds = [];
-        if (appData.deletedChapterIds.indexOf(id) === -1) appData.deletedChapterIds.push(id);
+        if (!book.deletedChapterIds) book.deletedChapterIds = [];
+        if (book.deletedChapterIds.indexOf(id) === -1) book.deletedChapterIds.push(id);
       }
 
-      if (appData.layoutMap && appData.layoutMap[id]) delete appData.layoutMap[id];
+      if (book.layoutMap && book.layoutMap[id]) delete book.layoutMap[id];
 
       if (wasCurrent) {
         currentChapterId = null;
@@ -1368,18 +2047,18 @@
         onAction: function () {
           if (localChapter) {
             var idx = localIndex;
-            if (idx < 0 || idx > appData.chapters.length) idx = appData.chapters.length;
-            appData.chapters.splice(idx, 0, localChapter);
+            if (idx < 0 || idx > book.chapters.length) idx = book.chapters.length;
+            book.chapters.splice(idx, 0, localChapter);
           } else {
-            var del = appData.deletedChapterIds || [];
+            var del = book.deletedChapterIds || [];
             var next = [];
             for (var k = 0; k < del.length; k++) if (del[k] !== id) next.push(del[k]);
-            appData.deletedChapterIds = next;
+            book.deletedChapterIds = next;
           }
 
           if (prevFolder) {
-            if (!appData.layoutMap) appData.layoutMap = {};
-            appData.layoutMap[id] = prevFolder;
+            if (!book.layoutMap) book.layoutMap = {};
+            book.layoutMap[id] = prevFolder;
           }
 
           saveData();
@@ -1920,11 +2599,13 @@
       cleanupDragUI();
   
       if (droppedInSidebar && chapterId) {
+        var book = getActiveBook();
         if (targetFolderId) {
-          appData.layoutMap[chapterId] = targetFolderId;
+          if (!book.layoutMap) book.layoutMap = {};
+          book.layoutMap[chapterId] = targetFolderId;
         } else {
           // 根目录
-          if (appData.layoutMap && appData.layoutMap[chapterId]) delete appData.layoutMap[chapterId];
+          if (book.layoutMap && book.layoutMap[chapterId]) delete book.layoutMap[chapterId];
         }
         saveData();
         renderSidebar();
@@ -2096,19 +2777,21 @@
       return null;
     }
   
-    function makeUniqueIdsForImport(lib, overwrite) {
+    function makeUniqueIdsForImport(lib, overwrite, book) {
       // 目标：避免 chapter/folder 的 id 与 static_* 冲突，避免与现有 local 冲突（merge时）
       // 规则：对导入的 folders/chapters 统一做“去重+重映射”，保持 layoutMap 正确。
       var usedChapterIds = {};
       var usedFolderIds = {};
   
       // static ids always occupied
-      for (var i = 0; i < staticData.length; i++) usedChapterIds[staticData[i].id] = true;
+      if (book && book.includePresets) {
+        for (var i = 0; i < staticData.length; i++) usedChapterIds[staticData[i].id] = true;
+      }
   
       // merge 时：已有 local/folder 也占用
       if (!overwrite) {
-        for (var j = 0; j < (appData.chapters || []).length; j++) usedChapterIds[appData.chapters[j].id] = true;
-        for (var k = 0; k < (appData.folders || []).length; k++) usedFolderIds[appData.folders[k].id] = true;
+        for (var j = 0; j < ((book && book.chapters) ? book.chapters : []).length; j++) usedChapterIds[book.chapters[j].id] = true;
+        for (var k = 0; k < ((book && book.folders) ? book.folders : []).length; k++) usedFolderIds[book.folders[k].id] = true;
       }
   
       var folderIdMap = {}; // old -> new
@@ -2183,11 +2866,12 @@
         alert('未识别的JSON结构。\n支持：单章节/多章节/文件夹树/完整结构');
         return;
       }
+      var book = getActiveBook();
   
       // 单章节：直接追加并打开
       if (lib.kind === 'single') {
         var one = lib.chapters[0];
-        appData.chapters.push(one);
+        book.chapters.push(one);
         saveData();
         renderSidebar();
         loadChapter(one.id);
@@ -2196,13 +2880,13 @@
   
       // 多结构：询问覆盖 or 追加
       var overwrite = confirm('检测到多文件夹/多章节结构。\n确定=覆盖当前本地题库\n取消=追加到当前题库');
-      var normalized = makeUniqueIdsForImport(lib, overwrite);
+      var normalized = makeUniqueIdsForImport(lib, overwrite, book);
   
       if (overwrite) {
-        appData.folders = normalized.folders;
-        appData.chapters = normalized.chapters;
-        appData.layoutMap = normalized.layoutMap;
-        appData.deletedChapterIds = normalized.deletedChapterIds || [];
+        book.folders = normalized.folders;
+        book.chapters = normalized.chapters;
+        book.layoutMap = normalized.layoutMap;
+        book.deletedChapterIds = normalized.deletedChapterIds || [];
   
         currentChapterId = null;
         if (els.chapterTitle) els.chapterTitle.innerText = '请选择章节';
@@ -2214,20 +2898,78 @@
       }
   
       // merge
-      for (var i = 0; i < normalized.folders.length; i++) appData.folders.push(normalized.folders[i]);
-      for (var j = 0; j < normalized.chapters.length; j++) appData.chapters.push(normalized.chapters[j]);
+      for (var i = 0; i < normalized.folders.length; i++) book.folders.push(normalized.folders[i]);
+      for (var j = 0; j < normalized.chapters.length; j++) book.chapters.push(normalized.chapters[j]);
       for (var chId in normalized.layoutMap) {
-        if (normalized.layoutMap.hasOwnProperty(chId)) appData.layoutMap[chId] = normalized.layoutMap[chId];
+        if (normalized.layoutMap.hasOwnProperty(chId)) book.layoutMap[chId] = normalized.layoutMap[chId];
       }
       // deleted: 合并（去重）
-      if (!appData.deletedChapterIds) appData.deletedChapterIds = [];
+      if (!book.deletedChapterIds) book.deletedChapterIds = [];
       for (var d = 0; d < (normalized.deletedChapterIds || []).length; d++) {
         var did = normalized.deletedChapterIds[d];
-        if (appData.deletedChapterIds.indexOf(did) === -1) appData.deletedChapterIds.push(did);
+        if (book.deletedChapterIds.indexOf(did) === -1) book.deletedChapterIds.push(did);
       }
   
       saveData();
       renderSidebar();
+    }
+
+    function importBookFromJSON(payload, fileNameHint) {
+      payload = (payload && typeof payload === 'object') ? payload : null;
+      if (!payload) { showToast('JSON无效', { timeoutMs: 2000 }); return false; }
+
+      // 1) Whole app export (books[])
+      if (Array.isArray(payload.books)) {
+        var imported = 0;
+        for (var i = 0; i < payload.books.length; i++) {
+          var b = payload.books[i];
+          if (!b || typeof b !== 'object') continue;
+          var lib = {
+            folders: Array.isArray(b.folders) ? b.folders : [],
+            chapters: Array.isArray(b.chapters) ? b.chapters : [],
+            layoutMap: (b.layoutMap && typeof b.layoutMap === 'object' && !Array.isArray(b.layoutMap)) ? b.layoutMap : {},
+            deletedChapterIds: Array.isArray(b.deletedChapterIds) ? b.deletedChapterIds : []
+          };
+          var normalized = makeUniqueIdsForImport(lib, true, { includePresets: false });
+          var title = (typeof b.title === 'string' && b.title.trim()) ? b.title.trim() : ('导入书 ' + (imported + 1));
+          var nb = makeBookFromLibrary(normalized, title, !!b.includePresets);
+          nb.theme = (typeof b.theme === 'string') ? b.theme : 'blue';
+          nb.icon = (typeof b.icon === 'string') ? b.icon : '📚';
+          nb = normalizeBook(nb);
+          getBooks().push(nb);
+          imported++;
+        }
+        if (!imported) { showToast('未找到可导入的书', { timeoutMs: 2200 }); return false; }
+        appData.currentBookId = getBooks()[getBooks().length - 1].id;
+        saveData();
+        if (homeVisible) renderHome();
+        showToast('已导入 ' + imported + ' 本书', { timeoutMs: 2400 });
+        return true;
+      }
+
+      // 2) Seed wrapper / legacy exports may put library under `.data`
+      var data = (payload.data && typeof payload.data === 'object') ? payload.data : payload;
+      var lib2 = buildLibraryFromAnyJSON(data);
+      if (!lib2) { showToast('未识别的书JSON', { timeoutMs: 2200 }); return false; }
+
+      var normalized2 = makeUniqueIdsForImport(lib2, true, { includePresets: false });
+
+      var hint = (typeof fileNameHint === 'string') ? fileNameHint : '';
+      hint = hint.replace(/\\.json$/i, '').trim();
+      var title2 = (typeof payload.bookTitle === 'string' && payload.bookTitle.trim())
+        ? payload.bookTitle.trim()
+        : ((typeof payload.title === 'string' && payload.title.trim()) ? payload.title.trim() : (hint || '导入书'));
+
+      var book2 = makeBookFromLibrary(normalized2, title2, false);
+      book2.theme = (typeof payload.theme === 'string') ? payload.theme : 'blue';
+      book2.icon = (typeof payload.icon === 'string') ? payload.icon : '📚';
+      book2 = normalizeBook(book2);
+      getBooks().push(book2);
+      appData.currentBookId = book2.id;
+      saveData();
+      if (homeVisible) renderHome();
+      showToast('已导入：' + title2, { timeoutMs: 2400 });
+      return true;
     }
   
     /** ---------------------------
@@ -2275,6 +3017,12 @@
 
       // 菜单
       if (els.menuToggle && els.sidebar) els.menuToggle.onclick = toggleSidebar;
+      if (els.homeBtn) {
+        els.homeBtn.onclick = function () {
+          showHomeView();
+          if (els.sidebar && isCompactLayout()) els.sidebar.classList.remove('active');
+        };
+      }
       if (els.sidebarOverlay && els.sidebar) {
         els.sidebarOverlay.onclick = function () {
           if (isCompactLayout()) els.sidebar.classList.remove('active');
@@ -2366,6 +3114,7 @@
       }
       bindOverlayClose(els.importModal);
       bindOverlayClose(els.folderModal);
+      bindOverlayClose(els.bookModal);
       bindOverlayClose(els.authModal);
       bindOverlayClose(els.settingsModal);
 
@@ -2393,6 +3142,90 @@
           try { if (els.folderNameInput) els.folderNameInput.focus(); } catch (_) {}
         };
       }
+
+      // 新建书（主页）
+      function openCreateBookModal() { openBookModalWithMode('create', null); }
+
+      function submitBookModal() {
+        var title = (els.bookNameInput && typeof els.bookNameInput.value === 'string') ? els.bookNameInput.value.trim() : '';
+        if (!title) { showToast('请输入书名', { timeoutMs: 1800 }); return; }
+
+        // Create
+        if (bookModalMode !== 'rename') {
+          var book = makeBookFromLibrary({ chapters: [], folders: [], layoutMap: {}, deletedChapterIds: [] }, title, false);
+          book.theme = bookModalTheme;
+          book.icon = bookModalIcon;
+          book = normalizeBook(book);
+          getBooks().push(book);
+          appData.currentBookId = book.id;
+          saveData();
+          if (els.bookModal) els.bookModal.classList.remove('open');
+          hideHomeView();
+          renderSidebar();
+          if (els.chapterTitle) els.chapterTitle.innerText = '请选择章节';
+          if (els.questionsContainer) els.questionsContainer.innerHTML = '';
+          showToast('已创建：' + title, { timeoutMs: 2400 });
+          return;
+        }
+
+        // Rename / edit appearance
+        var books = getBooks();
+        for (var i = 0; i < books.length; i++) {
+          if (books[i] && books[i].id === bookModalTargetId) {
+            books[i].title = title;
+            books[i].theme = bookModalTheme;
+            books[i].icon = bookModalIcon;
+            books[i].updatedAt = new Date().toISOString();
+            saveData();
+            if (els.bookModal) els.bookModal.classList.remove('open');
+            if (homeVisible) renderHome();
+            renderSidebar();
+            showToast('已保存：' + title, { timeoutMs: 2200 });
+            return;
+          }
+        }
+
+        showToast('未找到要编辑的书', { timeoutMs: 2400 });
+      }
+
+      if (els.newBookBtn) els.newBookBtn.onclick = openCreateBookModal;
+      if (els.importBookBtn) {
+        els.importBookBtn.onclick = function () {
+          try {
+            var input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json,application/json';
+            input.onchange = function (e) {
+              var f = e && e.target && e.target.files ? e.target.files[0] : null;
+              if (!f) return;
+              var r = new FileReader();
+              r.onload = function (ev) {
+                try {
+                  var data = JSON.parse(ev.target.result);
+                  var ok = importBookFromJSON(data, f.name);
+                  if (ok) {
+                    // After import: open the book immediately (no extra dialogs)
+                    hideHomeView();
+                    renderSidebar();
+                    if (els.chapterTitle) els.chapterTitle.innerText = '请选择章节';
+                    if (els.questionsContainer) els.questionsContainer.innerHTML = '';
+                  }
+                } catch (err) {
+                  showToast('JSON解析失败', { timeoutMs: 2200 });
+                }
+              };
+              r.readAsText(f);
+              input.value = '';
+            };
+            input.click();
+          } catch (e) {
+            showToast('导入失败', { timeoutMs: 2200 });
+          }
+        };
+      }
+      if (els.bookCancelBtn && els.bookModal) els.bookCancelBtn.onclick = function () { els.bookModal.classList.remove('open'); };
+      if (els.bookCreateBtn) els.bookCreateBtn.onclick = submitBookModal;
+      if (els.bookNameInput) els.bookNameInput.addEventListener('keydown', function (e) { if (e && e.key === 'Enter') submitBookModal(); });
 
       function switchImportTab(which) {
         if (!els.importPaneFile || !els.importPanePaste) return;
@@ -2454,7 +3287,8 @@
           showToast('请输入文件夹名称', { timeoutMs: 1800 });
           return;
         }
-        appData.folders.push({ id: uid('f'), title: title, isOpen: true });
+        var book = getActiveBook();
+        book.folders.push({ id: uid('f'), title: title, isOpen: true });
         saveData();
         renderSidebar();
         if (els.folderModal) els.folderModal.classList.remove('open');
@@ -2533,6 +3367,7 @@
 
           saveData();
           renderSidebar();
+          showHomeView();
           showToast('已重置到默认（可在“存档”找回旧版本）', { timeoutMs: 4200 });
           if (els.settingsModal) els.settingsModal.classList.remove('open');
         };
@@ -2777,7 +3612,8 @@
                     return cloudLoadLibrary();
                   }).then(function (j) {
                     if (j && j.data) {
-                      appData = j.data;
+                      var keepUi = appData && appData.ui ? normalizeUi(appData.ui) : defaultUi();
+                      normalizeAppData(j.data, keepUi);
                       cloud.version = j.version || cloud.version;
                       try { localStorage.setItem(STORAGE_KEY, JSON.stringify(appData)); } catch (_) {}
                       renderSidebar();
@@ -2921,7 +3757,8 @@
                     return cloudLoadLibrary();
                   }).then(function (j) {
                     if (j && j.data) {
-                      appData = j.data;
+                      var keepUi2 = appData && appData.ui ? normalizeUi(appData.ui) : defaultUi();
+                      normalizeAppData(j.data, keepUi2);
                       cloud.version = j.version || cloud.version;
                       try { localStorage.setItem(STORAGE_KEY, JSON.stringify(appData)); } catch (_) {}
                       renderSidebar();
@@ -3013,7 +3850,7 @@
 
           cloudLoadLibrary().then(function (j) {
             var remote = j && j.data ? j.data : null;
-            var remoteHas = remote && ((remote.chapters && remote.chapters.length) || (remote.folders && remote.folders.length));
+            var remoteHas = appHasAnyContent(remote);
             if (remoteHas) {
               cloud.version = (j && typeof j.version === 'number') ? j.version : cloud.version;
               cloud.remoteEmpty = false;
@@ -3068,11 +3905,14 @@
         bindUIOnce();
         installGuardsOnce();
         updateSyncStatus();
+        renderSidebar();
+        showHomeView();
         tryBootstrapFromCloud().then(function () {
           if (!appData.ui) appData.ui = defaultUi();
           appData.ui = normalizeUi(appData.ui);
           applyUiToDocument();
           renderSidebar();
+          if (homeVisible) renderHome();
         });
 
         initialized = true;
