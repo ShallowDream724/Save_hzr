@@ -626,6 +626,32 @@ body.home-transitioning .home-hud { opacity: 0; pointer-events: none; }
     opacity: 0.98;
 }
 
+/* Theme colors (book cover/spine) */
+.theme-blue .back-cover, .theme-blue .cover-face { background-color: #1e3a8a; }
+.theme-blue .spine { background-color: #172554; }
+.theme-indigo .back-cover, .theme-indigo .cover-face { background-color: #3730a3; }
+.theme-indigo .spine { background-color: #1e1b4b; }
+.theme-red .back-cover, .theme-red .cover-face { background-color: #881337; }
+.theme-red .spine { background-color: #4c0519; }
+.theme-rose .back-cover, .theme-rose .cover-face { background-color: #9f1239; }
+.theme-rose .spine { background-color: #500724; }
+.theme-teal .back-cover, .theme-teal .cover-face { background-color: #0f766e; }
+.theme-teal .spine { background-color: #134e4a; }
+.theme-emerald .back-cover, .theme-emerald .cover-face { background-color: #047857; }
+.theme-emerald .spine { background-color: #064e3b; }
+.theme-sage .back-cover, .theme-sage .cover-face { background-color: #4d7c0f; }
+.theme-sage .spine { background-color: #365314; }
+.theme-amber .back-cover, .theme-amber .cover-face { background-color: #92400e; }
+.theme-amber .spine { background-color: #78350f; }
+.theme-cocoa .back-cover, .theme-cocoa .cover-face { background-color: #7c2d12; }
+.theme-cocoa .spine { background-color: #431407; }
+.theme-plum .back-cover, .theme-plum .cover-face { background-color: #6d28d9; }
+.theme-plum .spine { background-color: #4c1d95; }
+.theme-slate .back-cover, .theme-slate .cover-face { background-color: #334155; }
+.theme-slate .spine { background-color: #1f2937; }
+.theme-midnight .back-cover, .theme-midnight .cover-face { background-color: #0f172a; }
+.theme-midnight .spine { background-color: #020617; }
+
 /* Animation states */
 .book-container.open-state { z-index: 999; }
 .book-container.open-state .front-cover { 
