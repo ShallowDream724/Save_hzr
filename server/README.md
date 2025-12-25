@@ -24,7 +24,7 @@ export JWT_SECRET='换成强随机'
 export GEMINI_API_KEY='你的 key（只在服务端使用）'
 export PORT=8787
 export DB_PATH=/var/lib/pharm-sync/app.db
-export CORS_ORIGIN=https://qianmeng.me
+export CORS_ORIGIN=https://your-domain.example
 node src/server.js
 ```
 

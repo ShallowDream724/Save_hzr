@@ -5,7 +5,7 @@ const multer = require('multer');
 
 const { newId } = require('./ids');
 const { isoNow } = require('./time');
-const { onJob } = require('./events');
+const { onJob, emitJob } = require('./events');
 const {
   createOrReuseConversation,
   listConversations,
@@ -262,6 +262,44 @@ function registerAiRoutes(app, { db, authMiddleware, importScheduler }) {
       job: normalizeJob(job, importScheduler.normalizeJobRow, importScheduler.recomputeJobProgress),
       items: normalizeItems(items, importScheduler.normalizeItemRow),
     });
+  });
+
+  router.post('/jobs/:jobId/cancel', authMiddleware, (req, res) => {
+    const userId = req.user.userId;
+    const jobId = String(req.params.jobId || '');
+    const job = getJobForUser(db, userId, jobId);
+    if (!job) return res.status(404).json({ error: 'not found' });
+
+    if (['done', 'done_with_errors', 'failed', 'canceled'].includes(String(job.status))) {
+      return res.status(409).json({ error: 'not cancelable', status: job.status });
+    }
+
+    const reason = req.body && typeof req.body.reason === 'string' ? req.body.reason : 'canceled by user';
+    const now = isoNow();
+
+    // Stop scheduling new items by removing the job from the scheduler set.
+    db.prepare(
+      `
+      UPDATE ai_jobs
+      SET status='canceled', error=?, updated_at=?
+      WHERE id=? AND user_id=?
+        AND status IN ('queued','running','finalizing','writing')
+    `
+    ).run(reason, now, jobId, userId);
+
+    // Mark any not-started items as canceled (running items may complete, but the job won't advance/write).
+    db.prepare(
+      `
+      UPDATE ai_job_items
+      SET status='canceled', error=?, finished_at=?, updated_at=?
+      WHERE job_id=? AND user_id=?
+        AND status IN ('queued','retry_wait')
+    `
+    ).run(reason, now, now, now, jobId, userId);
+
+    try { emitJob(jobId); } catch (_) {}
+    const next = getJobForUser(db, userId, jobId);
+    return res.json({ ok: true, job: normalizeJob(next, importScheduler.normalizeJobRow, importScheduler.recomputeJobProgress) });
   });
 
   router.get('/jobs/:jobId/events', authMiddleware, (req, res) => {

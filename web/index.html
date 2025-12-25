@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>拯救Hzr</title>
-    <!-- 可选：设置 API_BASE（留空则同源），如：https://qianmeng.me -->
+    <!-- 可选：设置 API_BASE（留空则同源），如：https://your-domain.example -->
     <meta name="hzr-api-base" content="">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="./vendor/katex/katex.min.css">
@@ -340,10 +340,10 @@
             <div class="ai-chat-header">
                 <div class="ai-chat-title" id="aiChatTitle">AI 对话</div>
                 <div class="ai-chat-actions">
-                    <select id="aiChatModelSelect" class="ai-chat-model" aria-label="模型选择">
-                        <option value="flash" selected>Flash</option>
-                        <option value="pro">Pro</option>
-                    </select>
+                    <div id="aiChatModelSwitch" class="ai-model-switch" role="radiogroup" aria-label="模型选择">
+                        <button type="button" class="ai-model-option active" data-value="flash" aria-checked="true" role="radio">Flash</button>
+                        <button type="button" class="ai-model-option" data-value="pro" aria-checked="false" role="radio">Pro</button>
+                    </div>
                     <button id="aiChatCloseBtn" class="action-btn icon-btn ai-chat-close" type="button" title="关闭">
                         <i class="fa-solid fa-xmark"></i>
                     </button>
@@ -358,8 +358,17 @@
             <div class="ai-chat-messages" id="aiChatMessages" aria-live="polite"></div>
 
             <div class="ai-chat-input">
-                <textarea id="aiChatInput" placeholder="输入你的问题…" rows="2"></textarea>
-                <button id="aiChatSendBtn" class="modal-btn primary" type="button">发送</button>
+                <div id="aiChatQuote" class="ai-chat-quote" style="display:none;">
+                    <div class="ai-chat-quote-badge" aria-hidden="true">&gt;</div>
+                    <div id="aiChatQuoteText" class="ai-chat-quote-text"></div>
+                    <button id="aiChatQuoteClearBtn" class="ai-chat-quote-clear" type="button" title="移除引用">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+                <div class="ai-chat-input-row">
+                    <textarea id="aiChatInput" placeholder="输入你的问题…" rows="2"></textarea>
+                    <button id="aiChatSendBtn" class="modal-btn primary" type="button">发送</button>
+                </div>
             </div>
 
             <div class="ai-chat-hint" id="aiChatHint"></div>
@@ -389,11 +398,12 @@
 
             <div class="ai-import-row ai-import-inline">
                 <div class="ai-import-label">模型</div>
-                <select id="aiImportModelSelect" class="ai-import-model" aria-label="导入模型">
-                    <option value="flash" selected>Flash</option>
-                    <option value="pro">Pro</option>
-                </select>
+                <div id="aiImportModelSwitch" class="ai-model-switch ai-model-switch--small" role="radiogroup" aria-label="导入模型">
+                    <button type="button" class="ai-model-option active" data-value="flash" aria-checked="true" role="radio">Flash</button>
+                    <button type="button" class="ai-model-option" data-value="pro" aria-checked="false" role="radio">Pro</button>
+                </div>
                 <button id="aiImportStartBtn" class="modal-btn primary" type="button">开始导入</button>
+                <button id="aiImportCancelBtn" class="modal-btn danger" type="button" style="display:none;">终止任务</button>
             </div>
 
             <div class="ai-import-row">
@@ -417,8 +427,6 @@
                     <select id="aiHistoryScopeSelect" class="ai-history-scope" aria-label="对话范围">
                         <option value="" selected>全部</option>
                         <option value="general">通用</option>
-                        <option value="book">书</option>
-                        <option value="question">题目</option>
                     </select>
                     <button id="aiHistoryNewBtn" class="modal-btn primary" type="button">新对话</button>
                     <button id="aiHistoryRefreshBtn" class="modal-btn" type="button">刷新</button>

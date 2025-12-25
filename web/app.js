@@ -197,6 +197,19 @@
       return 'theme-' + id;
     }
 
+    function applyAppThemeFromActiveBook() {
+      try {
+        if (!document.body || !document.body.classList) return;
+        for (var i = 0; i < BOOK_THEMES.length; i++) {
+          document.body.classList.remove('app-theme-' + BOOK_THEMES[i].id);
+        }
+        var book = getActiveBook();
+        var id = book && typeof book.theme === 'string' ? book.theme : 'blue';
+        if (!isValidBookTheme(id)) id = 'blue';
+        document.body.classList.add('app-theme-' + id);
+      } catch (_) {}
+    }
+
     function makeBookFromLibrary(lib, title, includePresets) {
       lib = (lib && typeof lib === 'object') ? lib : {};
       var b = {
@@ -323,6 +336,7 @@
         if (books[i] && books[i].id === bookId) {
           appData.currentBookId = bookId;
           currentChapterId = null;
+          applyAppThemeFromActiveBook();
           return true;
         }
       }
@@ -474,9 +488,14 @@
 
       // AI chat modal
       els.aiChatModal = document.getElementById('aiChatModal');
+      els.aiChatBox = els.aiChatModal ? els.aiChatModal.querySelector('.ai-chat-box') : null;
+      els.aiChatHeader = els.aiChatModal ? els.aiChatModal.querySelector('.ai-chat-header') : null;
       els.aiChatTitle = document.getElementById('aiChatTitle');
-      els.aiChatModelSelect = document.getElementById('aiChatModelSelect');
+      els.aiChatModelSwitch = document.getElementById('aiChatModelSwitch');
       els.aiChatCloseBtn = document.getElementById('aiChatCloseBtn');
+      els.aiChatQuote = document.getElementById('aiChatQuote');
+      els.aiChatQuoteText = document.getElementById('aiChatQuoteText');
+      els.aiChatQuoteClearBtn = document.getElementById('aiChatQuoteClearBtn');
       els.aiChatContextWrap = document.getElementById('aiChatContextWrap');
       els.aiChatContextText = document.getElementById('aiChatContextText');
       els.aiChatMessages = document.getElementById('aiChatMessages');
@@ -490,8 +509,9 @@
       els.aiImportFilesInput = document.getElementById('aiImportFilesInput');
       els.aiImportFilesList = document.getElementById('aiImportFilesList');
       els.aiImportNoteText = document.getElementById('aiImportNoteText');
-      els.aiImportModelSelect = document.getElementById('aiImportModelSelect');
+      els.aiImportModelSwitch = document.getElementById('aiImportModelSwitch');
       els.aiImportStartBtn = document.getElementById('aiImportStartBtn');
+      els.aiImportCancelBtn = document.getElementById('aiImportCancelBtn');
       els.aiImportProgressFill = document.getElementById('aiImportProgressFill');
       els.aiImportProgressText = document.getElementById('aiImportProgressText');
       els.aiImportQueueText = document.getElementById('aiImportQueueText');
@@ -725,6 +745,8 @@
 
       var root = document.documentElement;
       root.style.setProperty('--emphasis-color', ui.emphasisColor);
+      root.style.setProperty('--emphasis-soft', rgba(ui.emphasisColor, 0.12) || 'rgba(244,63,94,0.12)');
+      root.style.setProperty('--emphasis-soft-2', rgba(ui.emphasisColor, 0.08) || 'rgba(244,63,94,0.08)');
 
       root.style.setProperty('--analysis-color', ui.analysisColor);
       root.style.setProperty('--analysis-bg-1', rgba(ui.analysisColor, 0.10) || 'rgba(75,143,226,0.10)');
@@ -749,6 +771,93 @@
   
     function getScrollY() {
       return window.scrollY || document.documentElement.scrollTop || document.body.scrollTop || 0;
+    }
+
+    /** ---------------------------
+     * 2.1) Modal scroll lock (prevents background scroll chaining)
+     * --------------------------- */
+    var modalPageLock = null;
+    var modalObserverInstalled = false;
+
+    function lockPageScrollForModal() {
+      if (modalPageLock) return;
+      // Drag lock already uses fixed-body; do not interfere.
+      try { if (drag && drag.pageLock) return; } catch (_) {}
+
+      var y = getScrollY();
+      modalPageLock = {
+        scrollY: y,
+        bodyPos: document.body.style.position,
+        bodyTop: document.body.style.top,
+        bodyLeft: document.body.style.left,
+        bodyRight: document.body.style.right,
+        bodyWidth: document.body.style.width,
+        htmlOverflow: document.documentElement.style.overflow
+      };
+
+      document.documentElement.style.overflow = 'hidden';
+      document.body.style.position = 'fixed';
+      document.body.style.top = (-y) + 'px';
+      document.body.style.left = '0';
+      document.body.style.right = '0';
+      document.body.style.width = '100%';
+    }
+
+    function unlockPageScrollForModal() {
+      if (!modalPageLock) return;
+      try { if (drag && drag.pageLock) return; } catch (_) {}
+
+      var lock = modalPageLock;
+      modalPageLock = null;
+
+      document.documentElement.style.overflow = lock.htmlOverflow;
+      document.body.style.position = lock.bodyPos;
+      document.body.style.top = lock.bodyTop;
+      document.body.style.left = lock.bodyLeft;
+      document.body.style.right = lock.bodyRight;
+      document.body.style.width = lock.bodyWidth;
+
+      window.scrollTo(0, lock.scrollY);
+    }
+
+    function anyModalOpen() {
+      try {
+        return !!document.querySelector('.modal-overlay.open');
+      } catch (_) {
+        return false;
+      }
+    }
+
+    function syncModalScrollLock() {
+      var on = anyModalOpen();
+      try { document.body.classList.toggle('modal-open', on); } catch (_) {}
+      if (on) lockPageScrollForModal();
+      else unlockPageScrollForModal();
+    }
+
+    function installModalScrollWatcher() {
+      if (modalObserverInstalled) return;
+      modalObserverInstalled = true;
+      if (typeof MutationObserver === 'undefined') return;
+
+      try {
+        var nodes = [
+          els.importModal,
+          els.folderModal,
+          els.bookModal,
+          els.authModal,
+          els.settingsModal,
+          els.aiChatModal,
+          els.aiImportModal,
+          els.aiHistoryModal
+        ];
+        var obs = new MutationObserver(function () { syncModalScrollLock(); });
+        for (var i = 0; i < nodes.length; i++) {
+          if (!nodes[i]) continue;
+          obs.observe(nodes[i], { attributes: true, attributeFilter: ['class'] });
+        }
+        syncModalScrollLock();
+      } catch (_) {}
     }
 
     function formatLocalTime(iso) {
@@ -1464,6 +1573,52 @@
     /** ---------------------------
      * 7) 渲染侧边栏
      * --------------------------- */
+    function sortChaptersForDisplay(list) {
+      if (!Array.isArray(list) || list.length <= 1) return list;
+
+      function parseAiId(id) {
+        id = String(id || '');
+        if (id.indexOf('ai_') !== 0) return null;
+        var last = id.lastIndexOf('_');
+        if (last <= 3 || last >= id.length - 1) return null;
+        var job = id.slice(3, last);
+        var page = Number(id.slice(last + 1));
+        if (!Number.isFinite(page)) return null;
+        return { job: job, page: page };
+      }
+
+      function titleOf(ch) {
+        return (ch && typeof ch.title === 'string') ? ch.title.trim() : '';
+      }
+
+      list.sort(function (a, b) {
+        var aId = a && a.id ? String(a.id) : '';
+        var bId = b && b.id ? String(b.id) : '';
+        var aAi = parseAiId(aId);
+        var bAi = parseAiId(bId);
+
+        if (aAi && bAi) {
+          if (aAi.job !== bAi.job) return aAi.job.localeCompare(bAi.job);
+          return aAi.page - bAi.page;
+        }
+        if (aAi && !bAi) return -1;
+        if (!aAi && bAi) return 1;
+
+        var at = titleOf(a);
+        var bt = titleOf(b);
+        var c = '';
+        try {
+          c = at.localeCompare(bt, 'zh-Hans', { numeric: true, sensitivity: 'base' });
+        } catch (_) {
+          c = at.localeCompare(bt);
+        }
+        if (c) return c;
+        return aId.localeCompare(bId);
+      });
+
+      return list;
+    }
+
     function renderSidebar() {
       if (!els.sidebarList) return;
       els.sidebarList.innerHTML = '';
@@ -1489,7 +1644,7 @@
         var folderEl = createFolderElement(folders[f]);
         var contentEl = folderEl.querySelector('.folder-content');
   
-        var list = folderContents[folders[f].id] || [];
+        var list = sortChaptersForDisplay(folderContents[folders[f].id] || []);
         for (var c = 0; c < list.length; c++) {
           contentEl.appendChild(createChapterElement(list[c]));
         }
@@ -1497,6 +1652,7 @@
       }
   
       // root chapters
+      sortChaptersForDisplay(rootChapters);
       for (var r = 0; r < rootChapters.length; r++) {
         els.sidebarList.appendChild(createChapterElement(rootChapters[r]));
       }
@@ -2401,6 +2557,137 @@
       pendingSelectedText: ''
     };
 
+    function getModelFromSwitch(switchEl, fallback) {
+      var v = '';
+      try { v = switchEl && switchEl.dataset && switchEl.dataset.value ? String(switchEl.dataset.value) : ''; } catch (_) { v = ''; }
+      if (v === 'flash' || v === 'pro') return v;
+      return fallback || 'flash';
+    }
+
+    function setModelSwitchValue(switchEl, value) {
+      if (!switchEl || !switchEl.querySelectorAll) return;
+      var v = (value === 'pro') ? 'pro' : 'flash';
+      try { switchEl.dataset.value = v; } catch (_) {}
+      var btns = switchEl.querySelectorAll('button[data-value]');
+      for (var i = 0; i < btns.length; i++) {
+        var b = btns[i];
+        var on = (b && b.getAttribute && b.getAttribute('data-value') === v);
+        try { b.classList.toggle('active', !!on); } catch (_) {}
+        try { b.setAttribute('aria-checked', on ? 'true' : 'false'); } catch (_) {}
+      }
+    }
+
+    function renderAiChatQuote() {
+      var txt = aiChat.pendingSelectedText ? String(aiChat.pendingSelectedText) : '';
+      if (els.aiChatQuoteText) els.aiChatQuoteText.textContent = txt;
+      if (els.aiChatQuote) els.aiChatQuote.style.display = txt ? '' : 'none';
+    }
+
+    function autoGrowTextarea(el, maxPx) {
+      if (!el) return;
+      try {
+        el.style.height = 'auto';
+        var h = el.scrollHeight || 0;
+        if (maxPx && Number.isFinite(maxPx)) h = Math.min(h, maxPx);
+        el.style.height = Math.max(44, h) + 'px';
+      } catch (_) {}
+    }
+
+    var aiChatWindow = {
+      dragging: false,
+      pointerId: null,
+      startX: 0,
+      startY: 0,
+      startLeft: 0,
+      startTop: 0,
+      saveTimer: 0,
+      resizeObs: null
+    };
+
+    function isFinePointerLayout() {
+      try {
+        return !!(window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches);
+      } catch (_) {
+        return false;
+      }
+    }
+
+    function getAiChatBoxRect() {
+      try { return els.aiChatBox ? els.aiChatBox.getBoundingClientRect() : null; } catch (_) { return null; }
+    }
+
+    function clamp(n, min, max) {
+      n = Number(n);
+      if (!Number.isFinite(n)) return min;
+      return Math.max(min, Math.min(max, n));
+    }
+
+    function applyAiChatWindowStyle(rect) {
+      if (!els.aiChatBox || !rect) return;
+      var box = els.aiChatBox;
+      try {
+        box.style.position = 'fixed';
+        box.style.left = Math.round(rect.left) + 'px';
+        box.style.top = Math.round(rect.top) + 'px';
+        box.style.width = Math.round(rect.width) + 'px';
+        box.style.height = Math.round(rect.height) + 'px';
+        box.style.margin = '0';
+        box.style.transform = 'none';
+        box.style.maxHeight = 'none';
+        box.style.maxWidth = 'none';
+        box.classList.add('ai-floating');
+      } catch (_) {}
+    }
+
+    function saveAiChatWindowPrefsSoon() {
+      if (!isFinePointerLayout()) return;
+      if (aiChatWindow.saveTimer) return;
+      aiChatWindow.saveTimer = window.setTimeout(function () {
+        aiChatWindow.saveTimer = 0;
+        if (!els.aiChatBox) return;
+        if (!els.aiChatModal || !els.aiChatModal.classList.contains('open')) return;
+        try {
+          var r = els.aiChatBox.getBoundingClientRect();
+          var payload = {
+            left: Math.round(r.left),
+            top: Math.round(r.top),
+            width: Math.round(r.width),
+            height: Math.round(r.height)
+          };
+          localStorage.setItem('hzr_ai_chat_window_v1', JSON.stringify(payload));
+        } catch (_) {}
+      }, 200);
+    }
+
+    function loadAiChatWindowPrefs() {
+      if (!isFinePointerLayout()) return null;
+      try {
+        var raw = localStorage.getItem('hzr_ai_chat_window_v1');
+        if (!raw) return null;
+        var j = JSON.parse(raw);
+        if (!j || typeof j !== 'object') return null;
+        var left = Number(j.left), top = Number(j.top), width = Number(j.width), height = Number(j.height);
+        if (!Number.isFinite(left) || !Number.isFinite(top) || !Number.isFinite(width) || !Number.isFinite(height)) return null;
+        return { left: left, top: top, width: width, height: height };
+      } catch (_) {
+        return null;
+      }
+    }
+
+    function applySavedAiChatWindowPrefs() {
+      if (!isFinePointerLayout()) return;
+      if (!els.aiChatBox) return;
+      var j = loadAiChatWindowPrefs();
+      if (!j) return;
+      var maxW = window.innerWidth || 1200;
+      var maxH = window.innerHeight || 800;
+      var width = clamp(j.width, 560, Math.max(560, maxW - 20));
+      var height = clamp(j.height, 520, Math.max(520, maxH - 20));
+      var left = clamp(j.left, 10, Math.max(10, maxW - width - 10));
+      var top = clamp(j.top, 10, Math.max(10, maxH - height - 10));
+      applyAiChatWindowStyle({ left: left, top: top, width: width, height: height });
+    }
+
     function htmlToText(html) {
       try {
         var div = document.createElement('div');
@@ -2450,12 +2737,18 @@
       if (!els.aiChatModal) return;
       hideAiSelBtn();
       els.aiChatModal.classList.add('open');
+      syncModalScrollLock();
+      applySavedAiChatWindowPrefs();
+      renderAiChatQuote();
+      autoGrowTextarea(els.aiChatInput, 220);
       try { if (els.aiChatInput) els.aiChatInput.focus(); } catch (_) {}
     }
 
     function closeAiChatModal() {
       if (!els.aiChatModal) return;
+      saveAiChatWindowPrefsSoon();
       els.aiChatModal.classList.remove('open');
+      syncModalScrollLock();
       aiChat.busy = false;
       setAiChatHint('');
     }
@@ -2484,21 +2777,26 @@
 
     function renderAiConversation(conv, messages) {
       if (els.aiChatTitle) els.aiChatTitle.textContent = (conv && conv.title) ? String(conv.title) : 'AI 对话';
-      if (els.aiChatModelSelect) els.aiChatModelSelect.value = (conv && conv.modelPref) ? String(conv.modelPref) : 'flash';
+      setModelSwitchValue(els.aiChatModelSwitch, (conv && conv.modelPref) ? String(conv.modelPref) : 'flash');
 
       // Pull question context from the first system message if present.
       var contextText = '';
+      var hasSystemContext = false;
       for (var i = 0; i < (messages || []).length; i++) {
         var m = messages[i];
-        if (m && m.role === 'system' && m.text) { contextText = String(m.text); break; }
+        if (m && m.role === 'system' && m.text) { contextText = String(m.text); hasSystemContext = true; break; }
       }
-      if (!contextText) contextText = aiChat.lastQuestionContext || '';
-      if (els.aiChatContextText) renderMarkdownInto(els.aiChatContextText, contextText);
+      if (!contextText && conv && conv.scope === 'question') contextText = aiChat.lastQuestionContext || '';
+
+      var showContext = !!(conv && conv.scope === 'question' && contextText);
+      if (els.aiChatContextText) renderMarkdownInto(els.aiChatContextText, showContext ? contextText : '');
       if (els.aiChatContextWrap) {
-        if (contextText) els.aiChatContextWrap.style.display = '';
+        if (showContext) els.aiChatContextWrap.style.display = '';
         else els.aiChatContextWrap.style.display = 'none';
       }
 
+      aiChat.pendingSelectedText = '';
+      renderAiChatQuote();
       clearAiMessages();
       for (var j = 0; j < (messages || []).length; j++) {
         var msg = messages[j];
@@ -2565,11 +2863,13 @@
       var msg = (els.aiChatInput && typeof els.aiChatInput.value === 'string') ? els.aiChatInput.value.trim() : '';
       if (!msg) return;
 
-      var modelPref = (els.aiChatModelSelect && els.aiChatModelSelect.value) ? String(els.aiChatModelSelect.value) : 'flash';
+      var modelPref = getModelFromSwitch(els.aiChatModelSwitch, 'flash');
       var selText = aiChat.pendingSelectedText ? String(aiChat.pendingSelectedText) : '';
       aiChat.pendingSelectedText = '';
+      renderAiChatQuote();
 
       if (els.aiChatInput) els.aiChatInput.value = '';
+      autoGrowTextarea(els.aiChatInput, 220);
       setAiChatHint('AI 思考中…');
 
       appendAiBubble('user', msg);
@@ -2648,11 +2948,12 @@
       aiChat.lastQuestionContext = ctx;
       aiChat.scope = 'question';
       aiChat.pendingSelectedText = selectedText ? String(selectedText) : '';
+      renderAiChatQuote();
 
       setAiChatHint('建立对话…');
       openAiChatModal();
 
-      var modelPref = (els.aiChatModelSelect && els.aiChatModelSelect.value) ? String(els.aiChatModelSelect.value) : 'flash';
+      var modelPref = getModelFromSwitch(els.aiChatModelSwitch, 'flash');
       apiFetch('/api/ai/conversations', {
         method: 'POST',
         body: JSON.stringify({
@@ -2703,6 +3004,13 @@
     function setAiImportQueueText(text) {
       if (!els.aiImportQueueText) return;
       els.aiImportQueueText.textContent = text ? String(text) : '';
+    }
+
+    function setAiImportCancelable(on) {
+      try {
+        if (els.aiImportCancelBtn) els.aiImportCancelBtn.style.display = on ? '' : 'none';
+        if (els.aiImportStartBtn) els.aiImportStartBtn.disabled = !!on;
+      } catch (_) {}
     }
 
     function clearAiImportResult() {
@@ -2792,8 +3100,10 @@
       setAiImportProgress(0, '未开始');
       setAiImportQueueText('');
       setAiImportHint('');
+      setAiImportCancelable(false);
       clearAiImportResult();
       els.aiImportModal.classList.add('open');
+      syncModalScrollLock();
 
       // If there is an active job for this book (multi-device), attach to it.
       try {
@@ -2805,6 +3115,7 @@
     function closeAiImportModal() {
       if (!els.aiImportModal) return;
       els.aiImportModal.classList.remove('open');
+      syncModalScrollLock();
       clearAiImportJobPolling();
       stopAiImportEvents();
     }
@@ -2833,7 +3144,31 @@
       if (s === 'done') return '完成';
       if (s === 'done_with_errors') return '完成(有失败页)';
       if (s === 'failed') return '失败';
+      if (s === 'canceled') return '已终止';
       return s || '';
+    }
+
+    function cancelAiImportJob() {
+      if (!getToken()) { showToast('请先登录云同步', { timeoutMs: 2200 }); return; }
+      var jobId = aiImport.jobId;
+      if (!jobId) { showToast('暂无进行中的任务', { timeoutMs: 2000 }); return; }
+
+      setAiImportHint('正在终止任务…');
+      apiFetch('/api/ai/jobs/' + encodeURIComponent(String(jobId)) + '/cancel', { method: 'POST', body: '{}' })
+        .then(function (res) { return res.json().then(function (j) { return { res: res, json: j }; }); })
+        .then(function (x) {
+          if (!x.res.ok) {
+            var msg = (x.json && (x.json.message || x.json.error)) ? String(x.json.message || x.json.error) : '终止失败';
+            throw new Error(msg);
+          }
+          stopAiImportEvents();
+          clearAiImportJobPolling();
+          if (x.json && x.json.job) applyAiImportSnapshot({ job: x.json.job });
+          setAiImportHint('已终止任务。');
+        })
+        .catch(function (e) {
+          setAiImportHint('终止失败：' + (e && e.message ? e.message : '网络错误'));
+        });
     }
 
     function renderAiImportResultFromJob(job) {
@@ -2928,11 +3263,22 @@
       var pct = total > 0 ? Math.round((done / total) * 100) : 0;
       setAiImportProgress(pct, statusLabel(p.status) + ' · ' + done + '/' + total + '（成功 ' + ok + '，失败 ' + fail + '）');
 
+      var active = (p.status === 'queued' || p.status === 'running' || p.status === 'finalizing' || p.status === 'writing');
+      setAiImportCancelable(active);
+
       if (p.status === 'queued' || p.status === 'running' || p.status === 'finalizing' || p.status === 'writing') {
         var eta = (p.etaMin !== undefined && p.etaMin !== null) ? String(p.etaMin) : '';
         setAiImportQueueText('排队：前面 ' + String(p.aheadUsers || 0) + ' 位用户 · 预计 ' + (eta ? eta + ' 分钟' : '计算中…'));
       } else {
         setAiImportQueueText('');
+      }
+
+      if (p.status === 'canceled') {
+        clearAiImportJobPolling();
+        stopAiImportEvents();
+        setAiImportQueueText('');
+        setAiImportHint('已终止任务。');
+        return;
       }
 
       if (job.status === 'done' || job.status === 'done_with_errors' || job.status === 'failed') {
@@ -3029,7 +3375,7 @@
       if (!book || !book.id) { showToast('未找到书', { timeoutMs: 1800 }); return; }
       if (!aiImport.files.length) { showToast('请先选择图片（最多 9 张）', { timeoutMs: 2200 }); return; }
 
-      var model = (els.aiImportModelSelect && els.aiImportModelSelect.value) ? String(els.aiImportModelSelect.value) : 'flash';
+      var model = getModelFromSwitch(els.aiImportModelSwitch, 'flash');
       var noteText = (els.aiImportNoteText && typeof els.aiImportNoteText.value === 'string') ? els.aiImportNoteText.value : '';
 
       var fd = new FormData();
@@ -3097,19 +3443,73 @@
         return;
       }
       els.aiHistoryModal.classList.add('open');
+      syncModalScrollLock();
+      refreshAiHistoryScopeOptions();
       refreshAiHistory();
     }
 
     function closeAiHistoryModal() {
       if (!els.aiHistoryModal) return;
       els.aiHistoryModal.classList.remove('open');
+      syncModalScrollLock();
       setAiHistoryHint('');
     }
 
-    function scopeLabel(scope) {
-      if (scope === 'question') return '题目';
-      if (scope === 'book') return '书';
-      return '通用';
+    function bookTitleById(bookId) {
+      if (!bookId) return '';
+      var books = getBooks();
+      for (var i = 0; i < books.length; i++) {
+        if (books[i] && books[i].id === bookId) {
+          var t = (typeof books[i].title === 'string' && books[i].title.trim()) ? books[i].title.trim() : '';
+          return t || '';
+        }
+      }
+      return '';
+    }
+
+    function refreshAiHistoryScopeOptions() {
+      if (!els.aiHistoryScopeSelect) return;
+      var prev = (typeof els.aiHistoryScopeSelect.value === 'string') ? els.aiHistoryScopeSelect.value : '';
+      var opts = [{ value: '', label: '全部' }, { value: 'general', label: '通用' }];
+
+      var books = getBooks();
+      for (var i = 0; i < books.length; i++) {
+        var b = books[i];
+        if (!b || !b.id) continue;
+        var title = (typeof b.title === 'string' && b.title.trim()) ? b.title.trim() : ('书 ' + shortId(b.id));
+        opts.push({ value: 'bookid:' + String(b.id), label: title });
+      }
+
+      // Render options (avoid blowing away selection if still valid)
+      var html = '';
+      for (var j = 0; j < opts.length; j++) {
+        html += '<option value="' + escapeAttr(opts[j].value) + '">' + escapeHtml(opts[j].label) + '</option>';
+      }
+      els.aiHistoryScopeSelect.innerHTML = html;
+
+      // Default: when inside a book, bias to that book’s conversations.
+      var desired = prev;
+      try {
+        if ((!desired || desired === 'book' || desired === 'question') && !homeVisible) {
+          var ab = getActiveBook();
+          if (ab && ab.id) desired = 'bookid:' + String(ab.id);
+        }
+      } catch (_) {}
+
+      // Restore selection if possible; otherwise fall back to "全部".
+      var found = false;
+      for (var k = 0; k < opts.length; k++) if (opts[k].value === desired) { found = true; break; }
+      els.aiHistoryScopeSelect.value = found ? desired : '';
+    }
+
+    function parseAiHistoryFilter(raw) {
+      raw = String(raw || '').trim();
+      if (!raw) return { scope: null, bookId: null };
+      if (raw === 'general') return { scope: 'general', bookId: null };
+      if (raw.indexOf('bookid:') === 0) return { scope: null, bookId: raw.slice('bookid:'.length) };
+      // legacy values (kept for backward compatibility)
+      if (raw === 'book' || raw === 'question') return { scope: raw, bookId: null };
+      return { scope: raw, bookId: null };
     }
 
     function refreshAiHistory() {
@@ -3117,8 +3517,12 @@
       aiHistory.loading = true;
       setAiHistoryHint('加载中…');
 
-      var scope = (els.aiHistoryScopeSelect && typeof els.aiHistoryScopeSelect.value === 'string') ? els.aiHistoryScopeSelect.value.trim() : '';
-      var qs = scope ? ('?scope=' + encodeURIComponent(scope)) : '';
+      var sel = (els.aiHistoryScopeSelect && typeof els.aiHistoryScopeSelect.value === 'string') ? els.aiHistoryScopeSelect.value : '';
+      var f = parseAiHistoryFilter(sel);
+      var parts = [];
+      if (f.scope) parts.push('scope=' + encodeURIComponent(String(f.scope)));
+      if (f.bookId) parts.push('bookId=' + encodeURIComponent(String(f.bookId)));
+      var qs = parts.length ? ('?' + parts.join('&')) : '';
 
       apiFetch('/api/ai/conversations' + qs, { method: 'GET' })
         .then(function (res) { if (!res.ok) throw new Error('load failed'); return res.json(); })
@@ -3143,9 +3547,13 @@
         if (!c || !c.id) continue;
         var title = c.title ? String(c.title) : '新对话';
         var meta = [];
-        meta.push('<span class="ai-history-tag">' + escapeHtml(scopeLabel(c.scope)) + '</span>');
-        if (c.bookId) meta.push('<span class="ai-history-tag">' + escapeHtml('book:' + shortId(c.bookId)) + '</span>');
-        if (c.questionId) meta.push('<span class="ai-history-tag">' + escapeHtml('q:' + String(c.questionId)) + '</span>');
+        if (c.scope === 'general') {
+          meta.push('<span class="ai-history-tag">通用</span>');
+        } else {
+          var bookName = c.bookId ? (bookTitleById(c.bookId) || ('书 ' + shortId(c.bookId))) : '';
+          if (bookName) meta.push('<span class="ai-history-tag">' + escapeHtml(bookName) + '</span>');
+          if (c.questionId) meta.push('<span class="ai-history-tag">' + escapeHtml('Q' + String(c.questionId)) + '</span>');
+        }
         var t = c.lastMessageAt || c.updatedAt || c.createdAt;
         html += '<div class="ai-history-item" data-id="' + escapeHtml(c.id) + '">' +
           '<div class="ai-history-item-main">' +
@@ -3182,6 +3590,10 @@
         if (!j || !j.conversationId) throw new Error('bad response');
         closeAiHistoryModal();
         aiChat.conversationId = j.conversationId;
+        aiChat.scope = scope;
+        aiChat.lastQuestionContext = '';
+        aiChat.pendingSelectedText = '';
+        renderAiChatQuote();
         openAiChatModal();
         return loadAiConversation(j.conversationId);
       }).catch(function (e) {
@@ -3822,12 +4234,7 @@
   
       drag.mode = 'dragging';
       drag.suppressClickUntil = Date.now() + 450;
-  
-      // 振动反馈（支持则振）
-      if ((drag.pointerType === 'touch' || drag.pointerType === 'pen') && navigator.vibrate) {
-        navigator.vibrate(40);
-      }
-  
+
       lockPageScrollIfTouch();
       lockSidebarNativeScroll();
 
@@ -4411,6 +4818,7 @@
         modalEl.addEventListener('click', function (e) {
           if (e.target !== modalEl) return;
           modalEl.classList.remove('open');
+          syncModalScrollLock();
         }, false);
       }
       bindOverlayClose(els.importModal);
@@ -4438,10 +4846,105 @@
       if (els.aiChatCloseBtn) {
         els.aiChatCloseBtn.onclick = function () { closeAiChatModal(); };
       }
+      if (els.aiChatModelSwitch && !els.aiChatModelSwitch.dataset.bound) {
+        els.aiChatModelSwitch.dataset.bound = '1';
+        setModelSwitchValue(els.aiChatModelSwitch, 'flash');
+        els.aiChatModelSwitch.addEventListener('click', function (e) {
+          var btn = e && e.target && e.target.closest ? e.target.closest('button[data-value]') : null;
+          if (!btn) return;
+          var v = btn.getAttribute('data-value');
+          setModelSwitchValue(els.aiChatModelSwitch, v);
+        }, false);
+      }
+      if (els.aiChatHeader && els.aiChatBox && !els.aiChatHeader.dataset.dragBound) {
+        els.aiChatHeader.dataset.dragBound = '1';
+
+        var endChatDrag = function (e) {
+          if (!aiChatWindow.dragging) return;
+          if (e && aiChatWindow.pointerId !== null && e.pointerId !== aiChatWindow.pointerId) return;
+          aiChatWindow.dragging = false;
+          aiChatWindow.pointerId = null;
+          saveAiChatWindowPrefsSoon();
+          try { if (els.aiChatHeader && e && e.pointerId) els.aiChatHeader.releasePointerCapture(e.pointerId); } catch (_) {}
+        };
+
+        addEvt(els.aiChatHeader, 'pointerdown', function (e) {
+          try {
+            if (!isFinePointerLayout()) return;
+            if (!e || e.button !== 0) return;
+            if (e.target && e.target.closest && e.target.closest('button, textarea, input, select, option')) return;
+            if (!els.aiChatBox) return;
+
+            e.preventDefault();
+
+            var rect = getAiChatBoxRect();
+            if (rect) applyAiChatWindowStyle(rect);
+
+            // After apply style, read current numeric left/top.
+            var cur = getAiChatBoxRect();
+            if (!cur) return;
+
+            aiChatWindow.dragging = true;
+            aiChatWindow.pointerId = e.pointerId;
+            aiChatWindow.startX = e.clientX;
+            aiChatWindow.startY = e.clientY;
+            aiChatWindow.startLeft = cur.left;
+            aiChatWindow.startTop = cur.top;
+
+            try { els.aiChatHeader.setPointerCapture(e.pointerId); } catch (_) {}
+          } catch (_) {}
+        }, { passive: false });
+
+        addEvt(els.aiChatHeader, 'pointermove', function (e) {
+          try {
+            if (!aiChatWindow.dragging) return;
+            if (!e || (aiChatWindow.pointerId !== null && e.pointerId !== aiChatWindow.pointerId)) return;
+            if (!els.aiChatBox) return;
+
+            var dx = e.clientX - aiChatWindow.startX;
+            var dy = e.clientY - aiChatWindow.startY;
+
+            var r = getAiChatBoxRect();
+            if (!r) return;
+
+            var maxL = Math.max(10, (window.innerWidth || 1200) - r.width - 10);
+            var maxT = Math.max(10, (window.innerHeight || 800) - r.height - 10);
+            var nextL = clamp(aiChatWindow.startLeft + dx, 10, maxL);
+            var nextT = clamp(aiChatWindow.startTop + dy, 10, maxT);
+
+            els.aiChatBox.style.left = Math.round(nextL) + 'px';
+            els.aiChatBox.style.top = Math.round(nextT) + 'px';
+          } catch (_) {}
+        }, { passive: true });
+
+        addEvt(els.aiChatHeader, 'pointerup', endChatDrag, { passive: true });
+        addEvt(els.aiChatHeader, 'pointercancel', endChatDrag, { passive: true });
+      }
+      if (els.aiChatBox && typeof ResizeObserver !== 'undefined' && !aiChatWindow.resizeObs) {
+        try {
+          aiChatWindow.resizeObs = new ResizeObserver(function () {
+            if (!els.aiChatModal || !els.aiChatModal.classList.contains('open')) return;
+            if (!els.aiChatBox || !els.aiChatBox.classList.contains('ai-floating')) return;
+            saveAiChatWindowPrefsSoon();
+          });
+          aiChatWindow.resizeObs.observe(els.aiChatBox);
+        } catch (_) {}
+      }
+      if (els.aiChatQuoteClearBtn) {
+        els.aiChatQuoteClearBtn.onclick = function () {
+          aiChat.pendingSelectedText = '';
+          renderAiChatQuote();
+          setAiChatHint('');
+          try { if (els.aiChatInput) els.aiChatInput.focus(); } catch (_) {}
+        };
+      }
       if (els.aiChatSendBtn) {
         els.aiChatSendBtn.onclick = function () { sendAiChatMessage(); };
       }
       if (els.aiChatInput) {
+        addEvt(els.aiChatInput, 'input', function () {
+          autoGrowTextarea(els.aiChatInput, 220);
+        }, { passive: true });
         addEvt(els.aiChatInput, 'keydown', function (e) {
           if (!e) return;
           if (e.key === 'Enter' && !e.shiftKey) {
@@ -4458,8 +4961,21 @@
       if (els.aiImportCloseBtn) {
         els.aiImportCloseBtn.onclick = function () { closeAiImportModal(); };
       }
+      if (els.aiImportModelSwitch && !els.aiImportModelSwitch.dataset.bound) {
+        els.aiImportModelSwitch.dataset.bound = '1';
+        setModelSwitchValue(els.aiImportModelSwitch, 'flash');
+        els.aiImportModelSwitch.addEventListener('click', function (e) {
+          var btn = e && e.target && e.target.closest ? e.target.closest('button[data-value]') : null;
+          if (!btn) return;
+          var v = btn.getAttribute('data-value');
+          setModelSwitchValue(els.aiImportModelSwitch, v);
+        }, false);
+      }
       if (els.aiImportStartBtn) {
         els.aiImportStartBtn.onclick = function () { startAiImport(); };
+      }
+      if (els.aiImportCancelBtn) {
+        els.aiImportCancelBtn.onclick = function () { cancelAiImportJob(); };
       }
       if (els.aiImportFilesInput) {
         els.aiImportFilesInput.onchange = function () {
@@ -4621,6 +5137,9 @@
           if (!id) return;
           closeAiHistoryModal();
           aiChat.conversationId = String(id);
+          aiChat.pendingSelectedText = '';
+          aiChat.lastQuestionContext = '';
+          renderAiChatQuote();
           openAiChatModal();
           setAiChatHint('加载对话…');
           loadAiConversation(id).then(function () { setAiChatHint(''); }).catch(function () { setAiChatHint('加载失败'); });
@@ -4642,6 +5161,7 @@
         if (els.aiChatModal) els.aiChatModal.classList.remove('open');
         if (els.aiImportModal) els.aiImportModal.classList.remove('open');
         if (els.aiHistoryModal) els.aiHistoryModal.classList.remove('open');
+        syncModalScrollLock();
         if (els.sidebar && isCompactLayout()) els.sidebar.classList.remove('active');
       }, { passive: true });
 
@@ -4676,6 +5196,7 @@
           getBooks().push(book);
           appData.currentBookId = book.id;
           saveData();
+          applyAppThemeFromActiveBook();
           if (els.bookModal) els.bookModal.classList.remove('open');
           hideHomeView();
           renderSidebar();
@@ -4694,6 +5215,7 @@
             books[i].icon = bookModalIcon;
             books[i].updatedAt = new Date().toISOString();
             saveData();
+            if (appData && appData.currentBookId === bookModalTargetId) applyAppThemeFromActiveBook();
             if (els.bookModal) els.bookModal.classList.remove('open');
             if (homeVisible) renderHome();
             renderSidebar();
@@ -5406,6 +5928,7 @@
      * --------------------------- */
     function initApp() {
       cacheEls();
+      installModalScrollWatcher();
       if (!els.sidebarList) return;
 
       Promise.all([loadStaticPresets(), loadDefaultSeed()]).then(function () {
@@ -5413,6 +5936,7 @@
         if (!appData.ui) appData.ui = defaultUi();
         appData.ui = normalizeUi(appData.ui);
         applyUiToDocument();
+        applyAppThemeFromActiveBook();
         try {
           if (staticData.length && typeof window.addChaptersToFolder === 'function' && typeof window.getStaticChapterIds === 'function') {
             window.addChaptersToFolder('预设题库', window.getStaticChapterIds());
@@ -5428,6 +5952,7 @@
           if (!appData.ui) appData.ui = defaultUi();
           appData.ui = normalizeUi(appData.ui);
           applyUiToDocument();
+          applyAppThemeFromActiveBook();
           renderSidebar();
           if (homeVisible) renderHome();
         });

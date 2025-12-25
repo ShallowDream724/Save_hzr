@@ -53,23 +53,23 @@ npm install --omit=dev
 export JWT_SECRET='换成强随机'
 export PORT=8787
 export DB_PATH=/var/lib/save_hzr/app.db
-export CORS_ORIGIN=https://qianmeng.me
+export CORS_ORIGIN=https://your-domain.example
 
 node src/server.js
 ```
 
-## Nginx 部署（qianmeng.me）
+## Nginx 部署（示例）
 1) 安装 Nginx（Ubuntu/Debian）
 ```bash
 sudo apt update
 sudo apt install -y nginx
 ```
 
-2) 站点配置：`/etc/nginx/sites-available/qianmeng.me`
+2) 站点配置：`/etc/nginx/sites-available/your-domain.example`
 ```nginx
 server {
   listen 80;
-  server_name qianmeng.me;
+  server_name your-domain.example;
 
   # 如已配好 HTTPS，可把这里改成 301 跳转到 https
   location / {
@@ -96,7 +96,7 @@ server {
 
 启用并重载：
 ```bash
-sudo ln -sf /etc/nginx/sites-available/qianmeng.me /etc/nginx/sites-enabled/qianmeng.me
+sudo ln -sf /etc/nginx/sites-available/your-domain.example /etc/nginx/sites-enabled/your-domain.example
 sudo nginx -t
 sudo systemctl reload nginx
 ```
@@ -104,10 +104,10 @@ sudo systemctl reload nginx
 3) 配 HTTPS（可选但强烈建议，Certbot）
 ```bash
 sudo apt install -y certbot python3-certbot-nginx
-sudo certbot --nginx -d qianmeng.me
+sudo certbot --nginx -d your-domain.example
 ```
 
 ## CodePen（可选）
 CodePen 也能用，但**默认只能本地保存**；想跨设备同步，需要把 `API_BASE` 指向你的服务：
-- 在 HTML 里设置：`window.API_BASE = 'https://qianmeng.me';`
+- 在 HTML 里设置：`window.API_BASE = 'https://your-domain.example';`
 - 前端文件依赖：`web/index.html` 依赖 `web/style.css`、`web/app.js`、以及同源的 `web/presets.json`
