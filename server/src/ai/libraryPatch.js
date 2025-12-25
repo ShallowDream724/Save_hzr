@@ -55,6 +55,38 @@ function findBook(appData, bookId) {
   return null;
 }
 
+function ensureBook(appData, bookId, bookMeta) {
+  if (!isObject(appData)) return null;
+  if (!Array.isArray(appData.books)) appData.books = [];
+
+  const existing = findBook(appData, bookId);
+  if (existing) return existing;
+
+  const now = isoNow();
+  const meta = isObject(bookMeta) ? bookMeta : {};
+  const title = typeof meta.title === 'string' && meta.title.trim() ? meta.title.trim() : '未命名书';
+  const theme = typeof meta.theme === 'string' && meta.theme.trim() ? meta.theme.trim() : 'blue';
+  const icon = typeof meta.icon === 'string' && meta.icon.trim() ? meta.icon.trim() : '✚';
+  const includePresets = !!meta.includePresets;
+
+  const book = {
+    id: bookId,
+    title,
+    theme,
+    icon,
+    includePresets,
+    chapters: [],
+    folders: [],
+    layoutMap: {},
+    deletedChapterIds: [],
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  appData.books.push(book);
+  return book;
+}
+
 function makeChapterId(jobId, pageIndex) {
   return `ai_${String(jobId)}_${String(pageIndex)}`;
 }
@@ -107,7 +139,7 @@ function mergeAiChapters(currentAppData, incomingAppData) {
 }
 
 function createLibraryPatcher(db) {
-  function patchLibrary({ userId, bookId, jobId, pages }) {
+  function patchLibrary({ userId, bookId, jobId, pages, bookMeta }) {
     const sortedPages = ensureArray(pages).slice().sort((a, b) => Number(a.pageIndex) - Number(b.pageIndex));
 
     // Background jobs must not clobber concurrent user saves.
@@ -124,7 +156,7 @@ function createLibraryPatcher(db) {
       const appData = safeJsonParse(row.data_json, null);
       if (!isObject(appData)) throw new Error('library json invalid');
 
-      const book = findBook(appData, bookId);
+      const book = ensureBook(appData, bookId, bookMeta);
       if (!book) throw new Error('book not found');
 
       if (!Array.isArray(book.chapters)) book.chapters = [];

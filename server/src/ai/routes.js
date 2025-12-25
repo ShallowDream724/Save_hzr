@@ -100,20 +100,19 @@ function listJobItems(db, jobId) {
   return db.prepare('SELECT * FROM ai_job_items WHERE job_id=? ORDER BY idx ASC').all(jobId);
 }
 
-function userHasBook(db, userId, bookId) {
+function userHasCloudLibrary(db, userId) {
   try {
     const row = db.prepare('SELECT data_json FROM libraries WHERE user_id = ?').get(userId);
     if (!row || !row.data_json) return false;
     const data = safeJsonParse(row.data_json, null);
     if (!data || typeof data !== 'object') return false;
-    const books = Array.isArray(data.books) ? data.books : [];
-    return books.some((b) => b && typeof b.id === 'string' && b.id === bookId);
+    return true;
   } catch (_) {
     return false;
   }
 }
 
-function createImportJob({ db, userId, bookId, model, noteText, files, uploadsRoot }) {
+function createImportJob({ db, userId, bookId, model, noteText, bookMeta, files, uploadsRoot }) {
   const now = isoNow();
   const jobId = newId('job');
   const jobDir = path.join(uploadsRoot, String(userId), jobId);
@@ -146,6 +145,7 @@ function createImportJob({ db, userId, bookId, model, noteText, files, uploadsRo
     bookId,
     model,
     noteText: noteText || '',
+    bookMeta: (bookMeta && typeof bookMeta === 'object') ? bookMeta : null,
     images: movedFiles.map((x) => ({ idx: x.idx, mime: x.mime, originalName: x.originalName })),
   };
 
@@ -203,6 +203,9 @@ function registerAiRoutes(app, { db, authMiddleware, importScheduler }) {
     const bookId = req.body && typeof req.body.bookId === 'string' ? req.body.bookId.trim() : '';
     const model = req.body && typeof req.body.model === 'string' ? req.body.model.trim() : 'flash';
     const noteText = req.body && typeof req.body.noteText === 'string' ? req.body.noteText : '';
+    const bookTitle = req.body && typeof req.body.bookTitle === 'string' ? req.body.bookTitle : '';
+    const bookTheme = req.body && typeof req.body.bookTheme === 'string' ? req.body.bookTheme : '';
+    const bookIcon = req.body && typeof req.body.bookIcon === 'string' ? req.body.bookIcon : '';
 
     if (!isNonEmptyString(bookId)) {
       cleanupUploadedFiles(req.files);
@@ -217,9 +220,9 @@ function registerAiRoutes(app, { db, authMiddleware, importScheduler }) {
     if (files.length === 0) { cleanupUploadedFiles(req.files); return res.status(400).json({ error: 'images[] required' }); }
     if (files.length > 9) { cleanupUploadedFiles(req.files); return res.status(400).json({ error: 'max 9 images' }); }
 
-    if (!userHasBook(db, userId, bookId)) {
+    if (!userHasCloudLibrary(db, userId)) {
       cleanupUploadedFiles(req.files);
-      return res.status(400).json({ error: 'book not found in cloud library (enable sync & upload first)' });
+      return res.status(400).json({ error: 'cloud library not initialized (enable sync & upload first)' });
     }
 
     try {
@@ -229,6 +232,7 @@ function registerAiRoutes(app, { db, authMiddleware, importScheduler }) {
         bookId,
         model,
         noteText,
+        bookMeta: { title: bookTitle, theme: bookTheme, icon: bookIcon },
         files,
         uploadsRoot: importScheduler.uploadsRoot,
       });

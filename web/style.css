@@ -86,8 +86,10 @@ body:not(.home-mode) {
 body.sidebar-collapsed { --sidebar-width: 72px; }
 body.sidebar-collapsed .sidebar { transform: none; width: 72px; }
 body.sidebar-collapsed .chapter-list { display: none; }
-body.sidebar-collapsed .brand { padding: 18px 14px; justify-content: center; }
+body.sidebar-collapsed .brand { padding: 12px 10px; justify-content: center; flex-direction: column; gap: 12px; }
 body.sidebar-collapsed .brand-text { display: none; }
+body.sidebar-collapsed .brand-actions { flex-direction: column; gap: 10px; }
+body.sidebar-collapsed .collapse-btn { width: 44px; height: 44px; border-radius: 16px; }
 body.sidebar-collapsed .sidebar-footer { flex-direction: column; gap: 12px; padding: 12px; }
 body.sidebar-collapsed .icon-btn { width: 46px; height: 46px; flex: none; border-radius: 16px; }
 
@@ -1666,12 +1668,32 @@ h2 {
     color: #0f172a;
     font-weight: 700;
 }
+.ai-chat-model,
+.ai-import-model,
+.ai-history-scope,
+.settings-inline select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    cursor: pointer;
+    padding-right: 38px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 20 20'%3E%3Cpath fill='%2364758b' d='M5.6 7.4a1 1 0 0 1 1.4 0L10 10.4l3-3a1 1 0 1 1 1.4 1.4l-3.7 3.7a1 1 0 0 1-1.4 0L5.6 8.8a1 1 0 0 1 0-1.4Z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 16px 16px;
+}
+.ai-chat-model:hover,
+.ai-import-model:hover,
+.ai-history-scope:hover,
+.settings-inline select:hover {
+    border-color: rgba(99,102,241,0.32);
+}
 
 .ai-chat-context {
     margin: 10px 16px 0;
     border: 1px solid rgba(148,163,184,0.22);
     border-radius: 16px;
-    background: rgba(15, 23, 42, 0.03);
+    background: rgba(255,255,255,0.62);
     overflow: hidden;
 }
 .ai-chat-context summary {
@@ -1683,6 +1705,13 @@ h2 {
     display: flex;
     align-items: center;
     gap: 10px;
+}
+.ai-chat-context summary:hover {
+    background: rgba(99,102,241,0.06);
+}
+.ai-chat-context[open] summary {
+    border-bottom: 1px dashed rgba(148,163,184,0.30);
+    background: rgba(99,102,241,0.06);
 }
 .ai-chat-context summary::-webkit-details-marker { display: none; }
 .ai-chat-context summary::after {
@@ -1696,7 +1725,7 @@ h2 {
 .ai-chat-context[open] summary::after { transform: rotate(180deg); }
 .ai-chat-context-text {
     padding: 12px 12px 14px;
-    max-height: 26vh;
+    max-height: 22vh;
     overflow: auto;
     font-size: 0.95rem;
     line-height: 1.8;
@@ -1888,6 +1917,69 @@ h2 {
 .ai-import-sub {
     color: #64748b;
     font-size: 0.9rem;
+}
+
+#aiImportFilesInput {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 16px;
+    border: 1px dashed rgba(148,163,184,0.45);
+    background: rgba(255,255,255,0.86);
+    color: #334155;
+    font-weight: 650;
+}
+#aiImportFilesInput::file-selector-button {
+    border: 1px solid rgba(148,163,184,0.30);
+    background: rgba(255,255,255,0.92);
+    border-radius: 12px;
+    padding: 8px 12px;
+    margin-right: 12px;
+    cursor: pointer;
+    font-weight: 900;
+    color: #0f172a;
+}
+#aiImportFilesInput::file-selector-button:hover {
+    border-color: rgba(99,102,241,0.28);
+    box-shadow: 0 12px 26px rgba(15,23,42,0.10);
+}
+#aiImportFilesInput::-webkit-file-upload-button {
+    border: 1px solid rgba(148,163,184,0.30);
+    background: rgba(255,255,255,0.92);
+    border-radius: 12px;
+    padding: 8px 12px;
+    margin-right: 12px;
+    cursor: pointer;
+    font-weight: 900;
+    color: #0f172a;
+}
+#aiImportFilesInput::-webkit-file-upload-button:hover {
+    border-color: rgba(99,102,241,0.28);
+    box-shadow: 0 12px 26px rgba(15,23,42,0.10);
+}
+
+.settings-control input[type="color"] {
+    width: 44px;
+    height: 34px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    border-radius: 12px;
+}
+.settings-control input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+.settings-control input[type="color"]::-webkit-color-swatch {
+    border: none;
+    border-radius: 12px;
+    box-shadow: inset 0 0 0 1px rgba(148,163,184,0.55), 0 10px 18px rgba(15,23,42,0.08);
+}
+.settings-control input[type="color"]::-moz-color-swatch {
+    border: none;
+    border-radius: 12px;
+    box-shadow: inset 0 0 0 1px rgba(148,163,184,0.55), 0 10px 18px rgba(15,23,42,0.08);
+}
+.settings-control input[type="color"]:focus-visible {
+    outline: 2px solid var(--accent-color);
+    outline-offset: 3px;
 }
 .ai-import-files {
     display: flex;

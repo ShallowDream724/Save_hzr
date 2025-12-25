@@ -787,11 +787,15 @@ function startImportScheduler({ db, patchLibrary }) {
         finalizeWarnings = [`Finalize failed: ${finalizeItem.error || 'unknown error'}`];
       }
 
+      const jobPayload = safeJsonParse(job && job.payload_json, {});
+      const bookMeta = jobPayload && typeof jobPayload.bookMeta === 'object' ? jobPayload.bookMeta : null;
+
       const patchSummary = patchLibrary({
         userId: job.user_id,
         bookId: job.book_id,
         jobId: jobId,
         pages: pagesToWrite,
+        bookMeta,
       });
 
       const finalNow = isoNow();

@@ -3034,6 +3034,9 @@
 
       var fd = new FormData();
       fd.append('bookId', String(book.id));
+      fd.append('bookTitle', String(book.title || ''));
+      fd.append('bookTheme', String(book.theme || ''));
+      fd.append('bookIcon', String(book.icon || ''));
       fd.append('model', model);
       fd.append('noteText', noteText || '');
       for (var i = 0; i < aiImport.files.length; i++) {
