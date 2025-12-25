@@ -737,6 +737,7 @@
       root.style.setProperty('--knowledge-bg-1', rgba(ui.knowledgeColor, 0.10) || 'rgba(12,84,96,0.10)');
       root.style.setProperty('--knowledge-bg-2', rgba(ui.knowledgeColor, 0.04) || 'rgba(12,84,96,0.04)');
       root.style.setProperty('--knowledge-border', rgba(ui.knowledgeColor, 0.18) || 'rgba(12,84,96,0.18)');
+      root.style.setProperty('--knowledge-bar', rgba(ui.knowledgeColor, 0.70) || 'rgba(12,84,96,0.70)');
       root.style.setProperty('--knowledge-title', darken(ui.knowledgeColor, 0.10));
 
       refreshHighlightsInDocument();
@@ -2470,7 +2471,11 @@
       wrap.className = 'ai-msg ' + role;
       var bubble = document.createElement('div');
       bubble.className = 'ai-bubble ' + role;
-      renderMarkdownInto(bubble, String(text || ''));
+      var content = document.createElement('div');
+      content.className = 'ai-bubble-content';
+      bubble.appendChild(content);
+      bubble._contentEl = content;
+      renderMarkdownInto(content, String(text || ''));
       wrap.appendChild(bubble);
       els.aiChatMessages.appendChild(wrap);
       try { els.aiChatMessages.scrollTop = els.aiChatMessages.scrollHeight; } catch (_) {}
@@ -2488,7 +2493,7 @@
         if (m && m.role === 'system' && m.text) { contextText = String(m.text); break; }
       }
       if (!contextText) contextText = aiChat.lastQuestionContext || '';
-      if (els.aiChatContextText) els.aiChatContextText.textContent = contextText;
+      if (els.aiChatContextText) renderMarkdownInto(els.aiChatContextText, contextText);
       if (els.aiChatContextWrap) {
         if (contextText) els.aiChatContextWrap.style.display = '';
         else els.aiChatContextWrap.style.display = 'none';
@@ -2569,6 +2574,11 @@
 
       appendAiBubble('user', msg);
       var assistantBubble = appendAiBubble('assistant', '');
+      if (assistantBubble) {
+        assistantBubble._raw = '';
+        try { assistantBubble.dataset.streaming = '1'; } catch (_) {}
+        try { if (assistantBubble._contentEl) assistantBubble._contentEl.textContent = ''; } catch (_) {}
+      }
       aiChat.busy = true;
       if (els.aiChatSendBtn) els.aiChatSendBtn.disabled = true;
 
@@ -2581,17 +2591,26 @@
             var t = (data && typeof data.text === 'string') ? data.text : '';
             if (!t) return;
             assistantBubble._raw = (assistantBubble._raw || '') + t;
-            assistantBubble.innerHTML = escapeHtml(assistantBubble._raw).replace(/\n/g, '<br>');
+            var contentEl = assistantBubble._contentEl || assistantBubble;
+            try { contentEl.textContent = assistantBubble._raw; } catch (_) {}
             try { if (els.aiChatMessages) els.aiChatMessages.scrollTop = els.aiChatMessages.scrollHeight; } catch (_) {}
             return;
           }
           if (event === 'error') {
             var m = (data && data.message) ? String(data.message) : '请求失败';
             setAiChatHint('失败：' + m);
+            try { if (assistantBubble && assistantBubble.removeAttribute) assistantBubble.removeAttribute('data-streaming'); } catch (_) {}
             return;
           }
           if (event === 'done') {
             setAiChatHint('');
+            try {
+              if (assistantBubble && (assistantBubble._raw || '').trim()) {
+                var contentEl2 = assistantBubble._contentEl || assistantBubble;
+                if (assistantBubble.removeAttribute) assistantBubble.removeAttribute('data-streaming');
+                renderMarkdownInto(contentEl2, assistantBubble._raw || '');
+              }
+            } catch (_) {}
           }
         });
       }).catch(function (e) {

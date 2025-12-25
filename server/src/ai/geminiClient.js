@@ -1,6 +1,7 @@
 const fs = require('fs');
 const { FunctionCallingConfigMode, MediaResolution, PartMediaResolutionLevel } = require('@google/genai');
 const { getAiClient } = require('./geminiCore');
+const { normalizeGeminiError } = require('./geminiErrors');
 
 function getModelId(model) {
   if (model === 'pro') return 'gemini-3-pro-preview';
@@ -284,23 +285,28 @@ async function extractPageBundle({ model, pageIndex, noteText, imagePath, mimeTy
   const parts = [buildInlineImagePart(imagePath, mimeType, modelId), { text: prompt }];
   const isGemini3 = isGemini3ModelId(modelId);
 
-  const response = await ai.models.generateContent({
-    model: modelId,
-    contents: [{ role: 'user', parts }],
-    config: {
-      ...(isGemini3 ? {} : { mediaResolution: MediaResolution.MEDIA_RESOLUTION_HIGH }),
-      thinkingConfig: { thinkingLevel: 'HIGH' },
-      toolConfig: {
-        functionCallingConfig: {
-          mode: FunctionCallingConfigMode.ANY,
-          allowedFunctionNames: ['extract_page_bundle'],
+  let response;
+  try {
+    response = await ai.models.generateContent({
+      model: modelId,
+      contents: [{ role: 'user', parts }],
+      config: {
+        ...(isGemini3 ? {} : { mediaResolution: MediaResolution.MEDIA_RESOLUTION_HIGH }),
+        thinkingConfig: { thinkingLevel: 'HIGH' },
+        toolConfig: {
+          functionCallingConfig: {
+            mode: FunctionCallingConfigMode.ANY,
+            allowedFunctionNames: ['extract_page_bundle'],
+          },
         },
+        tools: [{ functionDeclarations: [extractPageBundleDeclaration] }],
+        temperature: 0.2,
+        topP: 0.95,
       },
-      tools: [{ functionDeclarations: [extractPageBundleDeclaration] }],
-      temperature: 0.2,
-      topP: 0.95,
-    },
-  });
+    });
+  } catch (e) {
+    throw normalizeGeminiError(e);
+  }
 
   const calls = response.functionCalls || [];
   const call = calls[0];
@@ -320,22 +326,27 @@ module.exports = {
     const modelId = getModelId(model);
     const prompt = buildFinalizePrompt({ pages, noteText });
 
-    const response = await ai.models.generateContent({
-      model: modelId,
-      contents: [{ role: 'user', parts: [{ text: prompt }] }],
-      config: {
-        thinkingConfig: { thinkingLevel: 'HIGH' },
-        toolConfig: {
-          functionCallingConfig: {
-            mode: FunctionCallingConfigMode.ANY,
-            allowedFunctionNames: ['finalize_import_job'],
+    let response;
+    try {
+      response = await ai.models.generateContent({
+        model: modelId,
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        config: {
+          thinkingConfig: { thinkingLevel: 'HIGH' },
+          toolConfig: {
+            functionCallingConfig: {
+              mode: FunctionCallingConfigMode.ANY,
+              allowedFunctionNames: ['finalize_import_job'],
+            },
           },
+          tools: [{ functionDeclarations: [finalizeImportJobDeclaration] }],
+          temperature: 0.2,
+          topP: 0.95,
         },
-        tools: [{ functionDeclarations: [finalizeImportJobDeclaration] }],
-        temperature: 0.2,
-        topP: 0.95,
-      },
-    });
+      });
+    } catch (e) {
+      throw normalizeGeminiError(e);
+    }
 
     const calls = response.functionCalls || [];
     const call = calls[0];

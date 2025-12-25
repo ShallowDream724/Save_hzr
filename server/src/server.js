@@ -6,6 +6,17 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const bcrypt = require('bcryptjs');
 
+const { setupUndiciProxyFromEnv } = require('./ai/outboundProxy');
+
+// Configure outbound proxy early (CN local-dev often cannot reach Google directly).
+const proxyState = setupUndiciProxyFromEnv();
+if (proxyState && proxyState.enabled) {
+  // Avoid leaking credentials in logs; outboundProxy redacts user/pass.
+  console.log(`[net] outbound proxy enabled for fetch: ${proxyState.proxyUrl || '(redacted)'}`);
+} else if (proxyState && proxyState.error) {
+  console.warn(`[net] outbound proxy setup failed: ${proxyState.error}`);
+}
+
 const { openDb } = require('./db');
 const { signToken, authMiddleware } = require('./auth');
 const { validateUsername, validatePassword } = require('./validators');

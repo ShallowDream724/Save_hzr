@@ -3,6 +3,7 @@ const { TokenBucket } = require('./tokenBucket');
 const { newId } = require('./ids');
 const { isoNow } = require('./time');
 const { getModelId } = require('./geminiClient');
+const { normalizeGeminiError } = require('./geminiErrors');
 
 function safeJsonParse(raw, fallback) {
   try {
@@ -259,36 +260,45 @@ async function streamConversationReply({ db, userId, conversationId, userMessage
   const systemInstruction = buildSystemInstruction({ conversation: conv, selectedText, contextText });
 
   const ai = getAiClient();
-  const stream = await ai.models.generateContentStream({
-    model: modelId,
-    contents: history,
-    config: {
-      systemInstruction,
-      thinkingConfig: { thinkingLevel: 'HIGH' },
-      temperature: 0.7,
-      topP: 0.95,
-    },
-  });
+  let stream;
+  try {
+    stream = await ai.models.generateContentStream({
+      model: modelId,
+      contents: history,
+      config: {
+        systemInstruction,
+        thinkingConfig: { thinkingLevel: 'HIGH' },
+        temperature: 0.7,
+        topP: 0.95,
+      },
+    });
+  } catch (e) {
+    throw normalizeGeminiError(e);
+  }
 
   let assistantText = '';
-  for await (const chunk of stream) {
-    const candidate = chunk && chunk.candidates && chunk.candidates[0];
-    const parts = candidate && candidate.content && Array.isArray(candidate.content.parts) ? candidate.content.parts : null;
-    if (parts) {
-      for (const part of parts) {
-        const text = part && typeof part.text === 'string' ? part.text : '';
-        if (!text) continue;
+  try {
+    for await (const chunk of stream) {
+      const candidate = chunk && chunk.candidates && chunk.candidates[0];
+      const parts = candidate && candidate.content && Array.isArray(candidate.content.parts) ? candidate.content.parts : null;
+      if (parts) {
+        for (const part of parts) {
+          const text = part && typeof part.text === 'string' ? part.text : '';
+          if (!text) continue;
+          assistantText += text;
+          onDelta(text);
+        }
+        continue;
+      }
+
+      const text = chunk && typeof chunk.text === 'string' ? chunk.text : '';
+      if (text) {
         assistantText += text;
         onDelta(text);
       }
-      continue;
     }
-
-    const text = chunk && typeof chunk.text === 'string' ? chunk.text : '';
-    if (text) {
-      assistantText += text;
-      onDelta(text);
-    }
+  } catch (e) {
+    throw normalizeGeminiError(e);
   }
 
   assistantText = assistantText.trim();

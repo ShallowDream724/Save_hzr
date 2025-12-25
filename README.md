@@ -39,6 +39,8 @@ node dev.mjs
 
 冒烟测试（不调用 Gemini）：`node dev.mjs --smoke`
 
+如果你在中国大陆本机开发，Gemini 可能因网络原因不可达：在 `.env` 里设置 `AI_HTTP_PROXY`（或 `HTTPS_PROXY`）即可让后端通过代理访问。
+
 ## 数据库会不会丢？
 - 不会：只要你不删 `pharm_sync_data` volume，重新 `git pull/clone` + `docker compose up -d --build` 都不会影响数据库。
 - 会丢的情况：`docker compose down -v`、`docker volume rm pharm_sync_data`、或你把 DB 改到别处但没迁移。

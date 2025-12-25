@@ -24,6 +24,7 @@ cd ..
 cp .env.example .env
 ```
 然后在 `.env` 里设置：`JWT_SECRET`、`GEMINI_API_KEY`（以及可选的 `AI_IMPORT_*` 参数）。
+如果你在中国大陆本机开发，建议同时设置 `AI_HTTP_PROXY`（或 `HTTPS_PROXY`），否则后端可能无法访问 Google/Gemini。
 
 ### 0.3 启动本地服务（推荐）
 ```bash

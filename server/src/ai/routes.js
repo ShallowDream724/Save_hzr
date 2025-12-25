@@ -402,7 +402,12 @@ function registerAiRoutes(app, { db, authMiddleware, importScheduler }) {
     } catch (e) {
       const name = e && e.name ? String(e.name) : 'Error';
       const msg = e instanceof Error ? e.message : String(e);
-      const status = name === 'RateLimited' ? 429 : name === 'BadRequest' ? 400 : name === 'NotFound' ? 404 : 500;
+      const status =
+        name === 'RateLimited' ? 429 :
+        name === 'BadRequest' ? 400 :
+        name === 'NotFound' ? 404 :
+        name === 'NetworkError' ? 502 :
+        500;
       send('error', { error: name, message: msg });
       res.statusCode = status;
       res.end();
