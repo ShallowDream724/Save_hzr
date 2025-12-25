@@ -15,3 +15,4 @@ data/
 
 # docker volumes (if bind-mounted)
 pharm_sync_data/
+All-Model-Chat/

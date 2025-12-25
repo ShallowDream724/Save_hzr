@@ -9,9 +9,16 @@ const bcrypt = require('bcryptjs');
 const { openDb } = require('./db');
 const { signToken, authMiddleware } = require('./auth');
 const { validateUsername, validatePassword } = require('./validators');
+const { createLibraryPatcher, mergeAiChapters } = require('./ai/libraryPatch');
+const { startImportScheduler } = require('./ai/importScheduler');
+const { registerAiRoutes } = require('./ai/routes');
 
 const app = express();
 const db = openDb();
+
+// --- AI background services ---
+const { patchLibrary } = createLibraryPatcher(db);
+const importScheduler = startImportScheduler({ db, patchLibrary });
 
 app.disable('x-powered-by');
 app.use(helmet({
@@ -42,6 +49,9 @@ app.use(cors({
 
 app.use(express.json({ limit: '10mb' }));
 app.use(morgan('combined'));
+
+// AI routes (must be registered after global middleware)
+registerAiRoutes(app, { db, authMiddleware, importScheduler });
 
 function getDeviceMeta(req) {
   const rawId = String(req.headers['x-device-id'] || '').trim();
@@ -126,7 +136,17 @@ app.put('/api/library', authMiddleware, (req, res) => {
     return res.status(409).json({ error: 'version conflict', version: currentVersion });
   }
 
-  const payload = JSON.stringify(data);
+  // Preserve server-side AI insertions when the client force-overwrites due to a conflict.
+  // In non-force saves, we respect the client's intent (including deletions).
+  let merged = data;
+  if (force && current && current.data_json) {
+    try {
+      const curObj = JSON.parse(current.data_json);
+      merged = mergeAiChapters(curObj, merged) || merged;
+    } catch (_) {}
+  }
+
+  const payload = JSON.stringify(merged);
   const nextVersion = currentVersion ? currentVersion + 1 : 1;
   const updatedAt = new Date().toISOString();
 
