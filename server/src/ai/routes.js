@@ -375,6 +375,7 @@ function registerAiRoutes(app, { db, authMiddleware, importScheduler }) {
     const id = String(req.params.id || '');
     const userMessage = req.body && typeof req.body.userMessage === 'string' ? req.body.userMessage : '';
     const selectedText = req.body && typeof req.body.selectedText === 'string' ? req.body.selectedText : '';
+    const modelPref = req.body && (req.body.modelPref === 'pro' || req.body.modelPref === 'flash') ? req.body.modelPref : null;
 
     res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
     res.setHeader('Cache-Control', 'no-cache, no-transform');
@@ -393,6 +394,7 @@ function registerAiRoutes(app, { db, authMiddleware, importScheduler }) {
         conversationId: id,
         userMessage,
         selectedText,
+        modelPref,
         onDelta: (text) => send('delta', { text }),
       });
       send('done', { ok: true });

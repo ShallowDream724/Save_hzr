@@ -402,6 +402,7 @@
       els.settingsBtn = document.getElementById('settingsBtn');
       els.syncBtn = document.getElementById('syncBtn');
       els.syncStatus = document.getElementById('syncStatus');
+      els.aiImportBtn = document.getElementById('aiImportBtn');
 
       els.importModal = document.getElementById('importModal');
       els.importTabFile = document.getElementById('importTabFile');
@@ -468,6 +469,31 @@
       els.resetToDefaultBtn = document.getElementById('resetToDefaultBtn');
       els.settingsCloseBtn = document.getElementById('settingsCloseBtn');
       els.resetHint = document.getElementById('resetHint');
+
+      // AI chat modal
+      els.aiChatModal = document.getElementById('aiChatModal');
+      els.aiChatTitle = document.getElementById('aiChatTitle');
+      els.aiChatModelSelect = document.getElementById('aiChatModelSelect');
+      els.aiChatCloseBtn = document.getElementById('aiChatCloseBtn');
+      els.aiChatContextWrap = document.getElementById('aiChatContextWrap');
+      els.aiChatContextText = document.getElementById('aiChatContextText');
+      els.aiChatMessages = document.getElementById('aiChatMessages');
+      els.aiChatInput = document.getElementById('aiChatInput');
+      els.aiChatSendBtn = document.getElementById('aiChatSendBtn');
+      els.aiChatHint = document.getElementById('aiChatHint');
+
+      // AI import modal
+      els.aiImportModal = document.getElementById('aiImportModal');
+      els.aiImportCloseBtn = document.getElementById('aiImportCloseBtn');
+      els.aiImportFilesInput = document.getElementById('aiImportFilesInput');
+      els.aiImportFilesList = document.getElementById('aiImportFilesList');
+      els.aiImportNoteText = document.getElementById('aiImportNoteText');
+      els.aiImportModelSelect = document.getElementById('aiImportModelSelect');
+      els.aiImportStartBtn = document.getElementById('aiImportStartBtn');
+      els.aiImportProgressFill = document.getElementById('aiImportProgressFill');
+      els.aiImportProgressText = document.getElementById('aiImportProgressText');
+      els.aiImportQueueText = document.getElementById('aiImportQueueText');
+      els.aiImportHint = document.getElementById('aiImportHint');
     }
   
     /** ---------------------------
@@ -2181,8 +2207,9 @@
       var card = document.createElement('div');
       card.className = 'question-card';
       if (q && q.id !== undefined && q.id !== null) card.dataset.hzrSeed = 'q:' + String(q.id);
+      if (q && q.id !== undefined && q.id !== null) card.dataset.qid = String(q.id);
   
-      var html = '<div class="q-header"><span class="q-id">' + q.id + '</span><div class="q-text">' + q.text + '</div></div><ul class="options-list">';
+      var html = '<div class="q-header"><span class="q-id">' + q.id + '</span><div class="q-text">' + q.text + '</div><button class="ai-ask-btn" type="button" title="问 AI">问AI</button></div><ul class="options-list">';
       for (var i = 0; i < (q.options || []).length; i++) {
         var opt = q.options[i];
         var isCorrect = opt.label === q.answer;
@@ -2204,6 +2231,547 @@
       card.innerHTML = html;
       applyRandomHighlights(card);
       return card;
+    }
+
+    /** ---------------------------
+     * 8.1) 题目快捷问 AI（首版：轻量 modal + SSE 流式）
+     * --------------------------- */
+    var aiChat = {
+      conversationId: null,
+      scope: null,
+      busy: false,
+      lastQuestionContext: '',
+      pendingSelectedText: ''
+    };
+
+    function htmlToText(html) {
+      try {
+        var div = document.createElement('div');
+        div.innerHTML = String(html || '');
+        return (div.textContent || div.innerText || '').trim();
+      } catch (_) {
+        return String(html || '').trim();
+      }
+    }
+
+    function buildQuestionContextText(book, chapter, q) {
+      var out = [];
+      if (book && book.title) out.push('书：' + String(book.title));
+      if (chapter && chapter.title) out.push('章节：' + String(chapter.title));
+      if (q && (q.id !== undefined && q.id !== null)) out.push('题号：' + String(q.id));
+      out.push('');
+      out.push('【题目】');
+      out.push(htmlToText(q && q.text));
+      out.push('');
+      out.push('【选项】');
+      for (var i = 0; i < (q && q.options ? q.options.length : 0); i++) {
+        var opt = q.options[i];
+        if (!opt) continue;
+        out.push(String(opt.label || '') + '. ' + htmlToText(opt.content));
+      }
+      out.push('');
+      out.push('【答案】' + String((q && q.answer) ? q.answer : ''));
+      if (q && q.explanation) {
+        out.push('');
+        out.push('【解析】');
+        out.push(htmlToText(q.explanation));
+      }
+      if (q && q.knowledge) {
+        out.push('');
+        out.push('【知识点】' + String(q.knowledgeTitle || ''));
+        out.push(htmlToText(q.knowledge));
+      }
+      return out.join('\n').trim();
+    }
+
+    function setAiChatHint(text) {
+      if (!els.aiChatHint) return;
+      els.aiChatHint.textContent = text ? String(text) : '';
+    }
+
+    function openAiChatModal() {
+      if (!els.aiChatModal) return;
+      hideAiSelBtn();
+      els.aiChatModal.classList.add('open');
+      try { if (els.aiChatInput) els.aiChatInput.focus(); } catch (_) {}
+    }
+
+    function closeAiChatModal() {
+      if (!els.aiChatModal) return;
+      els.aiChatModal.classList.remove('open');
+      aiChat.busy = false;
+      setAiChatHint('');
+    }
+
+    function clearAiMessages() {
+      if (!els.aiChatMessages) return;
+      els.aiChatMessages.innerHTML = '';
+    }
+
+    function appendAiBubble(role, text) {
+      if (!els.aiChatMessages) return null;
+      var wrap = document.createElement('div');
+      wrap.className = 'ai-msg ' + role;
+      var bubble = document.createElement('div');
+      bubble.className = 'ai-bubble ' + role;
+      bubble.innerHTML = escapeHtml(String(text || '')).replace(/\n/g, '<br>');
+      wrap.appendChild(bubble);
+      els.aiChatMessages.appendChild(wrap);
+      try { els.aiChatMessages.scrollTop = els.aiChatMessages.scrollHeight; } catch (_) {}
+      return bubble;
+    }
+
+    function renderAiConversation(conv, messages) {
+      if (els.aiChatTitle) els.aiChatTitle.textContent = (conv && conv.title) ? String(conv.title) : 'AI 对话';
+      if (els.aiChatModelSelect) els.aiChatModelSelect.value = (conv && conv.modelPref) ? String(conv.modelPref) : 'flash';
+
+      // Pull question context from the first system message if present.
+      var contextText = '';
+      for (var i = 0; i < (messages || []).length; i++) {
+        var m = messages[i];
+        if (m && m.role === 'system' && m.text) { contextText = String(m.text); break; }
+      }
+      if (!contextText) contextText = aiChat.lastQuestionContext || '';
+      if (els.aiChatContextText) els.aiChatContextText.textContent = contextText;
+      if (els.aiChatContextWrap) {
+        if (contextText) els.aiChatContextWrap.style.display = '';
+        else els.aiChatContextWrap.style.display = 'none';
+      }
+
+      clearAiMessages();
+      for (var j = 0; j < (messages || []).length; j++) {
+        var msg = messages[j];
+        if (!msg || !msg.role) continue;
+        if (msg.role === 'system') continue; // shown in context panel
+        appendAiBubble(msg.role === 'assistant' ? 'assistant' : 'user', msg.text || '');
+      }
+    }
+
+    function loadAiConversation(conversationId) {
+      return apiFetch('/api/ai/conversations/' + encodeURIComponent(String(conversationId)), { method: 'GET' })
+        .then(function (res) {
+          if (!res.ok) throw new Error('load conversation failed');
+          return res.json();
+        })
+        .then(function (j) {
+          aiChat.conversationId = j && j.conversation ? j.conversation.id : conversationId;
+          renderAiConversation(j.conversation, j.messages || []);
+          return j;
+        });
+    }
+
+    function consumeEventStream(res, onEvent) {
+      if (!res || !res.body || !res.body.getReader || typeof TextDecoder === 'undefined') {
+        return res.text().then(function (t) { onEvent('error', { message: t || 'no stream' }); });
+      }
+      var reader = res.body.getReader();
+      var decoder = new TextDecoder('utf-8');
+      var buf = '';
+
+      function parseBlock(block) {
+        var lines = block.split(/\r?\n/);
+        var ev = 'message';
+        var data = '';
+        for (var i = 0; i < lines.length; i++) {
+          var line = lines[i];
+          if (!line) continue;
+          if (line[0] === ':') continue;
+          if (line.indexOf('event:') === 0) ev = line.slice(6).trim();
+          else if (line.indexOf('data:') === 0) data += line.slice(5).trim();
+        }
+        if (!data) return;
+        var obj = null;
+        try { obj = JSON.parse(data); } catch (_) { obj = { text: data }; }
+        onEvent(ev, obj);
+      }
+
+      function pump() {
+        return reader.read().then(function (r) {
+          if (r.done) return;
+          buf += decoder.decode(r.value, { stream: true });
+          var parts = buf.split(/\n\n/);
+          buf = parts.pop();
+          for (var i = 0; i < parts.length; i++) parseBlock(parts[i]);
+          return pump();
+        });
+      }
+      return pump();
+    }
+
+    function sendAiChatMessage() {
+      if (aiChat.busy) return;
+      if (!aiChat.conversationId) { showToast('未建立对话', { timeoutMs: 1800 }); return; }
+      var msg = (els.aiChatInput && typeof els.aiChatInput.value === 'string') ? els.aiChatInput.value.trim() : '';
+      if (!msg) return;
+
+      var modelPref = (els.aiChatModelSelect && els.aiChatModelSelect.value) ? String(els.aiChatModelSelect.value) : 'flash';
+      var selText = aiChat.pendingSelectedText ? String(aiChat.pendingSelectedText) : '';
+      aiChat.pendingSelectedText = '';
+
+      if (els.aiChatInput) els.aiChatInput.value = '';
+      setAiChatHint('AI 思考中…');
+
+      appendAiBubble('user', msg);
+      var assistantBubble = appendAiBubble('assistant', '');
+      aiChat.busy = true;
+      if (els.aiChatSendBtn) els.aiChatSendBtn.disabled = true;
+
+      apiFetch('/api/ai/conversations/' + encodeURIComponent(String(aiChat.conversationId)) + '/messages/stream', {
+        method: 'POST',
+        body: JSON.stringify({ userMessage: msg, selectedText: selText, modelPref: modelPref })
+      }).then(function (res) {
+        return consumeEventStream(res, function (event, data) {
+          if (event === 'delta') {
+            var t = (data && typeof data.text === 'string') ? data.text : '';
+            if (!t) return;
+            assistantBubble._raw = (assistantBubble._raw || '') + t;
+            assistantBubble.innerHTML = escapeHtml(assistantBubble._raw).replace(/\n/g, '<br>');
+            try { if (els.aiChatMessages) els.aiChatMessages.scrollTop = els.aiChatMessages.scrollHeight; } catch (_) {}
+            return;
+          }
+          if (event === 'error') {
+            var m = (data && data.message) ? String(data.message) : '请求失败';
+            setAiChatHint('失败：' + m);
+            return;
+          }
+          if (event === 'done') {
+            setAiChatHint('');
+          }
+        });
+      }).catch(function (e) {
+        setAiChatHint('失败：' + (e && e.message ? e.message : '网络错误'));
+      }).then(function () {
+        aiChat.busy = false;
+        if (els.aiChatSendBtn) els.aiChatSendBtn.disabled = false;
+        // Refresh from server (keeps multi-device consistent)
+        return loadAiConversation(aiChat.conversationId).catch(function () {});
+      });
+    }
+
+    function openAiChatForQuestionId(qid) {
+      var selectedText = arguments.length > 1 ? arguments[1] : '';
+      var token = getToken();
+      if (!token) {
+        showToast('请先登录云同步后使用 AI', { timeoutMs: 2400 });
+        updateAuthModalUI();
+        switchSyncTab('account');
+        if (els.authModal) els.authModal.classList.add('open');
+        return;
+      }
+
+      var chapter = findChapterById(currentChapterId);
+      if (!chapter || !Array.isArray(chapter.questions)) { showToast('未找到题目', { timeoutMs: 1800 }); return; }
+
+      var q = null;
+      for (var i = 0; i < chapter.questions.length; i++) {
+        if (String(chapter.questions[i].id) === String(qid)) { q = chapter.questions[i]; break; }
+      }
+      if (!q) { showToast('未找到题目', { timeoutMs: 1800 }); return; }
+
+      var book = getActiveBook();
+      var ctx = buildQuestionContextText(book, chapter, q);
+      aiChat.lastQuestionContext = ctx;
+      aiChat.scope = 'question';
+      aiChat.pendingSelectedText = selectedText ? String(selectedText) : '';
+
+      setAiChatHint('建立对话…');
+      openAiChatModal();
+
+      var modelPref = (els.aiChatModelSelect && els.aiChatModelSelect.value) ? String(els.aiChatModelSelect.value) : 'flash';
+      apiFetch('/api/ai/conversations', {
+        method: 'POST',
+        body: JSON.stringify({
+          scope: 'question',
+          bookId: book && book.id ? String(book.id) : null,
+          chapterId: chapter && chapter.id ? String(chapter.id) : null,
+          questionId: (q && q.id !== undefined && q.id !== null) ? String(q.id) : null,
+          questionKey: (book && book.id ? String(book.id) : '') + '|' + (chapter && chapter.id ? String(chapter.id) : '') + '|' + String(qid),
+          modelPref: modelPref,
+          questionContext: ctx
+        })
+      }).then(function (res) {
+        if (!res.ok) throw new Error('create conversation failed');
+        return res.json();
+      }).then(function (j) {
+        if (!j || !j.conversationId) throw new Error('bad response');
+        aiChat.conversationId = j.conversationId;
+        return loadAiConversation(aiChat.conversationId);
+      }).then(function () {
+        if (aiChat.pendingSelectedText) setAiChatHint('已引用选中内容（发送时会带给 AI）');
+        else setAiChatHint('');
+      }).catch(function (e) {
+        setAiChatHint('失败：' + (e && e.message ? e.message : '请求失败'));
+      });
+    }
+
+    /** ---------------------------
+     * 8.2) 书内拍照导入（<=9 张，后端异步队列）
+     * --------------------------- */
+    var aiImport = {
+      files: [],
+      jobId: null,
+      pollTimer: 0
+    };
+
+    function setAiImportHint(text) {
+      if (!els.aiImportHint) return;
+      els.aiImportHint.textContent = text ? String(text) : '';
+    }
+
+    function setAiImportProgress(pct, text) {
+      if (els.aiImportProgressFill) els.aiImportProgressFill.style.width = String(Math.max(0, Math.min(100, pct || 0))) + '%';
+      if (els.aiImportProgressText) els.aiImportProgressText.textContent = text ? String(text) : '';
+    }
+
+    function setAiImportQueueText(text) {
+      if (!els.aiImportQueueText) return;
+      els.aiImportQueueText.textContent = text ? String(text) : '';
+    }
+
+    function renderAiImportFiles() {
+      if (!els.aiImportFilesList) return;
+      var html = '';
+      for (var i = 0; i < aiImport.files.length; i++) {
+        var f = aiImport.files[i];
+        if (!f) continue;
+        html += '<div class="ai-import-file" data-idx="' + i + '">' +
+          '<span class="ai-import-file-name">' + escapeHtml(f.name || ('image_' + (i + 1))) + '</span>' +
+          '<button class="ai-import-file-remove" type="button" title="移除">移除</button>' +
+        '</div>';
+      }
+      els.aiImportFilesList.innerHTML = html;
+    }
+
+    function addAiImportFiles(fileList) {
+      var list = fileList && fileList.length ? fileList : [];
+      for (var i = 0; i < list.length; i++) {
+        if (aiImport.files.length >= 9) break;
+        var f = list[i];
+        if (!f) continue;
+        var type = String(f.type || '');
+        if (type && type.indexOf('image/') !== 0) continue;
+        aiImport.files.push(f);
+      }
+      if (aiImport.files.length > 9) aiImport.files = aiImport.files.slice(0, 9);
+      renderAiImportFiles();
+    }
+
+    function clearAiImportJobPolling() {
+      if (aiImport.pollTimer) {
+        try { clearInterval(aiImport.pollTimer); } catch (_) {}
+        aiImport.pollTimer = 0;
+      }
+    }
+
+    function openAiImportModal() {
+      if (!els.aiImportModal) return;
+      if (!getToken()) {
+        showToast('请先登录云同步后使用 AI 导入', { timeoutMs: 2400 });
+        updateAuthModalUI();
+        switchSyncTab('account');
+        if (els.authModal) els.authModal.classList.add('open');
+        return;
+      }
+      if (homeVisible) {
+        showToast('请先进入一本书再导入', { timeoutMs: 2200 });
+        return;
+      }
+      aiImport.files = [];
+      aiImport.jobId = null;
+      clearAiImportJobPolling();
+      if (els.aiImportNoteText) els.aiImportNoteText.value = '';
+      renderAiImportFiles();
+      setAiImportProgress(0, '未开始');
+      setAiImportQueueText('');
+      setAiImportHint('');
+      els.aiImportModal.classList.add('open');
+    }
+
+    function closeAiImportModal() {
+      if (!els.aiImportModal) return;
+      els.aiImportModal.classList.remove('open');
+    }
+
+    function fetchWithAuth(path, options) {
+      options = options || {};
+      var headers = options.headers || {};
+      var t = getToken();
+      if (t) headers['Authorization'] = 'Bearer ' + t;
+      headers['X-Device-Id'] = headers['X-Device-Id'] || getOrCreateDeviceId();
+      try {
+        headers['X-Device-Label'] = headers['X-Device-Label'] || encodeURIComponent(getDeviceLabel());
+      } catch (_) {
+        headers['X-Device-Label'] = headers['X-Device-Label'] || '';
+      }
+      options.headers = headers;
+      return fetch(API_BASE + path, options);
+    }
+
+    function pollAiImportJob(jobId) {
+      if (!jobId) return;
+      return apiFetch('/api/ai/jobs/' + encodeURIComponent(String(jobId)), { method: 'GET' })
+        .then(function (res) { if (!res.ok) throw new Error('job load failed'); return res.json(); })
+        .then(function (j) {
+          var p = j && j.job && j.job.progress ? j.job.progress : null;
+          if (!p) return j;
+
+          var total = Number(p.totalPages) || 0;
+          var done = Number(p.donePages) || 0;
+          var ok = Number(p.okPages) || 0;
+          var fail = Number(p.failedPages) || 0;
+          var pct = total > 0 ? Math.round((done / total) * 100) : 0;
+          setAiImportProgress(pct, (p.status || '') + ' · ' + done + '/' + total + '（成功 ' + ok + '，失败 ' + fail + '）');
+
+          if (p.status === 'queued' || p.status === 'running' || p.status === 'finalizing' || p.status === 'writing') {
+            var eta = (p.etaMin !== undefined && p.etaMin !== null) ? String(p.etaMin) : '';
+            setAiImportQueueText('排队：前面 ' + String(p.aheadUsers || 0) + ' 位用户 · 预计 ' + (eta ? eta + ' 分钟' : '计算中…'));
+          } else {
+            setAiImportQueueText('');
+          }
+
+          if (p.status === 'done' || p.status === 'done_with_errors' || p.status === 'failed') {
+            clearAiImportJobPolling();
+            if (p.status === 'done') setAiImportHint('完成：已写入题库。');
+            else if (p.status === 'done_with_errors') setAiImportHint('完成但有失败页：可稍后重试导入。');
+            else setAiImportHint('失败：请稍后重试。');
+          }
+          return j;
+        })
+        .catch(function (e) {
+          setAiImportHint('状态获取失败：' + (e && e.message ? e.message : '网络错误'));
+        });
+    }
+
+    function startAiImport() {
+      if (!getToken()) {
+        showToast('请先登录云同步', { timeoutMs: 2200 });
+        return;
+      }
+      if (homeVisible) {
+        showToast('请先进入一本书再导入', { timeoutMs: 2200 });
+        return;
+      }
+      var book = getActiveBook();
+      if (!book || !book.id) { showToast('未找到书', { timeoutMs: 1800 }); return; }
+      if (!aiImport.files.length) { showToast('请先选择图片（最多 9 张）', { timeoutMs: 2200 }); return; }
+
+      var model = (els.aiImportModelSelect && els.aiImportModelSelect.value) ? String(els.aiImportModelSelect.value) : 'flash';
+      var noteText = (els.aiImportNoteText && typeof els.aiImportNoteText.value === 'string') ? els.aiImportNoteText.value : '';
+
+      var fd = new FormData();
+      fd.append('bookId', String(book.id));
+      fd.append('model', model);
+      fd.append('noteText', noteText || '');
+      for (var i = 0; i < aiImport.files.length; i++) fd.append('images', aiImport.files[i], aiImport.files[i].name || ('page_' + (i + 1) + '.png'));
+
+      setAiImportHint('提交中…');
+      setAiImportProgress(0, '提交中…');
+
+      fetchWithAuth('/api/ai/book-import', { method: 'POST', body: fd })
+        .then(function (res) {
+          return res.json().then(function (j) { return { res: res, json: j }; });
+        })
+        .then(function (x) {
+          if (x.res.status === 409 && x.json && x.json.jobId) {
+            aiImport.jobId = x.json.jobId;
+            setAiImportHint('已有进行中的导入任务，已切换到该任务。');
+            return aiImport.jobId;
+          }
+          if (!x.res.ok) {
+            var msg = (x.json && (x.json.message || x.json.error)) ? String(x.json.message || x.json.error) : '提交失败';
+            throw new Error(msg);
+          }
+          if (!x.json || !x.json.jobId) throw new Error('bad response');
+          aiImport.jobId = x.json.jobId;
+          setAiImportHint('已提交：后台处理中…');
+          return aiImport.jobId;
+        })
+        .then(function (jobId) {
+          clearAiImportJobPolling();
+          pollAiImportJob(jobId);
+          aiImport.pollTimer = setInterval(function () { pollAiImportJob(jobId); }, 2000);
+        })
+        .catch(function (e) {
+          setAiImportHint('失败：' + (e && e.message ? e.message : '提交失败'));
+          setAiImportProgress(0, '未开始');
+        });
+    }
+
+    /** ---------------------------
+     * 8.3) 选中引用快捷问 AI（浮动按钮）
+     * --------------------------- */
+    var aiSel = { btn: null, qid: null, text: '', timer: 0 };
+
+    function ensureAiSelBtn() {
+      if (aiSel.btn) return aiSel.btn;
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'ai-sel-btn';
+      btn.textContent = '问AI';
+      btn.onclick = function () {
+        var qid = aiSel.qid;
+        var txt = aiSel.text;
+        hideAiSelBtn();
+        if (!qid || !txt) return;
+        openAiChatForQuestionId(qid, txt);
+      };
+      document.body.appendChild(btn);
+      aiSel.btn = btn;
+      return btn;
+    }
+
+    function hideAiSelBtn() {
+      if (!aiSel.btn) return;
+      aiSel.btn.style.display = 'none';
+      aiSel.qid = null;
+      aiSel.text = '';
+    }
+
+    function scheduleAiSelUpdate() {
+      if (aiSel.timer) {
+        try { clearTimeout(aiSel.timer); } catch (_) {}
+        aiSel.timer = 0;
+      }
+      aiSel.timer = setTimeout(updateAiSelBtn, 120);
+    }
+
+    function updateAiSelBtn() {
+      aiSel.timer = 0;
+      if (!window.getSelection) { hideAiSelBtn(); return; }
+      var sel = null;
+      try { sel = window.getSelection(); } catch (_) { sel = null; }
+      if (!sel || sel.isCollapsed) { hideAiSelBtn(); return; }
+      var text = String(sel.toString() || '').trim();
+      if (!text || text.length < 2) { hideAiSelBtn(); return; }
+
+      var node = sel.anchorNode || sel.focusNode;
+      var el = null;
+      if (node && node.nodeType === 3) el = node.parentElement;
+      else el = node;
+      if (!el || !el.closest) { hideAiSelBtn(); return; }
+      var card = el.closest('.question-card');
+      if (!card || !card.dataset || !card.dataset.qid) { hideAiSelBtn(); return; }
+
+      var rect = null;
+      try {
+        var range = sel.rangeCount ? sel.getRangeAt(0) : null;
+        rect = range ? range.getBoundingClientRect() : null;
+      } catch (_) { rect = null; }
+      if (!rect) { hideAiSelBtn(); return; }
+
+      var btn = ensureAiSelBtn();
+      aiSel.qid = String(card.dataset.qid);
+      aiSel.text = text;
+
+      var left = rect.right + 10;
+      var top = rect.top - 8;
+      var bw = 54;
+      var bh = 34;
+      left = Math.max(8, Math.min(window.innerWidth - bw - 8, left));
+      top = Math.max(8, Math.min(window.innerHeight - bh - 8, top));
+      btn.style.left = left + 'px';
+      btn.style.top = top + 'px';
+      btn.style.display = 'block';
     }
   
     /** ---------------------------
@@ -3358,6 +3926,113 @@
       bindOverlayClose(els.bookModal);
       bindOverlayClose(els.authModal);
       bindOverlayClose(els.settingsModal);
+      bindOverlayClose(els.aiChatModal);
+      bindOverlayClose(els.aiImportModal);
+
+      // AI chat bindings
+      if (els.questionsContainer) {
+        els.questionsContainer.addEventListener('click', function (e) {
+          var t = e && e.target ? e.target : null;
+          if (!t || !t.closest) return;
+          var btn = t.closest('.ai-ask-btn');
+          if (!btn) return;
+          var card = btn.closest('.question-card');
+          var qid = (card && card.dataset) ? card.dataset.qid : null;
+          if (!qid) return;
+          openAiChatForQuestionId(qid);
+        }, false);
+      }
+      if (els.aiChatCloseBtn) {
+        els.aiChatCloseBtn.onclick = function () { closeAiChatModal(); };
+      }
+      if (els.aiChatSendBtn) {
+        els.aiChatSendBtn.onclick = function () { sendAiChatMessage(); };
+      }
+      if (els.aiChatInput) {
+        addEvt(els.aiChatInput, 'keydown', function (e) {
+          if (!e) return;
+          if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendAiChatMessage();
+          }
+        }, { passive: false });
+      }
+
+      // AI import bindings
+      if (els.aiImportBtn) {
+        els.aiImportBtn.onclick = function () { openAiImportModal(); };
+      }
+      if (els.aiImportCloseBtn) {
+        els.aiImportCloseBtn.onclick = function () { closeAiImportModal(); };
+      }
+      if (els.aiImportStartBtn) {
+        els.aiImportStartBtn.onclick = function () { startAiImport(); };
+      }
+      if (els.aiImportFilesInput) {
+        els.aiImportFilesInput.onchange = function () {
+          try { addAiImportFiles(els.aiImportFilesInput.files); } catch (_) {}
+          try { els.aiImportFilesInput.value = ''; } catch (_) {}
+        };
+      }
+      if (els.aiImportFilesList) {
+        els.aiImportFilesList.addEventListener('click', function (e) {
+          var t = e && e.target ? e.target : null;
+          if (!t || !t.closest) return;
+          var btn = t.closest('.ai-import-file-remove');
+          if (!btn) return;
+          var item = btn.closest('.ai-import-file');
+          var idx = item && item.dataset ? Number(item.dataset.idx) : NaN;
+          if (!Number.isFinite(idx)) return;
+          aiImport.files.splice(idx, 1);
+          renderAiImportFiles();
+        }, false);
+      }
+
+      // Ctrl+V paste images into AI import when modal is open (desktop convenience)
+      addEvt(document, 'paste', function (e) {
+        try {
+          if (!els.aiImportModal || !els.aiImportModal.classList.contains('open')) return;
+          var cd = e && e.clipboardData ? e.clipboardData : null;
+          if (!cd || !cd.items) return;
+          var files = [];
+          for (var i = 0; i < cd.items.length; i++) {
+            var it = cd.items[i];
+            if (!it) continue;
+            if (it.kind === 'file') {
+              var f = it.getAsFile();
+              if (f && String(f.type || '').indexOf('image/') === 0) files.push(f);
+            }
+          }
+          if (files.length) {
+            addAiImportFiles(files);
+            e.preventDefault();
+          }
+        } catch (_) {}
+      }, { passive: false });
+
+      // Drag & drop images into AI import modal
+      if (els.aiImportModal) {
+        ['dragenter', 'dragover'].forEach(function (type) {
+          addEvt(els.aiImportModal, type, function (e) {
+            if (!els.aiImportModal.classList.contains('open')) return;
+            try { e.preventDefault(); } catch (_) {}
+          }, { passive: false });
+        });
+        addEvt(els.aiImportModal, 'drop', function (e) {
+          try {
+            if (!els.aiImportModal.classList.contains('open')) return;
+            e.preventDefault();
+            var dt = e && e.dataTransfer ? e.dataTransfer : null;
+            if (!dt || !dt.files) return;
+            addAiImportFiles(dt.files);
+          } catch (_) {}
+        }, { passive: false });
+      }
+
+      // Selection -> floating "ask AI" button
+      addEvt(document, 'selectionchange', scheduleAiSelUpdate, { passive: true });
+      addEvt(document, 'pointerup', scheduleAiSelUpdate, { passive: true });
+      addEvt(window, 'scroll', hideAiSelBtn, { passive: true });
 
       // ESC：关闭 toast + 弹窗 + 侧边栏（移动端）
       addEvt(document, 'keydown', function (e) {
@@ -3366,6 +4041,8 @@
         if (els.importModal) els.importModal.classList.remove('open');
         if (els.authModal) els.authModal.classList.remove('open');
         if (els.settingsModal) els.settingsModal.classList.remove('open');
+        if (els.aiChatModal) els.aiChatModal.classList.remove('open');
+        if (els.aiImportModal) els.aiImportModal.classList.remove('open');
         if (els.sidebar && isCompactLayout()) els.sidebar.classList.remove('active');
       }, { passive: true });
 

@@ -78,6 +78,7 @@ function createOrReuseConversation(db, userId, payload) {
   const questionId = isNonEmptyString(payload.questionId) ? payload.questionId.trim() : null;
   const questionKey = isNonEmptyString(payload.questionKey) ? payload.questionKey.trim() : null;
   const modelPref = payload.modelPref === 'pro' || payload.modelPref === 'flash' ? payload.modelPref : 'flash';
+  const questionContext = isNonEmptyString(payload.questionContext) ? payload.questionContext.trim() : null;
 
   if (!['general', 'book', 'question'].includes(scope)) {
     const e = new Error('bad scope');
@@ -106,6 +107,18 @@ function createOrReuseConversation(db, userId, payload) {
     VALUES (?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, NULL)
   `
   ).run(conversationId, userId, scope, bookId, chapterId, questionId, questionKey, modelPref, now, now);
+
+  if (scope === 'question' && questionContext) {
+    // Persist the question context as a system message so multi-device reuse keeps the same grounding.
+    // The model will receive it via systemInstruction (see streamConversationReply).
+    insertMessage(db, {
+      conversationId,
+      userId,
+      role: 'system',
+      contentText: questionContext,
+      contentJson: { kind: 'question_context' },
+    });
+  }
 
   return { conversationId, reused: false };
 }
@@ -149,11 +162,15 @@ function insertMessage(db, { conversationId, userId, role, contentText, contentJ
   `
   ).run(id, conversationId, userId, role, contentText, contentJson ? JSON.stringify(contentJson) : null, now);
 
-  db.prepare('UPDATE ai_conversations SET updated_at=?, last_message_at=? WHERE id=? AND user_id=?').run(now, now, conversationId, userId);
+  if (role === 'system') {
+    db.prepare('UPDATE ai_conversations SET updated_at=? WHERE id=? AND user_id=?').run(now, conversationId, userId);
+  } else {
+    db.prepare('UPDATE ai_conversations SET updated_at=?, last_message_at=? WHERE id=? AND user_id=?').run(now, now, conversationId, userId);
+  }
   return id;
 }
 
-function buildSystemInstruction({ conversation, selectedText }) {
+function buildSystemInstruction({ conversation, selectedText, contextText }) {
   const parts = [];
   parts.push('你是一个严谨、耐心的学习助手。回答要清晰、分点、必要时给出公式（LaTeX）。');
 
@@ -170,6 +187,10 @@ function buildSystemInstruction({ conversation, selectedText }) {
     parts.push(`用户选中引用：\n"""\n${selectedText}\n"""`);
   }
 
+  if (isNonEmptyString(contextText)) {
+    parts.push(`题目上下文（用于回答，不要逐字复述）：\n"""\n${contextText}\n"""`);
+  }
+
   return parts.join('\n\n');
 }
 
@@ -184,7 +205,7 @@ function toGeminiHistory(messages) {
   return out;
 }
 
-async function streamConversationReply({ db, userId, conversationId, userMessage, selectedText, onDelta }) {
+async function streamConversationReply({ db, userId, conversationId, userMessage, selectedText, modelPref, onDelta }) {
   const conv = getConversation(db, userId, conversationId);
   if (!conv) {
     const e = new Error('not found');
@@ -198,8 +219,22 @@ async function streamConversationReply({ db, userId, conversationId, userMessage
     throw e;
   }
 
-  const modelPref = conv.model_pref === 'pro' ? 'pro' : 'flash';
-  const modelId = getModelId(modelPref);
+  const requestedModel = modelPref === 'pro' || modelPref === 'flash' ? modelPref : null;
+  const effectiveModelPref = requestedModel || (conv.model_pref === 'pro' ? 'pro' : 'flash');
+  const modelId = getModelId(effectiveModelPref);
+
+  if (requestedModel && requestedModel !== conv.model_pref) {
+    try {
+      const now = isoNow();
+      db.prepare('UPDATE ai_conversations SET model_pref=?, updated_at=? WHERE id=? AND user_id=?').run(
+        requestedModel,
+        now,
+        conversationId,
+        userId
+      );
+      conv.model_pref = requestedModel;
+    } catch (_) {}
+  }
 
   const msgText = String(userMessage || '').trim();
   if (!msgText) {
@@ -212,7 +247,16 @@ async function streamConversationReply({ db, userId, conversationId, userMessage
 
   const historyRows = getMessages(db, userId, conversationId, 120);
   const history = toGeminiHistory(historyRows);
-  const systemInstruction = buildSystemInstruction({ conversation: conv, selectedText });
+
+  let contextText = '';
+  for (const m of historyRows) {
+    if (m && m.role === 'system' && isNonEmptyString(m.content_text)) {
+      contextText = String(m.content_text);
+      break;
+    }
+  }
+
+  const systemInstruction = buildSystemInstruction({ conversation: conv, selectedText, contextText });
 
   const ai = getAiClient();
   const stream = await ai.models.generateContentStream({

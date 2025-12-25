@@ -66,6 +66,9 @@
                 <button id="homeBtn" class="menu-toggle" title="主页"><i class="fa-solid fa-book"></i></button>
                 <h2 id="currentChapterTitle">请选择章节</h2>
                 <div id="syncStatus" style="margin-left:auto; font-size:0.9rem; color:#888;"></div>
+                <button id="aiImportBtn" class="action-btn icon-btn" type="button" title="AI 拍照导入">
+                    <i class="fa-solid fa-camera"></i>
+                </button>
             </header>
             
             <div id="homeView" class="home-view">
@@ -319,6 +322,79 @@
                     <button id="resetToDefaultBtn" class="modal-btn danger" type="button">重置到默认</button>
                 </div>
                 <div id="resetHint" style="margin-top:10px; color:#667085; font-size:0.9rem;"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="aiChatModal">
+        <div class="modal-box ai-chat-box">
+            <div class="ai-chat-header">
+                <div class="ai-chat-title" id="aiChatTitle">AI 对话</div>
+                <div class="ai-chat-actions">
+                    <select id="aiChatModelSelect" class="ai-chat-model" aria-label="模型选择">
+                        <option value="flash" selected>Flash</option>
+                        <option value="pro">Pro</option>
+                    </select>
+                    <button id="aiChatCloseBtn" class="action-btn icon-btn ai-chat-close" type="button" title="关闭">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+            </div>
+
+            <details class="ai-chat-context" id="aiChatContextWrap">
+                <summary>题目信息（上下文）</summary>
+                <div id="aiChatContextText" class="ai-chat-context-text"></div>
+            </details>
+
+            <div class="ai-chat-messages" id="aiChatMessages" aria-live="polite"></div>
+
+            <div class="ai-chat-input">
+                <textarea id="aiChatInput" placeholder="输入你的问题…" rows="2"></textarea>
+                <button id="aiChatSendBtn" class="modal-btn primary" type="button">发送</button>
+            </div>
+
+            <div class="ai-chat-hint" id="aiChatHint"></div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="aiImportModal">
+        <div class="modal-box ai-import-box">
+            <div class="ai-import-header">
+                <div class="ai-import-title">AI 拍照导入</div>
+                <button id="aiImportCloseBtn" class="action-btn icon-btn" type="button" title="关闭">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="ai-import-row">
+                <div class="ai-import-label">图片（最多 9 张）</div>
+                <input id="aiImportFilesInput" type="file" accept="image/*" multiple>
+                <div class="ai-import-sub">支持拖拽到窗口内；电脑端支持 Ctrl+V 粘贴截图。</div>
+                <div id="aiImportFilesList" class="ai-import-files"></div>
+            </div>
+
+            <div class="ai-import-row">
+                <div class="ai-import-label">附加文字（可选）</div>
+                <textarea id="aiImportNoteText" placeholder="例如：这几页是第 3 章，重点是……" rows="3"></textarea>
+            </div>
+
+            <div class="ai-import-row ai-import-inline">
+                <div class="ai-import-label">模型</div>
+                <select id="aiImportModelSelect" class="ai-import-model" aria-label="导入模型">
+                    <option value="flash" selected>Flash</option>
+                    <option value="pro">Pro</option>
+                </select>
+                <button id="aiImportStartBtn" class="modal-btn primary" type="button">开始导入</button>
+            </div>
+
+            <div class="ai-import-row">
+                <div class="ai-import-label">进度</div>
+                <div class="ai-import-progress">
+                    <div class="ai-import-progress-bar"><div id="aiImportProgressFill" class="ai-import-progress-fill"></div></div>
+                    <div id="aiImportProgressText" class="ai-import-progress-text">未开始</div>
+                </div>
+                <div id="aiImportQueueText" class="ai-import-queue"></div>
+                <div id="aiImportHint" class="ai-import-hint"></div>
             </div>
         </div>
     </div>
