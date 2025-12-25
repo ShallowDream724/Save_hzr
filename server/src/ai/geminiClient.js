@@ -1,5 +1,5 @@
 const fs = require('fs');
-const { FunctionCallingConfigMode } = require('@google/genai');
+const { FunctionCallingConfigMode, MediaResolution, PartMediaResolutionLevel } = require('@google/genai');
 const { getAiClient } = require('./geminiCore');
 
 function getModelId(model) {
@@ -258,25 +258,37 @@ ${input}
 ${note}`.trim();
 }
 
-function buildInlineImagePart(imagePath, mimeType) {
+function isGemini3ModelId(modelId) {
+  return String(modelId || '').includes('gemini-3');
+}
+
+function buildInlineImagePart(imagePath, mimeType, modelId) {
   const buf = fs.readFileSync(imagePath);
   const b64 = buf.toString('base64');
-  return {
+  const part = {
     inlineData: { mimeType, data: b64 },
-    mediaResolution: { level: 'MEDIA_RESOLUTION_ULTRA_HIGH' },
   };
+
+  // Gemini 3 supports per-part ultra-high resolution; older models use global mediaResolution config.
+  if (isGemini3ModelId(modelId)) {
+    part.mediaResolution = { level: PartMediaResolutionLevel.MEDIA_RESOLUTION_ULTRA_HIGH };
+  }
+
+  return part;
 }
 
 async function extractPageBundle({ model, pageIndex, noteText, imagePath, mimeType }) {
   const ai = getAiClient();
   const modelId = getModelId(model);
   const prompt = buildExtractPrompt({ pageIndex, noteText });
-  const parts = [buildInlineImagePart(imagePath, mimeType), { text: prompt }];
+  const parts = [buildInlineImagePart(imagePath, mimeType, modelId), { text: prompt }];
+  const isGemini3 = isGemini3ModelId(modelId);
 
   const response = await ai.models.generateContent({
     model: modelId,
     contents: [{ role: 'user', parts }],
     config: {
+      ...(isGemini3 ? {} : { mediaResolution: MediaResolution.MEDIA_RESOLUTION_HIGH }),
       thinkingConfig: { thinkingLevel: 'HIGH' },
       toolConfig: {
         functionCallingConfig: {

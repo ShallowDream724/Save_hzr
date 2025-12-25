@@ -390,6 +390,7 @@
       els.homeSyncBtn = document.getElementById('homeSyncBtn');
       els.homeSavesBtn = document.getElementById('homeSavesBtn');
       els.homeSettingsBtn = document.getElementById('homeSettingsBtn');
+      els.homeAiBtn = document.getElementById('homeAiBtn');
       els.sidebar = document.getElementById('sidebar');
       els.sidebarOverlay = document.getElementById('sidebarOverlay');
       els.sidebarCollapseBtn = document.getElementById('sidebarCollapseBtn');
@@ -403,6 +404,7 @@
       els.syncBtn = document.getElementById('syncBtn');
       els.syncStatus = document.getElementById('syncStatus');
       els.aiImportBtn = document.getElementById('aiImportBtn');
+      els.aiHistoryBtn = document.getElementById('aiHistoryBtn');
 
       els.importModal = document.getElementById('importModal');
       els.importTabFile = document.getElementById('importTabFile');
@@ -494,6 +496,16 @@
       els.aiImportProgressText = document.getElementById('aiImportProgressText');
       els.aiImportQueueText = document.getElementById('aiImportQueueText');
       els.aiImportHint = document.getElementById('aiImportHint');
+      els.aiImportResult = document.getElementById('aiImportResult');
+
+      // AI history modal
+      els.aiHistoryModal = document.getElementById('aiHistoryModal');
+      els.aiHistoryCloseBtn = document.getElementById('aiHistoryCloseBtn');
+      els.aiHistoryScopeSelect = document.getElementById('aiHistoryScopeSelect');
+      els.aiHistoryNewBtn = document.getElementById('aiHistoryNewBtn');
+      els.aiHistoryRefreshBtn = document.getElementById('aiHistoryRefreshBtn');
+      els.aiHistoryList = document.getElementById('aiHistoryList');
+      els.aiHistoryHint = document.getElementById('aiHistoryHint');
     }
   
     /** ---------------------------
@@ -579,6 +591,77 @@
       // 仅匹配单星号，不吞掉 **...**
       s = s.replace(/(^|[^*])\*([^*]+?)\*([^*]|$)/g, "$1<span class='italic-em'>$2</span>$3");
       return s;
+    }
+
+    // Markdown + LaTeX (KaTeX) safe renderer (shared by question cards + AI chat)
+    var _mdIt = null;
+    function getMarkdownIt() {
+      if (_mdIt) return _mdIt;
+      try {
+        if (typeof window !== 'undefined' && typeof window.markdownit === 'function') {
+          _mdIt = window.markdownit({
+            html: true, // allow legacy highlight spans; sanitized by DOMPurify
+            linkify: true,
+            breaks: true
+          });
+        }
+      } catch (e) { _mdIt = null; }
+      return _mdIt;
+    }
+
+    function sanitizeHtmlWithPurify(html) {
+      try {
+        if (typeof window !== 'undefined' && window.DOMPurify && typeof window.DOMPurify.sanitize === 'function') {
+          return window.DOMPurify.sanitize(String(html || ''), {
+            USE_PROFILES: { html: true },
+            ADD_ATTR: ['target', 'rel'],
+            FORBID_TAGS: ['style', 'script', 'iframe', 'object', 'embed', 'link', 'meta'],
+            FORBID_ATTR: ['style', 'onerror', 'onload', 'onclick', 'onmouseover'],
+          });
+        }
+      } catch (e) {}
+      return String(html || '');
+    }
+
+    function renderMathSafe(rootEl) {
+      try {
+        if (!rootEl) return;
+        if (typeof window === 'undefined') return;
+        if (typeof window.renderMathInElement !== 'function') return;
+        window.renderMathInElement(rootEl, {
+          delimiters: [
+            { left: '$$', right: '$$', display: true },
+            { left: '$', right: '$', display: false },
+            { left: '\\(', right: '\\)', display: false },
+            { left: '\\[', right: '\\]', display: true },
+          ],
+          throwOnError: false,
+          strict: 'ignore',
+        });
+      } catch (_) {}
+    }
+
+    function renderMarkdownInto(el, mdText, opts) {
+      if (!el) return;
+      opts = opts || {};
+      var raw = (mdText === null || mdText === undefined) ? '' : String(mdText);
+      var md = getMarkdownIt();
+      var html = md ? (opts.inline ? md.renderInline(raw) : md.render(raw)) : escapeHtml(raw).replace(/\n/g, '<br>');
+      html = sanitizeHtmlWithPurify(html);
+      el.innerHTML = html;
+      // Ensure links are safe
+      try {
+        var links = el.querySelectorAll ? el.querySelectorAll('a') : null;
+        if (links && links.length) {
+          for (var i = 0; i < links.length; i++) {
+            var a = links[i];
+            if (!a) continue;
+            a.target = '_blank';
+            a.rel = 'noopener noreferrer';
+          }
+        }
+      } catch (_) {}
+      renderMathSafe(el);
     }
   
     function uid(prefix) {
@@ -2208,27 +2291,100 @@
       card.className = 'question-card';
       if (q && q.id !== undefined && q.id !== null) card.dataset.hzrSeed = 'q:' + String(q.id);
       if (q && q.id !== undefined && q.id !== null) card.dataset.qid = String(q.id);
-  
-      var html = '<div class="q-header"><span class="q-id">' + q.id + '</span><div class="q-text">' + q.text + '</div><button class="ai-ask-btn" type="button" title="问 AI">问AI</button></div><ul class="options-list">';
+
+      var header = document.createElement('div');
+      header.className = 'q-header';
+
+      var idEl = document.createElement('span');
+      idEl.className = 'q-id';
+      idEl.textContent = (q && q.id !== undefined && q.id !== null) ? String(q.id) : '';
+
+      var textEl = document.createElement('div');
+      textEl.className = 'q-text';
+      renderMarkdownInto(textEl, q && q.text);
+
+      var aiBtn = document.createElement('button');
+      aiBtn.className = 'ai-ask-btn';
+      aiBtn.type = 'button';
+      aiBtn.title = '问 AI';
+      aiBtn.textContent = '问AI';
+
+      header.appendChild(idEl);
+      header.appendChild(textEl);
+      header.appendChild(aiBtn);
+      card.appendChild(header);
+
+      var ul = document.createElement('ul');
+      ul.className = 'options-list';
       for (var i = 0; i < (q.options || []).length; i++) {
         var opt = q.options[i];
-        var isCorrect = opt.label === q.answer;
-        html += '<li class="option-item ' + (isCorrect ? 'correct' : '') + '">' +
-          '<span class="option-label">' + opt.label + '</span>' +
-          '<span class="option-content">' + opt.content + '</span>' +
-          (isCorrect ? '<i class="fa-solid fa-check" style="margin-left:auto; color:green;"></i>' : '') +
-        '</li>';
+        var li = document.createElement('li');
+        var isCorrect = opt && opt.label === q.answer;
+        li.className = 'option-item ' + (isCorrect ? 'correct' : '');
+
+        var lab = document.createElement('span');
+        lab.className = 'option-label';
+        lab.textContent = opt && opt.label ? String(opt.label) : '';
+
+        var cont = document.createElement('div');
+        cont.className = 'option-content';
+        renderMarkdownInto(cont, opt && opt.content, { inline: true });
+
+        li.appendChild(lab);
+        li.appendChild(cont);
+
+        if (isCorrect) {
+          var icon = document.createElement('i');
+          icon.className = 'fa-solid fa-check';
+          icon.style.marginLeft = 'auto';
+          icon.style.color = 'green';
+          li.appendChild(icon);
+        }
+
+        ul.appendChild(li);
       }
-      html += '</ul>';
-  
-      if (q.explanation) {
-        html += '<div class="analysis-box"><div class="analysis-title"><i class="fa-solid fa-lightbulb"></i> 解析</div><div class="analysis-content">' + formatInlineEmphasis(q.explanation) + '</div></div>';
+      card.appendChild(ul);
+
+      if (q && q.explanation) {
+        var box = document.createElement('div');
+        box.className = 'analysis-box';
+
+        var title = document.createElement('div');
+        title.className = 'analysis-title';
+        var light = document.createElement('i');
+        light.className = 'fa-solid fa-lightbulb';
+        title.appendChild(light);
+        title.appendChild(document.createTextNode(' 解析'));
+
+        var content = document.createElement('div');
+        content.className = 'analysis-content';
+        renderMarkdownInto(content, q.explanation);
+
+        box.appendChild(title);
+        box.appendChild(content);
+        card.appendChild(box);
       }
-      if (q.knowledge) {
-        html += '<details class="knowledge-details"><summary class="knowledge-summary"><i class="fa-solid fa-book-medical"></i> 知识点：' + escapeHtml(q.knowledgeTitle || '相关考点') + '</summary><div class="knowledge-content">' + formatInlineEmphasis(q.knowledge) + '</div></details>';
+
+      if (q && q.knowledge) {
+        var details = document.createElement('details');
+        details.className = 'knowledge-details';
+
+        var summary = document.createElement('summary');
+        summary.className = 'knowledge-summary';
+        var bookI = document.createElement('i');
+        bookI.className = 'fa-solid fa-book-medical';
+        summary.appendChild(bookI);
+        summary.appendChild(document.createTextNode(' 知识点：' + String(q.knowledgeTitle || '相关考点')));
+
+        var kCont = document.createElement('div');
+        kCont.className = 'knowledge-content';
+        renderMarkdownInto(kCont, q.knowledge);
+
+        details.appendChild(summary);
+        details.appendChild(kCont);
+        card.appendChild(details);
       }
-  
-      card.innerHTML = html;
+
       applyRandomHighlights(card);
       return card;
     }
@@ -2314,7 +2470,7 @@
       wrap.className = 'ai-msg ' + role;
       var bubble = document.createElement('div');
       bubble.className = 'ai-bubble ' + role;
-      bubble.innerHTML = escapeHtml(String(text || '')).replace(/\n/g, '<br>');
+      renderMarkdownInto(bubble, String(text || ''));
       wrap.appendChild(bubble);
       els.aiChatMessages.appendChild(wrap);
       try { els.aiChatMessages.scrollTop = els.aiChatMessages.scrollHeight; } catch (_) {}
@@ -2510,7 +2666,9 @@
     var aiImport = {
       files: [],
       jobId: null,
-      pollTimer: 0
+      pollTimer: 0,
+      eventsAbort: null,
+      dragFrom: null
     };
 
     function setAiImportHint(text) {
@@ -2528,14 +2686,23 @@
       els.aiImportQueueText.textContent = text ? String(text) : '';
     }
 
+    function clearAiImportResult() {
+      if (!els.aiImportResult) return;
+      els.aiImportResult.innerHTML = '';
+    }
+
     function renderAiImportFiles() {
       if (!els.aiImportFilesList) return;
       var html = '';
       for (var i = 0; i < aiImport.files.length; i++) {
-        var f = aiImport.files[i];
-        if (!f) continue;
-        html += '<div class="ai-import-file" data-idx="' + i + '">' +
-          '<span class="ai-import-file-name">' + escapeHtml(f.name || ('image_' + (i + 1))) + '</span>' +
+        var it = aiImport.files[i];
+        if (!it || !it.file) continue;
+        html += '<div class="ai-import-file" data-idx="' + i + '" draggable="true">' +
+          '<span class="ai-import-file-idx">' + (i + 1) + '</span>' +
+          '<img class="ai-import-thumb" src="' + escapeHtml(it.url || '') + '" alt="preview">' +
+          '<span class="ai-import-file-name">' + escapeHtml(it.name || it.file.name || ('image_' + (i + 1))) + '</span>' +
+          '<button class="ai-import-move-up" type="button" title="上移">↑</button>' +
+          '<button class="ai-import-move-down" type="button" title="下移">↓</button>' +
           '<button class="ai-import-file-remove" type="button" title="移除">移除</button>' +
         '</div>';
       }
@@ -2550,9 +2717,24 @@
         if (!f) continue;
         var type = String(f.type || '');
         if (type && type.indexOf('image/') !== 0) continue;
-        aiImport.files.push(f);
+        var url = '';
+        try { url = URL.createObjectURL(f); } catch (_) { url = ''; }
+        aiImport.files.push({ id: uid('img'), file: f, name: f.name || ('image_' + (aiImport.files.length + 1) + '.png'), url: url });
       }
       if (aiImport.files.length > 9) aiImport.files = aiImport.files.slice(0, 9);
+      renderAiImportFiles();
+    }
+
+    function clearAiImportFiles() {
+      try {
+        for (var i = 0; i < aiImport.files.length; i++) {
+          var it = aiImport.files[i];
+          if (it && it.url) {
+            try { URL.revokeObjectURL(it.url); } catch (_) {}
+          }
+        }
+      } catch (_) {}
+      aiImport.files = [];
       renderAiImportFiles();
     }
 
@@ -2561,6 +2743,13 @@
         try { clearInterval(aiImport.pollTimer); } catch (_) {}
         aiImport.pollTimer = 0;
       }
+    }
+
+    function stopAiImportEvents() {
+      if (aiImport.eventsAbort) {
+        try { aiImport.eventsAbort.abort(); } catch (_) {}
+      }
+      aiImport.eventsAbort = null;
     }
 
     function openAiImportModal() {
@@ -2576,20 +2765,29 @@
         showToast('请先进入一本书再导入', { timeoutMs: 2200 });
         return;
       }
-      aiImport.files = [];
-      aiImport.jobId = null;
       clearAiImportJobPolling();
+      stopAiImportEvents();
+      clearAiImportFiles();
+      aiImport.jobId = null;
       if (els.aiImportNoteText) els.aiImportNoteText.value = '';
-      renderAiImportFiles();
       setAiImportProgress(0, '未开始');
       setAiImportQueueText('');
       setAiImportHint('');
+      clearAiImportResult();
       els.aiImportModal.classList.add('open');
+
+      // If there is an active job for this book (multi-device), attach to it.
+      try {
+        var book = getActiveBook();
+        if (book && book.id) maybeAttachActiveImportJob(String(book.id));
+      } catch (_) {}
     }
 
     function closeAiImportModal() {
       if (!els.aiImportModal) return;
       els.aiImportModal.classList.remove('open');
+      clearAiImportJobPolling();
+      stopAiImportEvents();
     }
 
     function fetchWithAuth(path, options) {
@@ -2607,34 +2805,191 @@
       return fetch(API_BASE + path, options);
     }
 
+    function statusLabel(s) {
+      s = String(s || '');
+      if (s === 'queued') return '排队中';
+      if (s === 'running') return '识别中';
+      if (s === 'finalizing') return '归并中';
+      if (s === 'writing') return '写入中';
+      if (s === 'done') return '完成';
+      if (s === 'done_with_errors') return '完成(有失败页)';
+      if (s === 'failed') return '失败';
+      return s || '';
+    }
+
+    function renderAiImportResultFromJob(job) {
+      if (!els.aiImportResult) return;
+      var result = job && job.result ? job.result : null;
+      if (!result || !result.insertedChapters || !result.insertedChapters.length) {
+        els.aiImportResult.innerHTML = '';
+        return;
+      }
+      var html = '';
+      for (var i = 0; i < result.insertedChapters.length; i++) {
+        var ch = result.insertedChapters[i];
+        if (!ch || !ch.id) continue;
+        html += '<div class="ai-import-result-item" data-chid="' + escapeHtml(ch.id) + '">' +
+          '<div class="ai-import-result-title">' + escapeHtml(ch.title || ch.id) + '</div>' +
+          '<button class="ai-import-open-btn" type="button">打开</button>' +
+        '</div>';
+      }
+      els.aiImportResult.innerHTML = html;
+    }
+
+    function mergeRemoteAiChaptersIntoLocal(remoteData, bookId, jobId) {
+      try {
+        if (!remoteData || !remoteData.books || !bookId) return 0;
+        var books = getBooks();
+        var localBook = null;
+        for (var i = 0; i < books.length; i++) if (books[i] && books[i].id === bookId) { localBook = books[i]; break; }
+        if (!localBook) return 0;
+
+        var remoteBook = null;
+        for (var j = 0; j < remoteData.books.length; j++) {
+          var b = remoteData.books[j];
+          if (b && b.id === bookId) { remoteBook = b; break; }
+        }
+        if (!remoteBook) return 0;
+
+        if (!Array.isArray(localBook.chapters)) localBook.chapters = [];
+        if (!Array.isArray(remoteBook.chapters)) return 0;
+
+        var localIds = new Set();
+        for (var k = 0; k < localBook.chapters.length; k++) {
+          var cid = localBook.chapters[k] && localBook.chapters[k].id ? String(localBook.chapters[k].id) : '';
+          if (cid) localIds.add(cid);
+        }
+        var tomb = new Set();
+        if (Array.isArray(localBook.deletedChapterIds)) {
+          for (var t = 0; t < localBook.deletedChapterIds.length; t++) tomb.add(String(localBook.deletedChapterIds[t]));
+        }
+
+        var added = 0;
+        var prefix = jobId ? ('ai_' + String(jobId) + '_') : 'ai_';
+        for (var m = 0; m < remoteBook.chapters.length; m++) {
+          var ch = remoteBook.chapters[m];
+          var id = ch && ch.id ? String(ch.id) : '';
+          if (!id || id.indexOf(prefix) !== 0) continue;
+          if (tomb.has(id)) continue;
+          if (localIds.has(id)) continue;
+          localBook.chapters.push(ch);
+          localIds.add(id);
+          added += 1;
+        }
+        return added;
+      } catch (_) {
+        return 0;
+      }
+    }
+
+    function pullCloudAiUpdatesForJob(bookId, jobId) {
+      if (!getToken()) return Promise.resolve(false);
+      return cloudLoadLibrary().then(function (j) {
+        if (!j || !j.data) return false;
+        var added = mergeRemoteAiChaptersIntoLocal(j.data, bookId, jobId);
+        if (typeof j.version === 'number') cloud.version = j.version;
+        if (added > 0) {
+          saveData();
+          renderSidebar();
+          if (homeVisible) renderHome();
+        }
+        return added > 0;
+      }).catch(function () { return false; });
+    }
+
+    function applyAiImportSnapshot(payload) {
+      var job = payload && payload.job ? payload.job : null;
+      if (!job || !job.progress) return;
+
+      var p = job.progress;
+      var total = Number(p.totalPages) || 0;
+      var done = Number(p.donePages) || 0;
+      var ok = Number(p.okPages) || 0;
+      var fail = Number(p.failedPages) || 0;
+      var pct = total > 0 ? Math.round((done / total) * 100) : 0;
+      setAiImportProgress(pct, statusLabel(p.status) + ' · ' + done + '/' + total + '（成功 ' + ok + '，失败 ' + fail + '）');
+
+      if (p.status === 'queued' || p.status === 'running' || p.status === 'finalizing' || p.status === 'writing') {
+        var eta = (p.etaMin !== undefined && p.etaMin !== null) ? String(p.etaMin) : '';
+        setAiImportQueueText('排队：前面 ' + String(p.aheadUsers || 0) + ' 位用户 · 预计 ' + (eta ? eta + ' 分钟' : '计算中…'));
+      } else {
+        setAiImportQueueText('');
+      }
+
+      if (job.status === 'done' || job.status === 'done_with_errors' || job.status === 'failed') {
+        renderAiImportResultFromJob(job);
+      }
+
+      if (p.status === 'done' || p.status === 'done_with_errors' || p.status === 'failed') {
+        clearAiImportJobPolling();
+        stopAiImportEvents();
+        if (p.status === 'done') setAiImportHint('完成：已写入题库。');
+        else if (p.status === 'done_with_errors') setAiImportHint('完成但有失败页：可稍后重试导入。');
+        else setAiImportHint('失败：请稍后重试。');
+
+        // Best-effort pull remote AI chapters into local UI so the user can see them immediately.
+        try {
+          var b = getActiveBook();
+          if (b && b.id && aiImport.jobId) pullCloudAiUpdatesForJob(String(b.id), String(aiImport.jobId));
+        } catch (_) {}
+      }
+    }
+
+    function subscribeAiImportJobEvents(jobId) {
+      if (!jobId) return;
+      stopAiImportEvents();
+      clearAiImportJobPolling();
+      aiImport.jobId = jobId;
+
+      try {
+        if (typeof AbortController === 'undefined') throw new Error('no AbortController');
+        var ac = new AbortController();
+        aiImport.eventsAbort = ac;
+        fetchWithAuth('/api/ai/jobs/' + encodeURIComponent(String(jobId)) + '/events', { method: 'GET', signal: ac.signal })
+          .then(function (res) {
+            if (!res.ok) throw new Error('events failed');
+            return consumeEventStream(res, function (event, data) {
+              if (event === 'snapshot' && data) applyAiImportSnapshot(data);
+            });
+          })
+          .catch(function () {
+            // Fallback to polling if streaming is blocked by proxy/browser.
+            pollAiImportJob(jobId);
+            aiImport.pollTimer = setInterval(function () { pollAiImportJob(jobId); }, 2000);
+          });
+      } catch (_) {
+        pollAiImportJob(jobId);
+        aiImport.pollTimer = setInterval(function () { pollAiImportJob(jobId); }, 2000);
+      }
+    }
+
+    function maybeAttachActiveImportJob(bookId) {
+      if (!bookId) return;
+      apiFetch('/api/ai/jobs?bookId=' + encodeURIComponent(String(bookId)), { method: 'GET' })
+        .then(function (res) { if (!res.ok) throw new Error('jobs failed'); return res.json(); })
+        .then(function (j) {
+          var items = j && Array.isArray(j.items) ? j.items : [];
+          for (var i = 0; i < items.length; i++) {
+            var job = items[i];
+            if (!job || !job.id) continue;
+            if (job.status === 'queued' || job.status === 'running' || job.status === 'finalizing' || job.status === 'writing') {
+              aiImport.jobId = job.id;
+              setAiImportHint('检测到进行中的导入任务：已自动接入进度。');
+              subscribeAiImportJobEvents(job.id);
+              return;
+            }
+          }
+        })
+        .catch(function () {});
+    }
+
     function pollAiImportJob(jobId) {
       if (!jobId) return;
       return apiFetch('/api/ai/jobs/' + encodeURIComponent(String(jobId)), { method: 'GET' })
         .then(function (res) { if (!res.ok) throw new Error('job load failed'); return res.json(); })
         .then(function (j) {
-          var p = j && j.job && j.job.progress ? j.job.progress : null;
-          if (!p) return j;
-
-          var total = Number(p.totalPages) || 0;
-          var done = Number(p.donePages) || 0;
-          var ok = Number(p.okPages) || 0;
-          var fail = Number(p.failedPages) || 0;
-          var pct = total > 0 ? Math.round((done / total) * 100) : 0;
-          setAiImportProgress(pct, (p.status || '') + ' · ' + done + '/' + total + '（成功 ' + ok + '，失败 ' + fail + '）');
-
-          if (p.status === 'queued' || p.status === 'running' || p.status === 'finalizing' || p.status === 'writing') {
-            var eta = (p.etaMin !== undefined && p.etaMin !== null) ? String(p.etaMin) : '';
-            setAiImportQueueText('排队：前面 ' + String(p.aheadUsers || 0) + ' 位用户 · 预计 ' + (eta ? eta + ' 分钟' : '计算中…'));
-          } else {
-            setAiImportQueueText('');
-          }
-
-          if (p.status === 'done' || p.status === 'done_with_errors' || p.status === 'failed') {
-            clearAiImportJobPolling();
-            if (p.status === 'done') setAiImportHint('完成：已写入题库。');
-            else if (p.status === 'done_with_errors') setAiImportHint('完成但有失败页：可稍后重试导入。');
-            else setAiImportHint('失败：请稍后重试。');
-          }
+          if (j && j.job && j.job.id) aiImport.jobId = j.job.id;
+          applyAiImportSnapshot(j);
           return j;
         })
         .catch(function (e) {
@@ -2662,7 +3017,11 @@
       fd.append('bookId', String(book.id));
       fd.append('model', model);
       fd.append('noteText', noteText || '');
-      for (var i = 0; i < aiImport.files.length; i++) fd.append('images', aiImport.files[i], aiImport.files[i].name || ('page_' + (i + 1) + '.png'));
+      for (var i = 0; i < aiImport.files.length; i++) {
+        var it = aiImport.files[i];
+        if (!it || !it.file) continue;
+        fd.append('images', it.file, it.name || it.file.name || ('page_' + (i + 1) + '.png'));
+      }
 
       setAiImportHint('提交中…');
       setAiImportProgress(0, '提交中…');
@@ -2687,14 +3046,125 @@
           return aiImport.jobId;
         })
         .then(function (jobId) {
-          clearAiImportJobPolling();
-          pollAiImportJob(jobId);
-          aiImport.pollTimer = setInterval(function () { pollAiImportJob(jobId); }, 2000);
+          // Prefer SSE for real-time progress; fallback to polling inside subscribe.
+          subscribeAiImportJobEvents(jobId);
         })
         .catch(function (e) {
           setAiImportHint('失败：' + (e && e.message ? e.message : '提交失败'));
           setAiImportProgress(0, '未开始');
         });
+    }
+
+    /** ---------------------------
+     * 8.2.1) AI 历史中心（多端可继续对话）
+     * --------------------------- */
+    var aiHistory = { loading: false };
+
+    function setAiHistoryHint(text) {
+      if (!els.aiHistoryHint) return;
+      els.aiHistoryHint.textContent = text ? String(text) : '';
+    }
+
+    function openAiHistoryModal() {
+      if (!els.aiHistoryModal) return;
+      if (!getToken()) {
+        showToast('请先登录云同步后使用 AI', { timeoutMs: 2400 });
+        updateAuthModalUI();
+        switchSyncTab('account');
+        if (els.authModal) els.authModal.classList.add('open');
+        return;
+      }
+      els.aiHistoryModal.classList.add('open');
+      refreshAiHistory();
+    }
+
+    function closeAiHistoryModal() {
+      if (!els.aiHistoryModal) return;
+      els.aiHistoryModal.classList.remove('open');
+      setAiHistoryHint('');
+    }
+
+    function scopeLabel(scope) {
+      if (scope === 'question') return '题目';
+      if (scope === 'book') return '书';
+      return '通用';
+    }
+
+    function refreshAiHistory() {
+      if (aiHistory.loading) return;
+      aiHistory.loading = true;
+      setAiHistoryHint('加载中…');
+
+      var scope = (els.aiHistoryScopeSelect && typeof els.aiHistoryScopeSelect.value === 'string') ? els.aiHistoryScopeSelect.value.trim() : '';
+      var qs = scope ? ('?scope=' + encodeURIComponent(scope)) : '';
+
+      apiFetch('/api/ai/conversations' + qs, { method: 'GET' })
+        .then(function (res) { if (!res.ok) throw new Error('load failed'); return res.json(); })
+        .then(function (j) {
+          var items = (j && Array.isArray(j.items)) ? j.items : [];
+          renderAiHistory(items);
+          setAiHistoryHint(items.length ? '' : '暂无对话记录。');
+        })
+        .catch(function (e) {
+          setAiHistoryHint('加载失败：' + (e && e.message ? e.message : '网络错误'));
+        })
+        .then(function () {
+          aiHistory.loading = false;
+        });
+    }
+
+    function renderAiHistory(items) {
+      if (!els.aiHistoryList) return;
+      var html = '';
+      for (var i = 0; i < items.length; i++) {
+        var c = items[i];
+        if (!c || !c.id) continue;
+        var title = c.title ? String(c.title) : '新对话';
+        var meta = [];
+        meta.push('<span class="ai-history-tag">' + escapeHtml(scopeLabel(c.scope)) + '</span>');
+        if (c.bookId) meta.push('<span class="ai-history-tag">' + escapeHtml('book:' + shortId(c.bookId)) + '</span>');
+        if (c.questionId) meta.push('<span class="ai-history-tag">' + escapeHtml('q:' + String(c.questionId)) + '</span>');
+        var t = c.lastMessageAt || c.updatedAt || c.createdAt;
+        html += '<div class="ai-history-item" data-id="' + escapeHtml(c.id) + '">' +
+          '<div class="ai-history-item-main">' +
+            '<div class="ai-history-item-title">' + escapeHtml(title) + '</div>' +
+            '<div class="ai-history-item-meta">' + meta.join('') + '</div>' +
+          '</div>' +
+          '<div class="ai-history-time">' + escapeHtml(formatLocalTime(t)) + '</div>' +
+        '</div>';
+      }
+      els.aiHistoryList.innerHTML = html;
+    }
+
+    function startNewAiConversation() {
+      if (!getToken()) {
+        showToast('请先登录云同步后使用 AI', { timeoutMs: 2400 });
+        return;
+      }
+
+      var scope = homeVisible ? 'general' : 'book';
+      var book = (!homeVisible) ? getActiveBook() : null;
+
+      setAiHistoryHint('创建对话…');
+      apiFetch('/api/ai/conversations', {
+        method: 'POST',
+        body: JSON.stringify({
+          scope: scope,
+          bookId: (scope === 'book' && book && book.id) ? String(book.id) : null,
+          modelPref: 'flash'
+        })
+      }).then(function (res) {
+        if (!res.ok) throw new Error('create failed');
+        return res.json();
+      }).then(function (j) {
+        if (!j || !j.conversationId) throw new Error('bad response');
+        closeAiHistoryModal();
+        aiChat.conversationId = j.conversationId;
+        openAiChatModal();
+        return loadAiConversation(j.conversationId);
+      }).catch(function (e) {
+        setAiHistoryHint('创建失败：' + (e && e.message ? e.message : '网络错误'));
+      });
     }
 
     /** ---------------------------
@@ -3928,6 +4398,7 @@
       bindOverlayClose(els.settingsModal);
       bindOverlayClose(els.aiChatModal);
       bindOverlayClose(els.aiImportModal);
+      bindOverlayClose(els.aiHistoryModal);
 
       // AI chat bindings
       if (els.questionsContainer) {
@@ -3978,13 +4449,95 @@
         els.aiImportFilesList.addEventListener('click', function (e) {
           var t = e && e.target ? e.target : null;
           if (!t || !t.closest) return;
-          var btn = t.closest('.ai-import-file-remove');
-          if (!btn) return;
-          var item = btn.closest('.ai-import-file');
+          var item = t.closest('.ai-import-file');
+          if (!item) return;
           var idx = item && item.dataset ? Number(item.dataset.idx) : NaN;
           if (!Number.isFinite(idx)) return;
-          aiImport.files.splice(idx, 1);
-          renderAiImportFiles();
+
+          if (t.closest('.ai-import-file-remove')) {
+            var removed = aiImport.files[idx];
+            if (removed && removed.url) { try { URL.revokeObjectURL(removed.url); } catch (_) {} }
+            aiImport.files.splice(idx, 1);
+            renderAiImportFiles();
+            return;
+          }
+
+          if (t.closest('.ai-import-move-up')) {
+            if (idx <= 0) return;
+            var tmp = aiImport.files[idx - 1];
+            aiImport.files[idx - 1] = aiImport.files[idx];
+            aiImport.files[idx] = tmp;
+            renderAiImportFiles();
+            return;
+          }
+
+          if (t.closest('.ai-import-move-down')) {
+            if (idx >= aiImport.files.length - 1) return;
+            var tmp2 = aiImport.files[idx + 1];
+            aiImport.files[idx + 1] = aiImport.files[idx];
+            aiImport.files[idx] = tmp2;
+            renderAiImportFiles();
+            return;
+          }
+        }, false);
+
+        // Drag to reorder (desktop)
+        els.aiImportFilesList.addEventListener('dragstart', function (e) {
+          try {
+            var t = e && e.target ? e.target : null;
+            if (!t || !t.closest) return;
+            var item = t.closest('.ai-import-file');
+            if (!item || !item.dataset) return;
+            var idx = Number(item.dataset.idx);
+            if (!Number.isFinite(idx)) return;
+            aiImport.dragFrom = idx;
+            if (e.dataTransfer) {
+              e.dataTransfer.effectAllowed = 'move';
+              e.dataTransfer.setData('text/plain', String(idx));
+            }
+          } catch (_) {}
+        }, false);
+        els.aiImportFilesList.addEventListener('dragover', function (e) {
+          try { if (e) e.preventDefault(); } catch (_) {}
+        }, false);
+        els.aiImportFilesList.addEventListener('drop', function (e) {
+          try {
+            if (e) e.preventDefault();
+            var t = e && e.target ? e.target : null;
+            if (!t || !t.closest) return;
+            var item = t.closest('.ai-import-file');
+            if (!item || !item.dataset) return;
+            var to = Number(item.dataset.idx);
+            var from = aiImport.dragFrom;
+            aiImport.dragFrom = null;
+            if (!Number.isFinite(from) || !Number.isFinite(to) || from === to) return;
+            var moved = aiImport.files.splice(from, 1)[0];
+            aiImport.files.splice(to, 0, moved);
+            renderAiImportFiles();
+          } catch (_) {}
+        }, false);
+      }
+
+      // AI import result -> open chapter
+      if (els.aiImportResult) {
+        els.aiImportResult.addEventListener('click', function (e) {
+          var t = e && e.target ? e.target : null;
+          if (!t || !t.closest) return;
+          var btn = t.closest('.ai-import-open-btn');
+          if (!btn) return;
+          var item = btn.closest('.ai-import-result-item');
+          var chid = item && item.dataset ? item.dataset.chid : null;
+          if (!chid) return;
+          closeAiImportModal();
+          try {
+            if (!findChapterById(String(chid))) {
+              showToast('章节尚未同步到本机，稍后再试', { timeoutMs: 2200 });
+              return;
+            }
+            loadChapter(String(chid));
+          } catch (_) {
+            showToast('打开失败', { timeoutMs: 1800 });
+          }
         }, false);
       }
 
@@ -4029,6 +4582,29 @@
         }, { passive: false });
       }
 
+      // AI history bindings
+      if (els.aiHistoryBtn) els.aiHistoryBtn.onclick = function () { openAiHistoryModal(); };
+      if (els.homeAiBtn) els.homeAiBtn.onclick = function () { openAiHistoryModal(); };
+      if (els.aiHistoryCloseBtn) els.aiHistoryCloseBtn.onclick = function () { closeAiHistoryModal(); };
+      if (els.aiHistoryRefreshBtn) els.aiHistoryRefreshBtn.onclick = function () { refreshAiHistory(); };
+      if (els.aiHistoryNewBtn) els.aiHistoryNewBtn.onclick = function () { startNewAiConversation(); };
+      if (els.aiHistoryScopeSelect) els.aiHistoryScopeSelect.onchange = function () { refreshAiHistory(); };
+      if (els.aiHistoryList) {
+        els.aiHistoryList.addEventListener('click', function (e) {
+          var t = e && e.target ? e.target : null;
+          if (!t || !t.closest) return;
+          var item = t.closest('.ai-history-item');
+          if (!item || !item.dataset) return;
+          var id = item.dataset.id;
+          if (!id) return;
+          closeAiHistoryModal();
+          aiChat.conversationId = String(id);
+          openAiChatModal();
+          setAiChatHint('加载对话…');
+          loadAiConversation(id).then(function () { setAiChatHint(''); }).catch(function () { setAiChatHint('加载失败'); });
+        }, false);
+      }
+
       // Selection -> floating "ask AI" button
       addEvt(document, 'selectionchange', scheduleAiSelUpdate, { passive: true });
       addEvt(document, 'pointerup', scheduleAiSelUpdate, { passive: true });
@@ -4043,6 +4619,7 @@
         if (els.settingsModal) els.settingsModal.classList.remove('open');
         if (els.aiChatModal) els.aiChatModal.classList.remove('open');
         if (els.aiImportModal) els.aiImportModal.classList.remove('open');
+        if (els.aiHistoryModal) els.aiHistoryModal.classList.remove('open');
         if (els.sidebar && isCompactLayout()) els.sidebar.classList.remove('active');
       }, { passive: true });
 

@@ -2,6 +2,11 @@
 
 一个可自建部署的题库/复习小站：前端单页 + 后端同步服务（Node + SQLite + JWT）。支持手机/电脑/平板数据互通（每个用户独立数据）。
 
+## AI 功能（已接入 Gemini）
+- 题目卡片「问AI」：自动注入题干/选项/答案/解析/知识点上下文，支持多轮对话，SSE 流式输出，历史可跨设备同步。
+- 选中文字「问AI」：在同一题目对话里追加“选中引用”。
+- 书内「AI 拍照导入」：一次最多 9 张图，后端异步队列处理（全站全局 RPM + 1s 启动间隔 + 429 指数退避），生成 chapter 写入该书根目录。
+
 ## 存档（防误操作）
 - 自动存档：服务端每 **5 分钟**自动保存一次快照（可在“云同步 → 存档”里恢复）。
 - 手动存档：你可随时点“新建存档”，并支持命名/删除/恢复。
@@ -16,11 +21,23 @@
 cd /path/to/Save_hzr
 cp .env.example .env
 # 把 JWT_SECRET 换成强随机字符串（至少 32 位）
+# 填好 GEMINI_API_KEY（只在服务端使用，不会下发到前端）
 nano .env
 
 docker compose up -d --build
 curl -s http://127.0.0.1:8787/api/health
 ```
+
+## 本地开发 / 测试
+```bash
+cd /path/to/Save_hzr/server
+npm install --omit=dev
+cd ..
+cp .env.example .env
+node dev.mjs
+```
+
+冒烟测试（不调用 Gemini）：`node dev.mjs --smoke`
 
 ## 数据库会不会丢？
 - 不会：只要你不删 `pharm_sync_data` volume，重新 `git pull/clone` + `docker compose up -d --build` 都不会影响数据库。
@@ -60,6 +77,17 @@ server {
     proxy_set_header X-Real-IP $remote_addr;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     proxy_set_header X-Forwarded-Proto $scheme;
+  }
+
+  # SSE（AI 流式/进度推送）建议关闭缓冲
+  location /api/ai/ {
+    proxy_pass http://127.0.0.1:8787;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_buffering off;
   }
 }
 ```

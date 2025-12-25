@@ -29,7 +29,7 @@ app.use(helmet({
       "base-uri": ["'self'"],
       "object-src": ["'none'"],
       "frame-ancestors": ["'none'"],
-      "img-src": ["'self'", "data:"],
+      "img-src": ["'self'", "data:", "blob:"],
       // UI 依赖外链 icon font（FontAwesome CDN）+ 页面/脚本会动态写 style（拖拽幽灵等）
       "style-src": ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com"],
       "font-src": ["'self'", "https://cdnjs.cloudflare.com", "data:"],

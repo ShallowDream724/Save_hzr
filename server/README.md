@@ -5,6 +5,10 @@
 - 手动存档：支持命名/删除/恢复（`/api/archives`）。
 - 多设备冲突：客户端默认无弹窗继续同步（以当前设备为准），服务端会把旧云端数据写入“冲突自动备份”存档，避免静默丢失。
 
+## AI（Gemini，服务端调用）
+- 题目「问AI」：多轮对话 + SSE 流式 + 历史落库（不塞进 library JSON）。
+- 书内「AI 拍照导入」：<=9 张图，后端异步队列处理（全局 RPM + 1s 启动间隔 + 429 指数退避）。
+
 ## 1) Docker Compose（推荐）
 1. 复制环境变量：把仓库根目录的 `.env.example` 复制为 `.env`，并设置强随机 `JWT_SECRET`。
 2. 启动（需要 Docker Compose v2）：`docker compose up -d --build`
@@ -17,6 +21,7 @@
 cd /path/to/Save_hzr/server
 npm install --omit=dev
 export JWT_SECRET='换成强随机'
+export GEMINI_API_KEY='你的 key（只在服务端使用）'
 export PORT=8787
 export DB_PATH=/var/lib/pharm-sync/app.db
 export CORS_ORIGIN=https://qianmeng.me
@@ -40,3 +45,15 @@ node src/server.js
 - `POST /api/archives` `{name?, data?}` -> `{ok, id, createdAt}`
 - `DELETE /api/archives/:id` -> `{ok}`
 - `POST /api/archives/:id/restore` -> `{ok, version, updatedAt}`
+
+### AI
+- `POST /api/ai/book-import`（Bearer token，multipart）
+  - fields：`bookId`、`model=flash|pro`、`noteText?`
+  - files：`images`（1-9 张）
+- `GET /api/ai/jobs?bookId=...` -> `{items}`
+- `GET /api/ai/jobs/:jobId` -> `{job, items}`
+- `GET /api/ai/jobs/:jobId/events`（SSE）-> `snapshot` 事件（job+items）
+- `POST /api/ai/conversations` -> `{conversationId, reused}`
+- `GET /api/ai/conversations?scope=&bookId=` -> `{items}`
+- `GET /api/ai/conversations/:id` -> `{conversation, messages}`
+- `POST /api/ai/conversations/:id/messages/stream`（SSE）-> `delta|done|error`

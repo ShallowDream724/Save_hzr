@@ -1,6 +1,6 @@
-# Tiku AI 功能开发文档（计划与规范）
+# Tiku AI 功能开发文档（实现说明与规范）
 
-本文档用于指导后续实现「题目快捷问 AI」「书内拍照导入」「全站风控队列」「多端同步的历史对话」等能力。先写清楚方案与约束，不先写代码。
+本文档用于说明并指导实现「题目快捷问 AI」「书内拍照导入」「全站风控队列」「多端同步的历史对话」等能力。当前仓库已落地基础版本；本文件作为后续迭代的长期规范与设计参考。
 
 > 现状速览（方便定位接入点）
 > - 前端题卡渲染：`web/app.js:2159`（`createQuestionCard` 在 `web/app.js:2180`）
@@ -9,6 +9,38 @@
 > - Gemini 参考实现（你搬来的 AMC/All-Model-Chat）：`All-Model-Chat/all-model-chat/services/api/baseApi.ts:78`、`All-Model-Chat/all-model-chat/utils/domainUtils.ts:245`
 
 ---
+
+## 0. 快速开始（本地开发 / 自检）
+
+### 0.1 安装依赖
+```bash
+cd server
+npm install --omit=dev
+```
+
+### 0.2 配置环境变量（保护 Key：只在后端用）
+```bash
+cd ..
+cp .env.example .env
+```
+然后在 `.env` 里设置：`JWT_SECRET`、`GEMINI_API_KEY`（以及可选的 `AI_IMPORT_*` 参数）。
+
+### 0.3 启动本地服务（推荐）
+```bash
+node dev.mjs
+```
+
+### 0.4 运行冒烟测试（不调用 Gemini）
+```bash
+node dev.mjs --smoke
+```
+
+### 0.5 本地验证 Gemini Key（会真实计费/消耗 RPM）
+1) 打开 `http://localhost:8787`，注册/登录（云同步）。
+2) 进入一本书（确保该书已上传到云端）。
+3) 测试两条链路：
+   - 题目卡片点「问AI」发送问题（SSE 流式）。
+   - 顶部点「AI 拍照导入」上传 1-9 张图片并观察队列/进度/结果写入。
 
 ## 1. 总目标（必须满足）
 
@@ -52,7 +84,7 @@
 
 ### 2.2 队列可视化（用户体验要求）
 拍照导入需要让用户明确知道：
-- 当前任务状态：`queued | running | merging | writing | done | done_with_errors | failed | canceled`
+- 当前任务状态：`queued | running | finalizing | writing | done | done_with_errors | failed`
 - 总进度：`已完成页数/总页数`（例如 3/9）
 - 排队信息（至少提供一种）：
   - `aheadUsers`：前面有多少个「正在排队/处理中」的用户（同模型队列维度，去重）

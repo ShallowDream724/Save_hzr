@@ -7,7 +7,12 @@
     <!-- 可选：设置 API_BASE（留空则同源），如：https://qianmeng.me -->
     <meta name="hzr-api-base" content="">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="./vendor/katex/katex.min.css">
     <link rel="stylesheet" href="./style.css">
+    <script src="./vendor/purify.min.js" defer></script>
+    <script src="./vendor/markdown-it.min.js" defer></script>
+    <script src="./vendor/katex/katex.min.js" defer></script>
+    <script src="./vendor/katex/auto-render.min.js" defer></script>
     <script src="./app.js" defer></script>
 </head>
 <body>
@@ -66,6 +71,9 @@
                 <button id="homeBtn" class="menu-toggle" title="主页"><i class="fa-solid fa-book"></i></button>
                 <h2 id="currentChapterTitle">请选择章节</h2>
                 <div id="syncStatus" style="margin-left:auto; font-size:0.9rem; color:#888;"></div>
+                <button id="aiHistoryBtn" class="action-btn icon-btn" type="button" title="AI 历史/新对话">
+                    <i class="fa-solid fa-robot"></i>
+                </button>
                 <button id="aiImportBtn" class="action-btn icon-btn" type="button" title="AI 拍照导入">
                     <i class="fa-solid fa-camera"></i>
                 </button>
@@ -83,6 +91,7 @@
                             <button id="homeSyncBtn" class="modal-btn" type="button" title="云同步"><i class="fa-solid fa-cloud" style="margin-right:8px;"></i>云同步</button>
                             <button id="homeSavesBtn" class="modal-btn" type="button" title="存档"><i class="fa-solid fa-box-archive" style="margin-right:8px;"></i>存档</button>
                             <button id="homeSettingsBtn" class="modal-btn" type="button" title="设置"><i class="fa-solid fa-gear" style="margin-right:8px;"></i>设置</button>
+                            <button id="homeAiBtn" class="modal-btn" type="button" title="AI"><i class="fa-solid fa-robot" style="margin-right:8px;"></i>AI</button>
                             <span class="home-hud-divider" aria-hidden="true"></span>
                             <button id="importBookBtn" class="modal-btn" type="button"><i class="fa-solid fa-file-import" style="margin-right:8px;"></i>导入书</button>
                             <button id="newBookBtn" class="modal-btn primary" type="button"><i class="fa-solid fa-plus" style="margin-right:8px;"></i>新建书</button>
@@ -395,7 +404,31 @@
                 </div>
                 <div id="aiImportQueueText" class="ai-import-queue"></div>
                 <div id="aiImportHint" class="ai-import-hint"></div>
+                <div id="aiImportResult" class="ai-import-result"></div>
             </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="aiHistoryModal">
+        <div class="modal-box ai-history-box">
+            <div class="ai-history-header">
+                <div class="ai-history-title">AI 历史</div>
+                <div class="ai-history-actions">
+                    <select id="aiHistoryScopeSelect" class="ai-history-scope" aria-label="对话范围">
+                        <option value="" selected>全部</option>
+                        <option value="general">通用</option>
+                        <option value="book">书</option>
+                        <option value="question">题目</option>
+                    </select>
+                    <button id="aiHistoryNewBtn" class="modal-btn primary" type="button">新对话</button>
+                    <button id="aiHistoryRefreshBtn" class="modal-btn" type="button">刷新</button>
+                    <button id="aiHistoryCloseBtn" class="action-btn icon-btn" type="button" title="关闭">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+            </div>
+            <div id="aiHistoryList" class="ai-history-list"></div>
+            <div id="aiHistoryHint" class="ai-history-hint"></div>
         </div>
     </div>
 

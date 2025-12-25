@@ -201,6 +201,18 @@ function loadEnvFiles({ repoRoot, envPath }) {
   return loaded;
 }
 
+function hasServerDependencies(serverDir) {
+  try {
+    const nm = path.join(serverDir, "node_modules");
+    if (!fs.existsSync(nm)) return false;
+    const expressPath = path.join(nm, "express");
+    if (!fs.existsSync(expressPath)) return false;
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function getFreePort() {
   return new Promise((resolve, reject) => {
     const s = net.createServer();
@@ -311,6 +323,14 @@ async function main() {
 
   const loadedEnvFiles = loadEnvFiles({ repoRoot, envPath: args.env });
   if (loadedEnvFiles.length) console.log(`[dev] loaded env: ${loadedEnvFiles.join(", ")}`);
+  if (process.env.GEMINI_API_KEY) console.log("[dev] GEMINI_API_KEY set (server-side AI enabled)");
+  else console.log("[dev] GEMINI_API_KEY not set (AI calls will fail until you set it in .env)");
+
+  if (!hasServerDependencies(serverDir)) {
+    console.error("[dev] Missing server dependencies.");
+    console.error("[dev] Run: cd server; npm install --omit=dev");
+    process.exit(1);
+  }
 
   let port = Number(args.port ?? process.env.PORT ?? 8787);
   if (args.smoke && args.port === undefined && process.env.PORT === undefined) {

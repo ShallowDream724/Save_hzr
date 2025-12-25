@@ -28,11 +28,13 @@ function normalizeOption(opt) {
   };
 }
 
-function normalizeQuestion(q) {
+function normalizeQuestion(q, fallbackId, defaultAi) {
   q = isObject(q) ? q : {};
   const options = ensureArray(q.options).map(normalizeOption).filter((o) => o.label);
+  const rawId = q.id !== undefined && q.id !== null ? q.id : null;
+  const id = rawId === '' || rawId === null ? fallbackId : rawId;
   return {
-    id: q.id !== undefined && q.id !== null ? q.id : '',
+    id: id !== undefined && id !== null ? id : '',
     text: normalizeString(q.text),
     options,
     answer: normalizeString(q.answer).trim(),
@@ -40,7 +42,7 @@ function normalizeQuestion(q) {
     knowledgeTitle: normalizeString(q.knowledgeTitle),
     knowledge: normalizeString(q.knowledge),
     __ai: true,
-    ai: isObject(q.ai) ? q.ai : undefined,
+    ai: isObject(q.ai) ? q.ai : (isObject(defaultAi) ? defaultAi : undefined),
   };
 }
 
@@ -141,7 +143,9 @@ function createLibraryPatcher(db) {
         if (existingChapterIds.has(chapterId)) continue;
 
         const title = page && typeof page.title === 'string' && page.title.trim() ? page.title.trim() : `AI导入 第${pageIndex + 1}页`;
-        const questions = ensureArray(page.questions).map(normalizeQuestion);
+        const questions = ensureArray(page.questions).map((q, idx) =>
+          normalizeQuestion(q, idx + 1, { jobId, pageIndex, localIndex: idx })
+        );
 
         const chapter = {
           id: chapterId,
