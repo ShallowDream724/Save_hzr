@@ -87,6 +87,7 @@
         chapters: Array.isArray(book.chapters) ? book.chapters : [],
         folders: Array.isArray(book.folders) ? book.folders : [],
         layoutMap: (book.layoutMap && typeof book.layoutMap === 'object' && !Array.isArray(book.layoutMap)) ? book.layoutMap : {},
+        chapterOrder: (book.chapterOrder && typeof book.chapterOrder === 'object' && !Array.isArray(book.chapterOrder)) ? book.chapterOrder : {},
         deletedChapterIds: Array.isArray(book.deletedChapterIds) ? book.deletedChapterIds : [],
         createdAt: (typeof book.createdAt === 'string' && book.createdAt) ? book.createdAt : new Date().toISOString(),
         updatedAt: (typeof book.updatedAt === 'string' && book.updatedAt) ? book.updatedAt : new Date().toISOString()
@@ -153,6 +154,7 @@
         chapters: Array.isArray(lib.chapters) ? lib.chapters : [],
         folders: Array.isArray(lib.folders) ? lib.folders : [],
         layoutMap: (lib.layoutMap && typeof lib.layoutMap === 'object' && !Array.isArray(lib.layoutMap)) ? lib.layoutMap : {},
+        chapterOrder: (lib.chapterOrder && typeof lib.chapterOrder === 'object' && !Array.isArray(lib.chapterOrder)) ? lib.chapterOrder : {},
         deletedChapterIds: Array.isArray(lib.deletedChapterIds) ? lib.deletedChapterIds : [],
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()

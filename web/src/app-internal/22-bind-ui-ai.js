@@ -23,6 +23,12 @@
       if (els.aiChatCloseBtn) {
         els.aiChatCloseBtn.onclick = function () { closeAiChatModal(); };
       }
+      if (els.aiChatHistoryBtn) {
+        els.aiChatHistoryBtn.onclick = function () {
+          closeAiChatModal();
+          openAiHistoryModal();
+        };
+      }
       if (els.aiChatModelSwitch && !els.aiChatModelSwitch.dataset.bound) {
         els.aiChatModelSwitch.dataset.bound = '1';
         setModelSwitchValue(els.aiChatModelSwitch, 'flash');

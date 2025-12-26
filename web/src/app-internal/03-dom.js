@@ -104,6 +104,7 @@
       els.aiChatHeader = els.aiChatModal ? els.aiChatModal.querySelector('.ai-chat-header') : null;
       els.aiChatTitle = document.getElementById('aiChatTitle');
       els.aiChatModelSwitch = document.getElementById('aiChatModelSwitch');
+      els.aiChatHistoryBtn = document.getElementById('aiChatHistoryBtn');
       els.aiChatCloseBtn = document.getElementById('aiChatCloseBtn');
       els.aiChatQuote = document.getElementById('aiChatQuote');
       els.aiChatQuoteText = document.getElementById('aiChatQuoteText');

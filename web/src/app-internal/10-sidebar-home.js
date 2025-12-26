@@ -47,6 +47,42 @@
       return list;
     }
 
+    function orderChaptersForContainer(book, list, containerId) {
+      if (!Array.isArray(list) || list.length <= 1) return list;
+      book = (book && typeof book === 'object') ? book : null;
+      var key = containerId ? String(containerId) : 'root';
+      var orderMap = (book && book.chapterOrder && typeof book.chapterOrder === 'object' && !Array.isArray(book.chapterOrder))
+        ? book.chapterOrder
+        : null;
+      var manual = orderMap && Array.isArray(orderMap[key]) ? orderMap[key] : null;
+      if (!manual || manual.length <= 0) return sortChaptersForDisplay(list);
+
+      // Fallback order is deterministic even when manual order is partial.
+      var fallback = list.slice();
+      sortChaptersForDisplay(fallback);
+      var fallbackIndex = {};
+      for (var i = 0; i < fallback.length; i++) {
+        var id = fallback[i] && fallback[i].id ? String(fallback[i].id) : '';
+        if (id) fallbackIndex[id] = i;
+      }
+
+      var manualIndex = {};
+      for (var j = 0; j < manual.length; j++) manualIndex[String(manual[j])] = j;
+
+      list.sort(function (a, b) {
+        var aId = a && a.id ? String(a.id) : '';
+        var bId = b && b.id ? String(b.id) : '';
+        var ai = Object.prototype.hasOwnProperty.call(manualIndex, aId) ? manualIndex[aId] : 1e9;
+        var bi = Object.prototype.hasOwnProperty.call(manualIndex, bId) ? manualIndex[bId] : 1e9;
+        if (ai !== bi) return ai - bi;
+        var af = Object.prototype.hasOwnProperty.call(fallbackIndex, aId) ? fallbackIndex[aId] : 1e9;
+        var bf = Object.prototype.hasOwnProperty.call(fallbackIndex, bId) ? fallbackIndex[bId] : 1e9;
+        return af - bf;
+      });
+
+      return list;
+    }
+
     function renderSidebar() {
       if (!els.sidebarList) return;
       els.sidebarList.innerHTML = '';
@@ -72,7 +108,8 @@
         var folderEl = createFolderElement(folders[f]);
         var contentEl = folderEl.querySelector('.folder-content');
   
-        var list = sortChaptersForDisplay(folderContents[folders[f].id] || []);
+        var list = folderContents[folders[f].id] || [];
+        orderChaptersForContainer(book, list, folders[f].id);
         for (var c = 0; c < list.length; c++) {
           contentEl.appendChild(createChapterElement(list[c]));
         }
@@ -80,7 +117,7 @@
       }
   
       // root chapters
-      sortChaptersForDisplay(rootChapters);
+      orderChaptersForContainer(book, rootChapters, null);
       for (var r = 0; r < rootChapters.length; r++) {
         els.sidebarList.appendChild(createChapterElement(rootChapters[r]));
       }
@@ -425,4 +462,3 @@
         }
       };
     }
-

@@ -6,6 +6,7 @@
 - 题目卡片「问AI」：自动注入题干/选项/答案/解析/知识点上下文，支持多轮对话，SSE 流式输出，历史可跨设备同步。
 - 选中文字「问AI」：在同一题目对话里追加“选中引用”。
 - 书内「AI 拍照导入」：一次最多 9 张图，后端异步队列处理（全站全局 RPM + 1s 启动间隔 + 429 指数退避），生成 chapter 写入该书根目录。
+- 说明：从题目打开 AI 对话时会优先加载历史对话；只有在你发送第一条消息后才会创建新的对话记录。
 
 ## 存档（防误操作）
 - 自动存档：服务端每 **5 分钟**自动保存一次快照（可在“云同步 → 存档”里恢复）。
@@ -41,6 +42,10 @@ node dev.mjs
 
 如果你在中国大陆本机开发，Gemini 可能因网络原因不可达：在 `.env` 里设置 `AI_HTTP_PROXY`（或 `HTTPS_PROXY`）即可让后端通过代理访问。
 
+## 章节排序（文件夹内可手动排序）
+- 侧边栏支持拖拽章节到文件夹里。
+- 也支持在同一文件夹内拖拽调整顺序（会持久化到该书的数据中，导出/同步会携带）。
+
 ## 数据库会不会丢？
 - 不会：只要你不删 `pharm_sync_data` volume，重新 `git pull/clone` + `docker compose up -d --build` 都不会影响数据库。
 - 会丢的情况：`docker compose down -v`、`docker volume rm pharm_sync_data`、或你把 DB 改到别处但没迁移。
@@ -57,6 +62,9 @@ export CORS_ORIGIN=https://your-domain.example
 
 node src/server.js
 ```
+
+## Gemini 反代 / 网关
+如果你有自建网关（或可用的反代），可在 `.env` 设置 `GEMINI_BASE_URL` 覆盖官方 API 根地址；支持直接填带 `/v1beta` 或 `/v1beta/models` 的 URL（服务端会自动修剪）。
 
 ## Nginx 部署（示例）
 1) 安装 Nginx（Ubuntu/Debian）

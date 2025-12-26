@@ -955,6 +955,25 @@ body.home-transitioning #booksGrid .book-more { opacity: 0 !important; }
     box-shadow: none;
 }
 
+/* Chapter reordering insertion target */
+.chapter-item.drag-insert-target {
+    position: relative;
+}
+.chapter-item.drag-insert-target::before {
+    content: '';
+    position: absolute;
+    left: 14px;
+    right: 14px;
+    top: 0;
+    height: 0;
+    border-top: 2px solid rgba(99,102,241,0.70);
+    border-radius: 999px;
+}
+.chapter-item.drag-insert-target.drag-insert-after::before {
+    top: auto;
+    bottom: 0;
+}
+
 .item-title { font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* --- 文件夹样式 --- */
@@ -1548,7 +1567,7 @@ h2 {
 }
 .modal-overlay.open { 
     display: flex; 
-    overflow-y: auto; 
+    overflow: hidden; 
     padding: 20px; 
     opacity: 1; 
     overscroll-behavior: contain;
@@ -1561,13 +1580,26 @@ h2 {
     max-width: 600px;
     border-radius: 24px;
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-    max-height: calc(100vh - 40px);
+    max-height: calc(100dvh - 40px);
     overflow: auto;
     overscroll-behavior: contain;
     transform: scale(0.95);
     transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    scrollbar-gutter: stable;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(148,163,184,0.60) transparent;
 }
 .modal-overlay.open .modal-box { transform: scale(1); }
+
+.modal-box::-webkit-scrollbar { width: 12px; height: 12px; }
+.modal-box::-webkit-scrollbar-track { background: transparent; border-radius: 999px; }
+.modal-box::-webkit-scrollbar-thumb {
+    background-color: rgba(148,163,184,0.55);
+    border-radius: 999px;
+    border: 4px solid transparent;
+    background-clip: content-box;
+}
+.modal-box::-webkit-scrollbar-thumb:hover { background-color: rgba(148,163,184,0.70); }
 
 .modal-box .icon-btn {
     width: 38px;

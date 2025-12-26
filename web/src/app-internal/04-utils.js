@@ -136,28 +136,50 @@
       // Normalize CRLF -> LF for consistent parsing.
       s = s.replace(/\r\n/g, '\n');
 
+      function normalizeDisplayBody(body) {
+        body = (body === null || body === undefined) ? '' : String(body);
+        body = body.replace(/\r\n/g, '\n');
+        body = body.trim();
+
+        // Friendly auto-fix: when users write matrices as newline-separated rows without explicit '\\',
+        // KaTeX treats newlines as spaces -> rows collapse into a single line.
+        // If the formula contains a matrix environment and has newlines but no explicit row breaks,
+        // convert line breaks inside that environment into '\\\\'.
+        try {
+          var m = body.match(/\\begin\{([a-zA-Z*]+matrix)\}([\s\S]*?)\\end\{\1\}/);
+          if (m) {
+            var env = m[1];
+            var inner = m[2] || '';
+            if (inner.indexOf('\\\\') === -1 && inner.indexOf('\n') !== -1) {
+              inner = inner.replace(/\n+/g, function (nl) { return ' \\\\ '; });
+              body = body.replace(m[0], '\\begin{' + env + '}' + inner + '\\end{' + env + '}');
+            }
+          }
+        } catch (_) {}
+
+        // Collapse newlines so delimiters + body stay in the same text node.
+        body = body.replace(/\n+/g, ' ');
+        body = body.replace(/[ \t]{2,}/g, ' ');
+
+        // Markdown-it will treat `\\` as an escape and reduce it to `\` in rendered HTML.
+        // For KaTeX row breaks (especially matrices), we need the final HTML text to still contain `\\`.
+        // Doubling the backslashes here makes Markdown keep the intended `\\` after unescaping.
+        body = body.replace(/\\\\/g, '\\\\\\\\');
+        return body;
+      }
+
       // KaTeX auto-render expects $$...$$ pairs to exist in the same text node.
       // Users (and AI) often write:
       // $$\n\n...formula...\n\n$$
       // which Markdown turns into separate <p> blocks ("$$", "formula", "$$"), breaking display-math rendering.
       // We normalize $$ blocks by collapsing whitespace so delimiters + body stay in the same text node.
       s = s.replace(/\$\$([\s\S]*?)\$\$/g, function (_, inner) {
-        var body = (inner === null || inner === undefined) ? '' : String(inner);
-        body = body.replace(/\r\n/g, '\n');
-        body = body.trim();
-        body = body.replace(/\n+/g, ' ');
-        body = body.replace(/[ \t]{2,}/g, ' ');
-        return '$$' + body + '$$';
+        return '$$' + normalizeDisplayBody(inner) + '$$';
       });
 
       // Same for \[ ... \] blocks (display math).
       s = s.replace(/\\\[([\s\S]*?)\\\]/g, function (_, inner2) {
-        var body2 = (inner2 === null || inner2 === undefined) ? '' : String(inner2);
-        body2 = body2.replace(/\r\n/g, '\n');
-        body2 = body2.trim();
-        body2 = body2.replace(/\n+/g, ' ');
-        body2 = body2.replace(/[ \t]{2,}/g, ' ');
-        return '\\[' + body2 + '\\]';
+        return '\\[' + normalizeDisplayBody(inner2) + '\\]';
       });
 
       return s;

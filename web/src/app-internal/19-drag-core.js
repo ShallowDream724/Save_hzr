@@ -27,6 +27,9 @@
 
       overFolderId: null,
       overFolderEl: null,
+      overChapterId: null,
+      overChapterEl: null,
+      overInsertAfter: false,
   
       autoScrollSpeed: 0,
       autoScrollRaf: 0,

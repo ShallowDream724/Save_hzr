@@ -6,7 +6,8 @@
       scope: null,
       busy: false,
       lastQuestionContext: '',
-      pendingSelectedText: ''
+      pendingSelectedText: '',
+      pendingCreate: null
     };
 
     function getModelFromSwitch(switchEl, fallback) {
@@ -216,6 +217,26 @@
       els.aiChatMessages.innerHTML = '';
     }
 
+    function setPendingCreate(payload) {
+      aiChat.pendingCreate = (payload && typeof payload === 'object') ? payload : null;
+    }
+
+    function findExistingQuestionConversation(questionKey, bookId) {
+      if (!questionKey) return Promise.resolve(null);
+      var qs = '?scope=question' + (bookId ? ('&bookId=' + encodeURIComponent(String(bookId))) : '');
+      return apiFetch('/api/ai/conversations' + qs, { method: 'GET' })
+        .then(function (res) { return res.ok ? res.json() : null; })
+        .then(function (j) {
+          var items = (j && Array.isArray(j.items)) ? j.items : [];
+          for (var i = 0; i < items.length; i++) {
+            var it = items[i];
+            if (it && it.questionKey && String(it.questionKey) === String(questionKey) && it.id) return String(it.id);
+          }
+          return null;
+        })
+        .catch(function () { return null; });
+    }
+
     function appendAiBubble(role, text) {
       if (!els.aiChatMessages) return null;
       var wrap = document.createElement('div');
@@ -315,7 +336,6 @@
 
     function sendAiChatMessage() {
       if (aiChat.busy) return;
-      if (!aiChat.conversationId) { showToast('未建立对话', { timeoutMs: 1800 }); return; }
       var msg = (els.aiChatInput && typeof els.aiChatInput.value === 'string') ? els.aiChatInput.value.trim() : '';
       if (!msg) return;
 
@@ -339,9 +359,31 @@
       aiChat.busy = true;
       if (els.aiChatSendBtn) els.aiChatSendBtn.disabled = true;
 
-      apiFetch('/api/ai/conversations/' + encodeURIComponent(String(aiChat.conversationId)) + '/messages/stream', {
-        method: 'POST',
-        body: JSON.stringify({ userMessage: msg, selectedText: selText, modelPref: modelPref })
+      var ensureConversation = Promise.resolve();
+      if (!aiChat.conversationId) {
+        var payload = aiChat.pendingCreate;
+        if (!payload) {
+          aiChat.busy = false;
+          if (els.aiChatSendBtn) els.aiChatSendBtn.disabled = false;
+          setAiChatHint('未建立对话（请从题目或 AI 历史打开）');
+          return;
+        }
+        setAiChatHint('建立对话…');
+        ensureConversation = apiFetch('/api/ai/conversations', { method: 'POST', body: JSON.stringify(payload) })
+          .then(function (res) { if (!res.ok) throw new Error('create failed'); return res.json(); })
+          .then(function (j) {
+            if (!j || !j.conversationId) throw new Error('bad response');
+            aiChat.conversationId = String(j.conversationId);
+            setPendingCreate(null);
+            setAiChatHint('');
+          });
+      }
+
+      ensureConversation.then(function () {
+        return apiFetch('/api/ai/conversations/' + encodeURIComponent(String(aiChat.conversationId)) + '/messages/stream', {
+          method: 'POST',
+          body: JSON.stringify({ userMessage: msg, selectedText: selText, modelPref: modelPref })
+        });
       }).then(function (res) {
         return consumeEventStream(res, function (event, data) {
           if (event === 'delta') {
@@ -385,7 +427,7 @@
         aiChat.busy = false;
         if (els.aiChatSendBtn) els.aiChatSendBtn.disabled = false;
         // Refresh from server (keeps multi-device consistent)
-        return loadAiConversation(aiChat.conversationId).catch(function () {});
+        if (aiChat.conversationId) return loadAiConversation(aiChat.conversationId).catch(function () {});
       });
     }
 
@@ -423,32 +465,36 @@
       aiChat.pendingSelectedText = selectedText ? String(selectedText) : '';
       renderAiChatQuote();
 
-      setAiChatHint('建立对话…');
+      setAiChatHint('加载对话…');
       openAiChatModal();
+      try {
+        if (els.aiChatTitle) els.aiChatTitle.textContent = 'AI 对话';
+        if (els.aiChatContextText) renderMarkdownInto(els.aiChatContextText, ctx || '');
+        if (els.aiChatContextWrap) els.aiChatContextWrap.style.display = ctx ? '' : 'none';
+      } catch (_) {}
 
       var modelPref = getModelFromSwitch(els.aiChatModelSwitch, 'flash');
-      apiFetch('/api/ai/conversations', {
-        method: 'POST',
-        body: JSON.stringify({
-          scope: 'question',
-          bookId: book && book.id ? String(book.id) : null,
-          chapterId: chapter && chapter.id ? String(chapter.id) : null,
-          questionId: questionId,
-          questionKey: (book && book.id ? String(book.id) : '') + '|' + (chapter && chapter.id ? String(chapter.id) : '') + '|' + String(questionId),
-          modelPref: modelPref,
-          questionContext: ctx
-        })
-      }).then(function (res) {
-        if (!res.ok) throw new Error('create conversation failed');
-        return res.json();
-      }).then(function (j) {
-        if (!j || !j.conversationId) throw new Error('bad response');
-        aiChat.conversationId = j.conversationId;
-        return loadAiConversation(aiChat.conversationId);
-      }).then(function () {
-        if (aiChat.pendingSelectedText) setAiChatHint('已引用选中内容（发送时会带给 AI）');
-        else setAiChatHint('');
-      }).catch(function (e) {
-        setAiChatHint('失败：' + (e && e.message ? e.message : '请求失败'));
+      var qKey = (book && book.id ? String(book.id) : '') + '|' + (chapter && chapter.id ? String(chapter.id) : '') + '|' + String(questionId);
+      aiChat.conversationId = null;
+      setPendingCreate({
+        scope: 'question',
+        bookId: book && book.id ? String(book.id) : null,
+        chapterId: chapter && chapter.id ? String(chapter.id) : null,
+        questionId: questionId,
+        questionKey: qKey,
+        modelPref: modelPref,
+        questionContext: ctx
+      });
+
+      clearAiMessages();
+      findExistingQuestionConversation(qKey, book && book.id ? String(book.id) : null).then(function (cid) {
+        if (cid) {
+          aiChat.conversationId = cid;
+          setPendingCreate(null);
+          return loadAiConversation(cid).then(function () { setAiChatHint(''); });
+        }
+        setAiChatHint(aiChat.pendingSelectedText ? '已引用选中内容（发送时会带给 AI）' : '');
+      }).catch(function () {
+        setAiChatHint('加载失败');
       });
     }
