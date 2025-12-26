@@ -255,7 +255,7 @@ SQLite 继续可用（现有就是 SQLite）。任务系统要求：
 
 重要约束（写进 prompt，服务端也校验）：
 - `head` 若非 null，表示“本页开头不是一个完整新题”，因此该题 **不得** 同时出现在 `questions`。
-- `tail` 的题 **不得** 同时出现在 `questions`（无论 complete 还是 fragment），避免去重困难。
+- `tail` 的题 **不得** 同时出现在 `questions`，避免去重困难。
 
 `Question`（完整题，且必须带来源）：
 - `sourceRef`: `{ pageIndex, localIndex }`（localIndex 从 0 开始，按该页题目出现顺序）
@@ -264,8 +264,8 @@ SQLite 继续可用（现有就是 SQLite）。任务系统要求：
 Question（对齐现有题卡字段，见 `web/src/app-internal/12-chapter-view.js:25`）
 - `id`: string|number
 - `text`: string（Markdown/纯文本）
-- `options`: `{label, content}[]`
-- `answer`: string
+- `options?`: `{label, content}[]`（选择题时有；简答题可省略或为空数组）
+- `answer`: string（选择题通常为选项字母；简答题为答案文本；允许为空）
 - `explanation`: string（Markdown；finalize **必填**）
 - `knowledgeTitle`: string（finalize **必填**）
 - `knowledge`: string（Markdown；finalize **必填**）

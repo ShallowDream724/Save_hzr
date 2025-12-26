@@ -90,7 +90,7 @@ const extractPageBundleDeclaration = {
             knowledgeTitle: { type: 'string' },
             knowledge: { type: 'string' },
           },
-          required: ['sourceRef', 'text', 'options', 'answer'],
+          required: ['sourceRef', 'text', 'answer'],
         },
       },
       tail: {
@@ -173,7 +173,7 @@ const finalizeImportJobDeclaration = {
                   knowledgeTitle: { type: 'string' },
                   knowledge: { type: 'string' },
                 },
-                required: ['text', 'options', 'answer', 'explanation', 'knowledgeTitle', 'knowledge'],
+                required: ['text', 'answer', 'explanation', 'knowledgeTitle', 'knowledge'],
               },
             },
             warnings: { type: 'array', items: { type: 'string' } },
@@ -189,7 +189,7 @@ const finalizeImportJobDeclaration = {
 
 function buildExtractPrompt({ pageIndex, noteText }) {
   const note = noteText ? `\n\nUser note:\n${noteText}\n` : '';
-  return `You are extracting questions from ONE page image (typically single-answer). The output will be rendered directly in a study UI.
+  return `You are extracting questions from ONE page image. Questions can be choice questions (with options, typically single-answer) or short-answer questions (no options). The output will be rendered directly in a study UI.
 
 Hard rules (MUST follow):
 1) You MUST call the function "extract_page_bundle" exactly once. Do NOT output any other text.
@@ -203,31 +203,32 @@ Hard rules (MUST follow):
    - If some parts are not visible, leave them empty.
 5) Do NOT include the head question or the tail question inside "questions".
 6) "questions" must contain only COMPLETE questions that are fully readable on this page.
+   - For choice questions: include options + answer when visible.
+   - For short-answer questions: you do NOT need to return options (omit "options" or use an empty array). Put the short answer into "answer" when visible; otherwise keep "answer" empty. Do NOT invent options.
 7) For each question in "questions", you MUST fill "explanation", "knowledgeTitle", and "knowledge". These fields are rendered directly in a study UI, so write them as helpful learning notes:
    - Use clear Chinese.
    - Use Markdown + LaTeX when helpful.
-   - Use emphasis to make key terms stand out (supported: Markdown **bold** or <span class="highlight">...</span>; no other HTML).
+   - Use emphasis to make key terms stand out (supported: Markdown **bold** or <span class="highlight">...</span> or <span class="underline-em">...</span>; no other HTML).
 8) Do NOT invent. If unclear, keep fields empty where appropriate and add a warning string.
-9) Output Markdown/LaTeX-friendly text. Do NOT output arbitrary HTML (only the highlight span is allowed).
+9) Output Markdown/LaTeX-friendly text. Do NOT output arbitrary HTML (only the allowed span classes above).
 ${note}`.trim();
 }
 
 function buildFinalizePrompt({ pages, noteText }) {
   const note = noteText ? `\n\nUser note:\n${noteText}\n` : '';
   const input = JSON.stringify({ pages });
-  return `You are generating explanations and knowledge points for some questions.
+  return `You are generating explanations and knowledge points for stitched questions (some may be short-answer with no options).
 
 Hard rules (MUST follow):
 1) You MUST call the function "finalize_import_job" exactly once. Do NOT output any other text.
 2) Keep the same pageIndex set as the input. Do NOT invent extra pages.
 3) Keep question order stable within each page. Do NOT merge/split questions. Do NOT change question text/options/answer.
 3.1) Preserve question "id" (question number) if present. Do NOT renumber or invent ids.
-4) You MUST fill "explanation", "knowledgeTitle", and "knowledge" for EVERY question. These fields are rendered directly in a study UI, so write them as helpful learning notes:
-   - Use clear Chinese.
-   - Explain why the correct option is the BEST answer, and briefly address common pitfalls.
+4) You MUST fill "explanation", "knowledgeTitle", and "knowledge" for EVERY question. These are the primary study notes shown under each question in our UI:
+   - Write clear Chinese learning notes: explain why the answer is correct, and briefly mention common pitfalls.
    - Provide a short knowledgeTitle + a knowledge paragraph that summarizes the key concept.
    - If the question is unclear/missing info, do NOT invent. Explain what is unclear and what extra info is needed; still provide a safe knowledgeTitle/knowledge about how to verify/re-capture the content, and add a warning string.
-5) Use Markdown + LaTeX for readability. Use emphasis to highlight key terms (supported: **bold** or <span class="highlight">...</span>; no other HTML).
+5) Use Markdown + LaTeX for readability. Use emphasis to highlight key terms (supported: **bold**, <span class="highlight">...</span>, <span class="underline-em">...</span>; no other HTML).
 6) Keep each page "title" exactly as input (do NOT change titles).
 
 Input pages JSON:
