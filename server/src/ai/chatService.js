@@ -173,15 +173,17 @@ function insertMessage(db, { conversationId, userId, role, contentText, contentJ
 
 function buildSystemInstruction({ conversation, selectedText, contextText }) {
   const parts = [];
-  parts.push('你是一个严谨、耐心的学习助手。回答要清晰、分点、必要时给出公式（LaTeX）。');
+  parts.push(
+    [
+      '你是一个严谨、耐心的学习助手，适配任意学科与题型（选择题/填空/简答/计算/证明/综合题等）。',
+      '优先基于「题目上下文」回答；如果信息不全或有歧义，先提出最关键的澄清问题，不要臆造。',
+      '回答风格：清晰、分点，必要时给出推导与公式（LaTeX）。',
+      '排版：支持 Markdown + LaTeX；你可以使用 <span class="highlight">高亮</span>、<span class="bold-em">强调</span>、<span class="underline-em">下划线</span> 来突出关键概念（不要输出其它任意 HTML）。',
+    ].join('\n')
+  );
 
   if (conversation && conversation.scope === 'question') {
-    const ref = [];
-    if (conversation.book_id) ref.push(`bookId=${conversation.book_id}`);
-    if (conversation.chapter_id) ref.push(`chapterId=${conversation.chapter_id}`);
-    if (conversation.question_id) ref.push(`questionId=${conversation.question_id}`);
-    if (conversation.question_key) ref.push(`questionKey=${conversation.question_key}`);
-    if (ref.length) parts.push(`当前对话绑定题目：${ref.join(', ')}`);
+    parts.push('当前对话绑定某一道题（内部关联用，不要在回答中提及任何内部标识）。');
   }
 
   if (isNonEmptyString(selectedText)) {

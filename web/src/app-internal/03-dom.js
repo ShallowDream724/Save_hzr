@@ -14,7 +14,6 @@
       els.newBookBtn = document.getElementById('newBookBtn');
       els.importBookBtn = document.getElementById('importBookBtn');
       els.homeSyncBtn = document.getElementById('homeSyncBtn');
-      els.homeSavesBtn = document.getElementById('homeSavesBtn');
       els.homeSettingsBtn = document.getElementById('homeSettingsBtn');
       els.homeAiBtn = document.getElementById('homeAiBtn');
       els.sidebar = document.getElementById('sidebar');
@@ -86,6 +85,7 @@
 
       // settings modal
       els.settingsModal = document.getElementById('settingsModal');
+      els.settingsDangerZone = document.getElementById('settingsDangerZone');
       els.exportLocalBtn = document.getElementById('exportLocalBtn');
       els.resetUiBtn = document.getElementById('resetUiBtn');
       els.uiAnalysisColor = document.getElementById('uiAnalysisColor');

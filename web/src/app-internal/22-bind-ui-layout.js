@@ -69,14 +69,6 @@
       if (els.homeSyncBtn) {
         els.homeSyncBtn.onclick = function () {
           updateAuthModalUI();
-          switchSyncTab('account');
-          if (els.authModal) els.authModal.classList.add('open');
-          syncModalScrollLock();
-        };
-      }
-      if (els.homeSavesBtn) {
-        els.homeSavesBtn.onclick = function () {
-          updateAuthModalUI();
           switchSyncTab(getToken() ? 'saves' : 'account');
           if (els.authModal) els.authModal.classList.add('open');
           syncModalScrollLock();
@@ -84,10 +76,12 @@
       }
       if (els.homeSettingsBtn) {
         els.homeSettingsBtn.onclick = function () {
-          if (!els.settingsModal) return;
-          populateSettingsUi();
-          els.settingsModal.classList.add('open');
-          syncModalScrollLock();
+          if (typeof window.openSettingsModal === 'function') window.openSettingsModal('home');
+          else if (els.settingsModal) {
+            populateSettingsUi();
+            els.settingsModal.classList.add('open');
+            syncModalScrollLock();
+          }
         };
       }
 
@@ -219,4 +213,3 @@
         uiUpdateCollapseIcon();
       }, { passive: true });
     }
-

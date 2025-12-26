@@ -71,6 +71,30 @@
       applyUiToDocument();
     }
 
+    function getSettingsMode(explicitMode) {
+      if (explicitMode === 'home' || explicitMode === 'book') return explicitMode;
+      return homeVisible ? 'home' : 'book';
+    }
+
+    function updateSettingsModalMode(mode) {
+      try {
+        if (els.settingsModal && els.settingsModal.dataset) els.settingsModal.dataset.mode = mode;
+      } catch (_) {}
+
+      if (els.settingsDangerZone) els.settingsDangerZone.style.display = (mode === 'home') ? '' : 'none';
+      if (els.exportLocalBtn) els.exportLocalBtn.textContent = (mode === 'home') ? '导出全部备份（JSON）' : '导出本书备份（JSON）';
+    }
+
+    function openSettingsModal(explicitMode) {
+      if (!els.settingsModal) return;
+      populateSettingsUi();
+      if (els.resetHint) els.resetHint.textContent = '';
+      if (els.resetToDefaultBtn) els.resetToDefaultBtn.textContent = '重置到默认';
+      updateSettingsModalMode(getSettingsMode(explicitMode));
+      els.settingsModal.classList.add('open');
+      syncModalScrollLock();
+    }
+
     function bindUiSettingsOnce() {
       if (uiSettingsBound) return;
       uiSettingsBound = true;
@@ -106,12 +130,7 @@
       // 设置
       if (els.settingsBtn) {
         els.settingsBtn.onclick = function () {
-          if (!els.settingsModal) return;
-          populateSettingsUi();
-          if (els.resetHint) els.resetHint.textContent = '';
-          if (els.resetToDefaultBtn) els.resetToDefaultBtn.textContent = '重置到默认';
-          els.settingsModal.classList.add('open');
-          syncModalScrollLock();
+          openSettingsModal();
         };
       }
 
@@ -120,13 +139,66 @@
       }
       if (els.exportLocalBtn) {
         els.exportLocalBtn.onclick = function () {
-          var payload = {
+          function safeFileName(name) {
+            var s = (typeof name === 'string') ? name.trim() : '';
+            if (!s) return '未命名书';
+            return s.replace(/[\\/:*?"<>|]/g, '-').slice(0, 40) || '未命名书';
+          }
+
+          var mode = 'home';
+          try { mode = (els.settingsModal && els.settingsModal.dataset && els.settingsModal.dataset.mode) ? els.settingsModal.dataset.mode : mode; } catch (_) {}
+          mode = getSettingsMode(mode);
+
+          var ts = new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-');
+          if (mode === 'book') {
+            var book = getActiveBook();
+            if (!book) { showToast('未找到当前书', { timeoutMs: 2200 }); return; }
+            book = normalizeBook(book);
+            var payloadBook = {
+              exportedAt: new Date().toISOString(),
+              app: '拯救Hzr',
+              bookTitle: book.title,
+              theme: book.theme,
+              icon: book.icon,
+              includePresets: !!book.includePresets,
+              data: {
+                folders: Array.isArray(book.folders) ? book.folders : [],
+                chapters: Array.isArray(book.chapters) ? book.chapters : [],
+                layoutMap: (book.layoutMap && typeof book.layoutMap === 'object' && !Array.isArray(book.layoutMap)) ? book.layoutMap : {},
+                deletedChapterIds: Array.isArray(book.deletedChapterIds) ? book.deletedChapterIds : []
+              }
+            };
+            downloadJson('拯救Hzr-书备份-' + safeFileName(book.title) + '-' + ts + '.json', payloadBook);
+            showToast('已导出本书备份', { timeoutMs: 2600 });
+            return;
+          }
+
+          var books = getBooks();
+          var outBooks = [];
+          for (var i = 0; i < (books || []).length; i++) {
+            var b = books[i];
+            if (!b) continue;
+            b = normalizeBook(b);
+            outBooks.push({
+              title: b.title,
+              theme: b.theme,
+              icon: b.icon,
+              includePresets: !!b.includePresets,
+              folders: Array.isArray(b.folders) ? b.folders : [],
+              chapters: Array.isArray(b.chapters) ? b.chapters : [],
+              layoutMap: (b.layoutMap && typeof b.layoutMap === 'object' && !Array.isArray(b.layoutMap)) ? b.layoutMap : {},
+              deletedChapterIds: Array.isArray(b.deletedChapterIds) ? b.deletedChapterIds : []
+            });
+          }
+
+          var payloadAll = {
             exportedAt: new Date().toISOString(),
             app: '拯救Hzr',
-            data: appData
+            books: outBooks,
+            ui: (appData && appData.ui) ? normalizeUi(appData.ui) : defaultUi()
           };
-          downloadJson('拯救Hzr-本地备份-' + new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-') + '.json', payload);
-          showToast('已导出本地备份', { timeoutMs: 2600 });
+          downloadJson('拯救Hzr-全部备份-' + ts + '.json', payloadAll);
+          showToast('已导出全部备份', { timeoutMs: 2600 });
         };
       }
 
@@ -176,3 +248,4 @@
       }
     }
 
+    try { window.openSettingsModal = openSettingsModal; } catch (_) {}

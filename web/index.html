@@ -119,7 +119,6 @@
                         </div>
                         <div class="home-hud-actions" aria-label="主页操作">
                             <button id="homeSyncBtn" class="modal-btn" type="button" title="云同步"><i class="fa-solid fa-cloud" style="margin-right:8px;"></i>云同步</button>
-                            <button id="homeSavesBtn" class="modal-btn" type="button" title="存档"><i class="fa-solid fa-box-archive" style="margin-right:8px;"></i>存档</button>
                             <button id="homeSettingsBtn" class="modal-btn" type="button" title="设置"><i class="fa-solid fa-gear" style="margin-right:8px;"></i>设置</button>
                             <button id="homeAiBtn" class="modal-btn" type="button" title="AI"><i class="fa-solid fa-robot" style="margin-right:8px;"></i>AI</button>
                             <span class="home-hud-divider" aria-hidden="true"></span>
@@ -338,7 +337,6 @@
 
                 <div class="settings-inline" style="margin-top:10px;">
                     <button id="resetUiBtn" class="modal-btn" type="button">恢复默认配色</button>
-                    <button id="exportLocalBtn" class="modal-btn" type="button">导出本地备份（JSON）</button>
                 </div>
 
                 <div class="settings-preview">
@@ -353,11 +351,15 @@
                 </div>
             </div>
 
-            <div class="danger-zone" style="margin-top:14px;">
+            <div class="modal-actions" style="margin-top:14px; justify-content:space-between;">
+                <button id="settingsCloseBtn" class="modal-btn" type="button">关闭</button>
+                <button id="exportLocalBtn" class="modal-btn" type="button">导出全部备份（JSON）</button>
+            </div>
+
+            <div id="settingsDangerZone" class="danger-zone" style="margin-top:14px;">
                 <div class="danger-title">危险操作</div>
                 <div class="danger-desc">重置会清空本地导入/自建内容，并恢复预设题库。</div>
-                <div class="modal-actions" style="justify-content:space-between; margin-top:10px;">
-                    <button id="settingsCloseBtn" class="modal-btn" type="button">关闭</button>
+                <div class="modal-actions" style="justify-content:flex-end; margin-top:10px;">
                     <button id="resetToDefaultBtn" class="modal-btn danger" type="button">重置到默认</button>
                 </div>
                 <div id="resetHint" style="margin-top:10px; color:#667085; font-size:0.9rem;"></div>
