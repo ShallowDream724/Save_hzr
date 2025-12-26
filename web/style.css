@@ -1778,6 +1778,44 @@ h2 {
     .top-bar { position: sticky; top: calc(10px + env(safe-area-inset-top)); }
 }
 
+@media (max-width: 420px) {
+    .main-content {
+        padding: 14px;
+        padding-top: calc(12px + env(safe-area-inset-top));
+        padding-bottom: calc(14px + env(safe-area-inset-bottom));
+    }
+    .top-bar {
+        gap: 10px;
+        padding: 12px 12px;
+        flex-wrap: wrap;
+    }
+    .top-bar .icon-btn {
+        flex: none;
+        height: 40px;
+        min-width: 44px;
+        border-radius: 14px;
+    }
+    .top-bar h2 {
+        order: 3;
+        flex: 1 1 auto;
+        min-width: 140px;
+        font-size: 1rem;
+    }
+    #syncStatus {
+        order: 4;
+        margin-left: 0 !important;
+        flex: 1 1 100%;
+        max-width: 100%;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        font-size: 0.82rem !important;
+        padding: 4px 8px;
+    }
+    #aiHistoryBtn { order: 5; }
+    #aiImportBtn { order: 6; }
+}
+
 /* ---------------------------
  * AI chat (modal)
  * --------------------------- */
