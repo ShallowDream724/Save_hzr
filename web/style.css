@@ -1388,6 +1388,7 @@ h2 {
 }
 
 .q-header { display: flex; gap: 16px; margin-bottom: 20px; align-items: flex-start; }
+.q-header { min-width: 0; }
 .q-id {
     background: var(--primary-color);
     color: white;
@@ -1404,6 +1405,9 @@ h2 {
     line-height: 1.7; 
     color: var(--primary-color);
     letter-spacing: -0.01em; 
+    min-width: 0;
+    overflow-wrap: anywhere;
+    word-break: break-word;
 }
 
 .options-list { list-style: none; margin: 20px 0; display: grid; gap: 12px; }
@@ -1416,6 +1420,7 @@ h2 {
     transition: all 0.2s ease;
     cursor: pointer;
     align-items: center;
+    min-width: 0;
 }
 .option-item:hover { 
     background: white; 
@@ -1443,6 +1448,28 @@ h2 {
 }
 .option-item:hover .option-label { background: var(--accent-color); color: white; }
 .option-item.correct .option-label { background: #059669; color: white; }
+.option-content {
+    min-width: 0;
+    flex: 1;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+/* Prevent page-level horizontal scroll: let long formulas scroll inside their own block */
+.katex-display {
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+@media (max-width: 520px) {
+    .analysis-content table, .knowledge-content table {
+        display: block;
+        max-width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+}
 
 .analysis-box {
     margin-top: 24px;
