@@ -805,7 +805,7 @@ body.home-transitioning #booksGrid .book-more { opacity: 0 !important; }
     position: fixed;
     inset: 0 auto 0 0;
     height: 100dvh;
-    z-index: 100;
+    z-index: 2400;
     display: flex;
     flex-direction: column;
     transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -816,6 +816,16 @@ body.home-transitioning #booksGrid .book-more { opacity: 0 !important; }
     box-shadow: 4px 0 24px rgba(0,0,0,0.04);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
+}
+.sidebar-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 2300;
+    background: rgba(15, 23, 42, 0.35);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 180ms ease;
+    touch-action: none;
 }
 .brand {
     padding: 20px 18px;
@@ -1640,6 +1650,7 @@ h2 {
 
     .sidebar { transform: translateX(-100%); width: 280px; }
     .sidebar.active { transform: translateX(0); }
+    .sidebar.active + .sidebar-overlay { opacity: 1; pointer-events: auto; }
     .main-content { margin-left: 0; }
     .fab-menu { display: inline-flex; }
     .menu-toggle { display: inline-flex; }
@@ -1683,7 +1694,7 @@ h2 {
 .ai-sel-btn:active { transform: translateY(1px); }
 
 .ai-chat-box {
-    width: min(880px, calc(100vw - 28px));
+    width: min(900px, calc(100vw - 40px));
     max-width: none;
     height: min(86vh, 920px);
     max-height: min(92vh, 980px);
@@ -2003,10 +2014,13 @@ h2 {
     white-space: pre-line;
 }
 
-@media (max-width: 768px) {
+/* Tablet: near full-screen sheet */
+@media (max-width: 1024px) {
+    #aiChatModal.open { padding: 12px; overflow: hidden; }
     .ai-chat-box {
-        width: calc(100vw - 16px);
-        height: calc(100vh - 16px);
+        width: calc(100vw - 24px);
+        height: calc(100vh - 24px);
+        height: calc(100dvh - 24px);
         max-height: none;
         border-radius: 22px;
     }
@@ -2017,7 +2031,21 @@ h2 {
     .ai-bubble { max-width: 94%; }
 }
 
-@media (hover: hover) and (pointer: fine) {
+/* Phone: true full-screen (safe-area aware) */
+@media (max-width: 600px) {
+    #aiChatModal.open { padding: 0; }
+    .ai-chat-box {
+        width: 100vw;
+        height: 100vh;
+        height: 100dvh;
+        border-radius: 0;
+    }
+    .ai-chat-header { padding-top: calc(14px + env(safe-area-inset-top)); }
+    .ai-chat-input { margin-bottom: calc(12px + env(safe-area-inset-bottom)); }
+    .ai-chat-hint { margin-bottom: calc(12px + env(safe-area-inset-bottom)); }
+}
+
+@media (hover: hover) and (pointer: fine) and (min-width: 900px) {
     .ai-chat-box { resize: both; min-width: 560px; min-height: 640px; }
     .ai-chat-header { cursor: move; user-select: none; }
 }

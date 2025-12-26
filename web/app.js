@@ -2606,7 +2606,11 @@
 
     function isFinePointerLayout() {
       try {
-        return !!(window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches);
+        if (!window.matchMedia) return false;
+        if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return false;
+        // Small screens: keep the chat as a stable sheet (no dragging/resizing), even if a mouse/trackpad exists.
+        if (window.matchMedia('(max-width: 899px)').matches) return false;
+        return true;
       } catch (_) {
         return false;
       }
@@ -2795,8 +2799,6 @@
         else els.aiChatContextWrap.style.display = 'none';
       }
 
-      aiChat.pendingSelectedText = '';
-      renderAiChatQuote();
       clearAiMessages();
       for (var j = 0; j < (messages || []).length; j++) {
         var msg = messages[j];
