@@ -32,8 +32,22 @@ function normalizeQuestion(q, fallbackId, defaultAi) {
   q = isObject(q) ? q : {};
   const options = ensureArray(q.options).map(normalizeOption).filter((o) => o.label);
   const rawId = q.id !== undefined && q.id !== null ? q.id : null;
-  const id = rawId === '' || rawId === null ? fallbackId : rawId;
+  const id = rawId === '' || rawId === null ? '' : rawId;
+
+  const rawQid = q.qid !== undefined && q.qid !== null ? q.qid : null;
+  let qid = typeof rawQid === 'string' ? rawQid.trim() : '';
+  if (!qid) {
+    const ai = isObject(q.ai) ? q.ai : (isObject(defaultAi) ? defaultAi : null);
+    if (ai && ai.jobId !== undefined && ai.pageIndex !== undefined && ai.localIndex !== undefined) {
+      qid = `aiq_${String(ai.jobId)}_${String(ai.pageIndex)}_${String(ai.localIndex)}`;
+    } else if (id !== '' && id !== null && id !== undefined) {
+      qid = String(id);
+    } else {
+      qid = String(fallbackId);
+    }
+  }
   return {
+    qid,
     id: id !== undefined && id !== null ? id : '',
     text: normalizeString(q.text),
     options,

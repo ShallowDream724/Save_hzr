@@ -392,10 +392,17 @@
       if (!chapter || !Array.isArray(chapter.questions)) { showToast('未找到题目', { timeoutMs: 1800 }); return; }
 
       var q = null;
+      var qidStr = String(qid);
+      var questionId = null;
       for (var i = 0; i < chapter.questions.length; i++) {
-        if (String(chapter.questions[i].id) === String(qid)) { q = chapter.questions[i]; break; }
+        var qq = chapter.questions[i];
+        var qqid = (qq && qq.qid !== undefined && qq.qid !== null) ? String(qq.qid)
+          : (qq && qq.id !== undefined && qq.id !== null) ? String(qq.id)
+          : '';
+        if (qqid && qqid === qidStr) { q = qq; questionId = qqid; break; }
       }
       if (!q) { showToast('未找到题目', { timeoutMs: 1800 }); return; }
+      if (!questionId) questionId = qidStr;
 
       var book = getActiveBook();
       var ctx = buildQuestionContextText(book, chapter, q);
@@ -414,8 +421,8 @@
           scope: 'question',
           bookId: book && book.id ? String(book.id) : null,
           chapterId: chapter && chapter.id ? String(chapter.id) : null,
-          questionId: (q && q.id !== undefined && q.id !== null) ? String(q.id) : null,
-          questionKey: (book && book.id ? String(book.id) : '') + '|' + (chapter && chapter.id ? String(chapter.id) : '') + '|' + String(qid),
+          questionId: questionId,
+          questionKey: (book && book.id ? String(book.id) : '') + '|' + (chapter && chapter.id ? String(chapter.id) : '') + '|' + String(questionId),
           modelPref: modelPref,
           questionContext: ctx
         })
@@ -433,4 +440,3 @@
         setAiChatHint('失败：' + (e && e.message ? e.message : '请求失败'));
       });
     }
-

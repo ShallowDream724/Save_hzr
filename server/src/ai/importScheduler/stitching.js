@@ -223,14 +223,17 @@ function finalizeBundlesToChapters({ jobId, bundles }) {
     delete page.tail;
   }
 
-  // Assign stable display IDs per chapter (1..n) and tag AI origin.
+  // Tag AI origin and assign stable internal question IDs (qid).
   for (const page of pageResults) {
     const qs = Array.isArray(page.questions) ? page.questions : [];
     for (let i = 0; i < qs.length; i++) {
       const q = qs[i];
-      q.id = typeof q.id === 'string' || typeof q.id === 'number' ? q.id : i + 1;
       q.__ai = true;
-      q.ai = q.ai || { jobId, pageIndex: page.pageIndex };
+      const localIndex = q && q.sourceRef && Number.isFinite(Number(q.sourceRef.localIndex)) ? Number(q.sourceRef.localIndex) : i;
+      q.ai = q.ai || { jobId, pageIndex: page.pageIndex, localIndex };
+      if (!q.qid || (typeof q.qid === 'string' && !q.qid.trim())) {
+        q.qid = `aiq_${String(jobId)}_${String(page.pageIndex)}_${String(localIndex)}`;
+      }
     }
   }
 

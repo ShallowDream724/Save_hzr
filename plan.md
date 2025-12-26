@@ -236,14 +236,14 @@ SQLite 继续可用（现有就是 SQLite）。任务系统要求：
 1) `extract_page_bundle(args)`（每页一次，支持并行在途）
    - 返回该页的“中间产物”，包含 **头/中/尾**，用于跨页拼接与归位
 2) `finalize_import_job(args)`（整章一次或分块多次）
-   - 输入所有页 bundles + 服务端预拼接结果，输出最终 chapters（按页归属；跨页合并题默认归到上一页）
+   - 输入服务端已按页归并好的 `pages[]`（题目已拼接归位），输出同结构（补全解析/知识点）
 
 `extract_page_bundle(args)` 返回结构建议（配合你的“头/尾拼接规则”）：
 - `pageIndex`: number（严格使用服务端传入的顺序，从 0 开始）
-- `chapterTitleCandidate`: string（可选；最终以 finalize 为准）
+- `chapterTitleCandidate`: string（该页章节名候选；允许空字符串，服务端会兜底）
 - `head`: QuestionFragment | null（该页“头”，仅当**本页第一题明显是上一页续题残余**才输出；如果本页第一题完整，则必须为 null）
 - `questions`: Question[]（该页中间的“完整题”数组）
-- `tail`: QuestionTail（该页“尾”，**必须输出**：即便最后一题完整也要放在 tail 里；若续到下一页则输出 fragment）
+- `tail`: QuestionFragment（该页“尾”，**必须输出**：永远是“本页最后一题”，不判断完整/不完整，能看见什么填什么）
 - `warnings?`: string[]（可选：识别不清/页面质量差等）
 
 `QuestionFragment`（允许不完整，便于拼接）：
@@ -251,12 +251,7 @@ SQLite 继续可用（现有就是 SQLite）。任务系统要求：
 - `text?`: string
 - `options?`: `{label, content}[]`
 - `answer?`: string
-- `continues?`: `'from_prev'|'to_next'|'none'`（模型尽量判断；不确定就 `none`）
-
-`QuestionTail`（始终存在，且保证不重复）
-- `kind`: `'complete' | 'fragment'`
-- `question?`: Question（当 `kind='complete'`）
-- `fragment?`: QuestionFragment（当 `kind='fragment'`，且通常 `continues='to_next'`）
+- `continues?`: `'from_prev'|'to_next'|'none'`（可选；不确定就 `none`）
 
 重要约束（写进 prompt，服务端也校验）：
 - `head` 若非 null，表示“本页开头不是一个完整新题”，因此该题 **不得** 同时出现在 `questions`。
@@ -271,9 +266,9 @@ Question（对齐现有题卡字段，见 `web/src/app-internal/12-chapter-view.
 - `text`: string（Markdown/纯文本）
 - `options`: `{label, content}[]`
 - `answer`: string
-- `explanation?`: string（Markdown）
-- `knowledgeTitle?`: string
-- `knowledge?`: string（Markdown）
+- `explanation`: string（Markdown；finalize **必填**）
+- `knowledgeTitle`: string（finalize **必填**）
+- `knowledge`: string（Markdown；finalize **必填**）
 
 #### prompt 原则（必须写死在服务端）
 - 系统提示词强调：
@@ -526,5 +521,5 @@ Home/开书动画（必须保护）
 
 ## 13. 待你确认的问题（写完文档后只留最关键的）
 1) 导入默认采用“方案 A（头/中/尾片段 + finalize 归并）”，并保留“方案 B（串行 carry）”作为兜底开关，这样 OK 吗？
-2) 导入是否默认生成 `explanation/knowledge`？（如果一章题太多，可能需要分块 finalize；也可以先只抽题+答案，解析后续按需生成）
+2) 解析/知识点：默认对所有题 **强制生成**（含跨页拼接题）。若极端情况下 token 超限，则再做“分块 finalize（多次）”兜底。
 3) `maxInFlight` 你希望保守还是激进？我默认建议：Pro=10、Flash=20（都仍受 rpm + 1s 启动间隔约束，可随时调小/调大）

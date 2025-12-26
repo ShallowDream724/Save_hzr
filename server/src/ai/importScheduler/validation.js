@@ -12,9 +12,23 @@ function validateBundle(bundle, expectedPageIndex) {
   if (!Array.isArray(bundle.questions)) return 'questions must be array';
   if (!bundle.tail || typeof bundle.tail !== 'object') return 'tail must be object';
   if (bundle.head !== null && typeof bundle.head !== 'object') return 'head must be null or object';
-  if (!bundle.tail.sourceRef || typeof bundle.tail.sourceRef !== 'object') return 'tail.sourceRef required';
-  if (Number(bundle.tail.sourceRef.pageIndex) !== Number(expectedPageIndex)) return 'tail.sourceRef.pageIndex mismatch';
-  if (bundle.tail.sourceRef.kind !== 'tail') return 'tail.sourceRef.kind invalid';
+
+  // tail (new format): tail is an object with {sourceRef:{pageIndex,kind:'tail'}, ...}
+  // tail (old format): tail.kind in {'complete','fragment'} and nested {question|fragment} with its own sourceRef.
+  const tail = bundle.tail;
+  const tailSourceRef = tail && tail.sourceRef && typeof tail.sourceRef === 'object' ? tail.sourceRef : null;
+  if (tailSourceRef) {
+    if (Number(tailSourceRef.pageIndex) !== Number(expectedPageIndex)) return 'tail.sourceRef.pageIndex mismatch';
+    if (tailSourceRef.kind !== 'tail') return 'tail.sourceRef.kind invalid';
+  } else if (tail && (tail.kind === 'complete' || tail.kind === 'fragment')) {
+    const nested = tail.kind === 'complete' ? tail.question : tail.fragment;
+    const nestedRef = nested && nested.sourceRef && typeof nested.sourceRef === 'object' ? nested.sourceRef : null;
+    if (!nestedRef) return 'tail.sourceRef required';
+    if (Number(nestedRef.pageIndex) !== Number(expectedPageIndex)) return 'tail.sourceRef.pageIndex mismatch';
+  } else {
+    return 'tail.sourceRef required';
+  }
+
   if (bundle.head !== null) {
     if (!bundle.head.sourceRef || typeof bundle.head.sourceRef !== 'object') return 'head.sourceRef required';
     if (Number(bundle.head.sourceRef.pageIndex) !== Number(expectedPageIndex)) return 'head.sourceRef.pageIndex mismatch';
@@ -41,9 +55,9 @@ function validateFinalizeOutput(out) {
         if (typeof o.label !== 'string' || typeof o.content !== 'string') return 'option.label/content must be string';
       }
       if (typeof q.answer !== 'string') return 'question.answer must be string';
-      if (q.explanation !== undefined && typeof q.explanation !== 'string') return 'question.explanation must be string';
-      if (q.knowledgeTitle !== undefined && typeof q.knowledgeTitle !== 'string') return 'question.knowledgeTitle must be string';
-      if (q.knowledge !== undefined && typeof q.knowledge !== 'string') return 'question.knowledge must be string';
+      if (!isNonEmptyString(q.explanation)) return 'question.explanation required';
+      if (!isNonEmptyString(q.knowledgeTitle)) return 'question.knowledgeTitle required';
+      if (!isNonEmptyString(q.knowledge)) return 'question.knowledge required';
     }
   }
   if (out.warnings !== undefined && !Array.isArray(out.warnings)) return 'warnings must be array';

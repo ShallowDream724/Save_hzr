@@ -135,7 +135,7 @@ const extractPageBundleDeclaration = {
 const finalizeImportJobDeclaration = {
   name: 'finalize_import_job',
   description:
-    'Finalize book import from pre-merged page questions. Keep order stable. Optionally generate short explanations and knowledge points when possible; do not output any extra text.',
+    'Finalize book import from stitched questions. Do NOT change question text/options/answer. MUST generate explanation + knowledge point for every question; do not output any extra text.',
   parametersJsonSchema: {
     type: 'object',
     additionalProperties: false,
@@ -173,7 +173,7 @@ const finalizeImportJobDeclaration = {
                   knowledgeTitle: { type: 'string' },
                   knowledge: { type: 'string' },
                 },
-                required: ['text', 'options', 'answer'],
+                required: ['text', 'options', 'answer', 'explanation', 'knowledgeTitle', 'knowledge'],
               },
             },
             warnings: { type: 'array', items: { type: 'string' } },
@@ -193,7 +193,7 @@ function buildExtractPrompt({ pageIndex, noteText }) {
 
 Hard rules (MUST follow):
 1) You MUST call the function "extract_page_bundle" exactly once. Do NOT output any other text.
-2) The returned object MUST have pageIndex = ${pageIndex}.
+2) The returned object MUST have pageIndex = ${pageIndex}. (The system uses pageIndex to reorder pages; do NOT change it.)
 2.1) ALWAYS include the "head" field. If not needed, set "head" = null (do NOT omit the field).
 2.2) CRITICAL: Respect the question numbers shown in the photo. If a question has a visible number (e.g. "12.", "(12)", "12、"), put that number into the question's "id" field (prefer digits only). Do NOT invent ids; if unclear, leave id empty.
 2.3) Provide "chapterTitleCandidate": a short Chinese chapter/topic title for THIS page's main content (max 18 chars). Prefer on-page headings if present. Do NOT use generic placeholders like "AI导入", "第X页", "Page". If you truly cannot infer a topic, set it to an empty string.
@@ -211,19 +211,22 @@ ${note}`.trim();
 function buildFinalizePrompt({ pages, noteText }) {
   const note = noteText ? `\n\nUser note:\n${noteText}\n` : '';
   const input = JSON.stringify({ pages });
-  return `You are finalizing a book import from pre-extracted page questions.
+  return `You are generating explanations and knowledge points for stitched multiple-choice questions.
 
 Hard rules (MUST follow):
 1) You MUST call the function "finalize_import_job" exactly once. Do NOT output any other text.
 2) Keep the same pageIndex set as the input. Do NOT invent extra pages.
-3) The questions are already stitched and complete. Keep question order stable within each page. Do NOT merge/split questions.
-3.1) Preserve question "id" (question number) if present. Do NOT renumber questions.
-4) Do NOT invent content that is not supported by the extracted text/options/answer. If a question is unclear, keep explanation empty and add a warning.
-5) If you can provide a SHORT explanation (2-5 sentences) and a SHORT knowledge point, you may fill "explanation"/"knowledgeTitle"/"knowledge". Otherwise leave them empty strings.
-5.1) You MAY use simple Markdown + LaTeX for readability:
+3) Keep question order stable within each page. Do NOT merge/split questions. Do NOT change question text/options/answer.
+3.1) Preserve question "id" (question number) if present. Do NOT renumber or invent ids.
+4) You MUST fill "explanation", "knowledgeTitle", and "knowledge" for EVERY question.
+   - explanation: 2-6 sentences (or short bullet list). Explain why the answer is correct; mention key clue(s).
+   - knowledgeTitle: a short Chinese concept name (4-12 chars).
+   - knowledge: 2-6 sentences summarizing the concept + common pitfalls or an easy memory tip.
+   - If the question is unclear/missing info, do NOT invent. Write an explanation stating what is unclear and what extra info is needed, and set knowledgeTitle/knowledge to a safe meta knowledge point (e.g., how to re-capture the page). Also add a warning string.
+5) You MAY use simple Markdown + LaTeX for readability:
      - Emphasize 1-3 key terms with **bold** or <span class="highlight">highlight</span>.
      - Use short lists when helpful. Do NOT output arbitrary HTML (only the highlight span is allowed).
-6) Replace each page "title" with a short, human-friendly chapter name in Chinese based on THAT page's main content (max 18 chars). Do NOT use generic placeholders like "AI导入", "第X页", "Page".
+6) Keep each page "title" exactly as input (do NOT change titles).
 
 Input pages JSON:
 ${input}

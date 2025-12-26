@@ -25,8 +25,11 @@
     function createQuestionCard(q) {
       var card = document.createElement('div');
       card.className = 'question-card';
-      if (q && q.id !== undefined && q.id !== null) card.dataset.hzrSeed = 'q:' + String(q.id);
-      if (q && q.id !== undefined && q.id !== null) card.dataset.qid = String(q.id);
+      var qid = (q && q.qid !== undefined && q.qid !== null) ? String(q.qid)
+        : (q && q.id !== undefined && q.id !== null) ? String(q.id)
+        : '';
+      if (qid) card.dataset.hzrSeed = 'q:' + qid;
+      if (qid) card.dataset.qid = qid;
 
       var header = document.createElement('div');
       header.className = 'q-header';
@@ -124,4 +127,3 @@
       applyRandomHighlights(card);
       return card;
     }
-
