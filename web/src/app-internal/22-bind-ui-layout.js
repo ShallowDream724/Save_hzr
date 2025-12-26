@@ -11,22 +11,39 @@
 
     function uiOpenSidebar() {
       if (!els.sidebar) return;
-      if (uiIsCompactLayout()) els.sidebar.classList.add('active');
-      else document.body.classList.remove('sidebar-collapsed');
+      if (uiIsCompactLayout()) {
+        // Compact layout uses `.sidebar.active`; make sure desktop-only collapse state doesn't block it.
+        try { if (document.body && document.body.classList) document.body.classList.remove('sidebar-collapsed'); } catch (_) {}
+        els.sidebar.classList.add('active');
+      } else {
+        // Desktop layout uses `body.sidebar-collapsed`; make sure mobile overlay state doesn't leak.
+        try { if (els.sidebar && els.sidebar.classList) els.sidebar.classList.remove('active'); } catch (_) {}
+        document.body.classList.remove('sidebar-collapsed');
+      }
       uiUpdateCollapseIcon();
     }
 
     function uiCloseSidebar() {
       if (!els.sidebar) return;
-      if (uiIsCompactLayout()) els.sidebar.classList.remove('active');
-      else document.body.classList.add('sidebar-collapsed');
+      if (uiIsCompactLayout()) {
+        try { if (document.body && document.body.classList) document.body.classList.remove('sidebar-collapsed'); } catch (_) {}
+        els.sidebar.classList.remove('active');
+      } else {
+        try { if (els.sidebar && els.sidebar.classList) els.sidebar.classList.remove('active'); } catch (_) {}
+        document.body.classList.add('sidebar-collapsed');
+      }
       uiUpdateCollapseIcon();
     }
 
     function uiToggleSidebar() {
       if (!els.sidebar) return;
-      if (uiIsCompactLayout()) els.sidebar.classList.toggle('active');
-      else document.body.classList.toggle('sidebar-collapsed');
+      if (uiIsCompactLayout()) {
+        try { if (document.body && document.body.classList) document.body.classList.remove('sidebar-collapsed'); } catch (_) {}
+        els.sidebar.classList.toggle('active');
+      } else {
+        try { if (els.sidebar && els.sidebar.classList) els.sidebar.classList.remove('active'); } catch (_) {}
+        document.body.classList.toggle('sidebar-collapsed');
+      }
       uiUpdateCollapseIcon();
     }
 
@@ -104,11 +121,12 @@
       // 可拖动汉堡按钮（移动端/平板更顺手）
       if (els.fabMenu) {
         var FAB_KEY = 'hzr_fab_pos_v1';
-        var fabDrag = { active: false, moved: false, pid: null, startX: 0, startY: 0, left: 0, top: 0 };
+        var FAB_DRAG_THRESHOLD = 8; // px; higher to avoid "tap jitter" being treated as drag on touch
+        var fabDrag = { active: false, moved: false, pid: null, tid: null, startX: 0, startY: 0, left: 0, top: 0, lastPos: null };
 
         function clamp(n, min, max) { return Math.max(min, Math.min(max, n)); }
         function placeFab(left, top) {
-          var w = 52, h = 52;
+          var w = 56, h = 56;
           var maxL = Math.max(0, window.innerWidth - w - 8);
           var maxT = Math.max(0, window.innerHeight - h - 8);
           var l = clamp(left, 8, maxL);
@@ -118,6 +136,10 @@
           els.fabMenu.style.right = 'auto';
           els.fabMenu.style.bottom = 'auto';
           return { left: l, top: t };
+        }
+        function persistFabPos(pos) {
+          if (!pos) return;
+          try { localStorage.setItem(FAB_KEY, JSON.stringify(pos)); } catch (_) {}
         }
 
         // restore
@@ -129,14 +151,33 @@
           }
         } catch (_) {}
 
+        function onFabTap() {
+          // Home page: use the same draggable hamburger as a HUD toggle.
+          // NOTE: use DOM class as source of truth to avoid state desync on mobile.
+          var inHomeMode = false;
+          try { inHomeMode = !!(document.body && document.body.classList && document.body.classList.contains('home-mode')); } catch (_) { inHomeMode = false; }
+          if (!inHomeMode) inHomeMode = !!homeVisible;
+          if (inHomeMode) {
+            try {
+              var hud = document.querySelector('.home-hud');
+              if (hud && hud.classList) hud.classList.toggle('collapsed');
+            } catch (_) {}
+            return;
+          }
+          uiToggleSidebar();
+        }
+
         addEvt(els.fabMenu, 'pointerdown', function (e) {
           if (!e) return;
+          if ((e.pointerType || 'mouse') === 'touch') return; // Touch: prefer TouchEvents (more stable)
           // Touch/pen PointerEvent may have `button` undefined/-1 on some Android WebViews;
           // only enforce left-click for real mouse input.
           if (e.pointerType === 'mouse' && e.button !== 0) return;
           fabDrag.active = true;
           fabDrag.moved = false;
+          fabDrag.lastPos = null;
           fabDrag.pid = e.pointerId;
+          fabDrag.tid = null;
           fabDrag.startX = e.clientX;
           fabDrag.startY = e.clientY;
           var rect = els.fabMenu.getBoundingClientRect();
@@ -150,10 +191,42 @@
           if (!fabDrag.active || fabDrag.pid !== e.pointerId) return;
           var dx = e.clientX - fabDrag.startX;
           var dy = e.clientY - fabDrag.startY;
-          if (!fabDrag.moved && (Math.abs(dx) + Math.abs(dy) > 4)) fabDrag.moved = true;
+          if (!fabDrag.moved && (Math.abs(dx) + Math.abs(dy) > FAB_DRAG_THRESHOLD)) fabDrag.moved = true;
           if (!fabDrag.moved) return;
-          var pos = placeFab(fabDrag.left + dx, fabDrag.top + dy);
-          try { localStorage.setItem(FAB_KEY, JSON.stringify(pos)); } catch (_) {}
+          fabDrag.lastPos = placeFab(fabDrag.left + dx, fabDrag.top + dy);
+          try { e.preventDefault(); } catch (_) {}
+        }, { passive: false });
+
+        addEvt(els.fabMenu, 'touchstart', function (e) {
+          if (!e || !e.touches || !e.touches[0]) return;
+          var t = e.touches[0];
+          fabDrag.active = true;
+          fabDrag.moved = false;
+          fabDrag.lastPos = null;
+          fabDrag.pid = null;
+          fabDrag.tid = t.identifier;
+          fabDrag.startX = t.clientX;
+          fabDrag.startY = t.clientY;
+          var rect = els.fabMenu.getBoundingClientRect();
+          fabDrag.left = rect.left;
+          fabDrag.top = rect.top;
+          try { e.preventDefault(); } catch (_) {}
+        }, { passive: false });
+
+        addEvt(els.fabMenu, 'touchmove', function (e) {
+          if (!fabDrag.active || fabDrag.tid === null) return;
+          if (!e || !e.touches || !e.touches.length) return;
+          var t = null;
+          for (var i = 0; i < e.touches.length; i++) {
+            if (e.touches[i] && e.touches[i].identifier === fabDrag.tid) { t = e.touches[i]; break; }
+          }
+          if (!t) return;
+          var dx = t.clientX - fabDrag.startX;
+          var dy = t.clientY - fabDrag.startY;
+          if (!fabDrag.moved && (Math.abs(dx) + Math.abs(dy) > FAB_DRAG_THRESHOLD)) fabDrag.moved = true;
+          if (!fabDrag.moved) return;
+          fabDrag.lastPos = placeFab(fabDrag.left + dx, fabDrag.top + dy);
+          try { e.preventDefault(); } catch (_) {}
         }, { passive: false });
 
         // Prevent long-press context menu on mobile which can feel like "needs 2s to respond".
@@ -165,24 +238,42 @@
           if (!fabDrag.active || fabDrag.pid !== e.pointerId) return;
           fabDrag.active = false;
           try { els.fabMenu.releasePointerCapture(e.pointerId); } catch (_) {}
-          if (!fabDrag.moved) {
-            // Home page: use the same draggable hamburger as a HUD toggle.
-            // NOTE: use DOM class as source of truth to avoid state desync on mobile.
-            var inHomeMode = false;
-            try { inHomeMode = !!(document.body && document.body.classList && document.body.classList.contains('home-mode')); } catch (_) { inHomeMode = false; }
-            if (!inHomeMode) inHomeMode = !!homeVisible;
-            if (inHomeMode) {
-              try {
-                var hud = document.querySelector('.home-hud');
-                if (hud && hud.classList) hud.classList.toggle('collapsed');
-              } catch (_) {}
-              return;
-            }
-            uiToggleSidebar();
+          if (fabDrag.moved) {
+            persistFabPos(fabDrag.lastPos);
+            return;
           }
+          onFabTap();
         }
         addEvt(els.fabMenu, 'pointerup', endFab, { passive: true });
         addEvt(els.fabMenu, 'pointercancel', endFab, { passive: true });
+
+        function endFabTouch(e) {
+          if (!fabDrag.active || fabDrag.tid === null) return;
+          var ended = false;
+          try {
+            if (e && e.changedTouches && e.changedTouches.length) {
+              for (var i = 0; i < e.changedTouches.length; i++) {
+                if (e.changedTouches[i] && e.changedTouches[i].identifier === fabDrag.tid) { ended = true; break; }
+              }
+            } else {
+              ended = true;
+            }
+          } catch (_) { ended = true; }
+          if (!ended) return;
+          // If we were dragging, persist the last stable position.
+          if (fabDrag.moved) {
+            fabDrag.active = false;
+            fabDrag.tid = null;
+            persistFabPos(fabDrag.lastPos);
+            return;
+          }
+          fabDrag.active = false;
+          fabDrag.tid = null;
+          try { if (e) e.preventDefault(); } catch (_) {}
+          onFabTap();
+        }
+        addEvt(els.fabMenu, 'touchend', endFabTouch, { passive: false });
+        addEvt(els.fabMenu, 'touchcancel', endFabTouch, { passive: false });
       }
 
       // 点击空白立即收起 toast（但不影响 toast 按钮）
