@@ -1495,7 +1495,6 @@ h2 {
     border-color: color-mix(in srgb, var(--knowledge-color) 18%, rgba(148,163,184,0.22));
     box-shadow:
         0 0 0 6px color-mix(in srgb, var(--knowledge-color) 12%, transparent),
-        0 0 0 14px color-mix(in srgb, var(--knowledge-color) 6%, transparent),
         0 18px 40px rgba(15,23,42,0.10);
 }
 .knowledge-summary::-webkit-details-marker { display: none; }
