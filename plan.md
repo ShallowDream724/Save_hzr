@@ -31,6 +31,11 @@ cp .env.example .env
 node dev.mjs
 ```
 
+> Windows/多 Node 版本提示（重要）
+> - `server/` 使用 `better-sqlite3`（原生模块），**Node 主版本不匹配会直接启动失败**。
+> - 推荐使用 Node 20 LTS 启动（与你当前 `server/node_modules` 编译版本一致）。
+> - 若你用的是更高版本 Node（例如 22/24），请执行 `cd server && npm rebuild better-sqlite3` 重新编译，或显式用系统 Node 20 启动：`& "C:\\Program Files\\nodejs\\node.exe" dev.mjs`。
+
 ### 0.4 运行冒烟测试（不调用 Gemini）
 ```bash
 node dev.mjs --smoke
@@ -58,6 +63,7 @@ node dev.mjs --smoke
 - 入口在书内部：用户上传图片（一次最多 9 张）+ 附加文字。
 - 后端异步队列处理：**1 张图 = 1 次 Gemini 请求 = 生成 1 个 chapter**（chapter 标题由 AI 起）。
 - 默认写入该书的「根目录」（不自动建文件夹，不写 `layoutMap`；用户后续自己拖拽整理）。
+- **题号保真（必须）**：如果照片里存在题号（如 12、(12)、12.），必须尽量提取并写入 `question.id`，后续 finalize/写库阶段都不得重编号；不确定则留空并回退为顺序号。
 - **多用户全站共享 RPM**：Gemini 3 Pro 全局 `rpm=10`，Gemini 3 Flash 全局 `rpm=20`；超出则排队等待。
 - 请求启动间隔：同一模型队列 **每次启动至少间隔 1s**（避免过密）。
 - 429 优雅处理：尊重 `Retry-After`；否则指数退避 + jitter；绝不立刻重试。
@@ -449,6 +455,10 @@ AI 对话窗口需要在 **首页** 与 **书内** 都可打开：
 
 ### 10.2 现代化重构路线（你已授权，推荐）
 你明确表示可以重构、也偏好“2025 最现代”的工程化。我建议采用 **strangler** 方式：不一次性推翻现有功能，而是先把新模块工程化，然后逐步迁移旧代码。
+
+Home/开书动画（必须保护）
+- 把 Home 视图与 3D 开书动画当成 “legacy frozen zone”：未来重构时 **不改 DOM 结构、不改关键 CSS 选择器语义、不改 JS 的状态机**。
+- 建议做法：将 Home 相关逻辑拆到单独的 `legacy-home.*`（或单独入口页面），新工程只通过桥接 API 调用“进入书/退出书”，避免任何 UI 库渲染干扰动画。
 
 推荐栈（可随时收敛，不必一步到位）：
 - 前端：`Vite + TypeScript + React`（或 Preact/Solid 也可），配合 `Tailwind + Radix/shadcn` 做高级 UI/UX

@@ -35,6 +35,7 @@ const extractPageBundleDeclaration = {
                 },
                 required: ['pageIndex', 'kind'],
               },
+              id: { anyOf: [{ type: 'string' }, { type: 'number' }] },
               text: { type: 'string' },
               options: {
                 type: 'array',
@@ -70,6 +71,7 @@ const extractPageBundleDeclaration = {
               },
               required: ['pageIndex', 'localIndex'],
             },
+            id: { anyOf: [{ type: 'string' }, { type: 'number' }] },
             text: { type: 'string' },
             options: {
               type: 'array',
@@ -109,6 +111,7 @@ const extractPageBundleDeclaration = {
                 },
                 required: ['pageIndex', 'localIndex'],
               },
+              id: { anyOf: [{ type: 'string' }, { type: 'number' }] },
               text: { type: 'string' },
               options: {
                 type: 'array',
@@ -142,6 +145,7 @@ const extractPageBundleDeclaration = {
                 },
                 required: ['pageIndex', 'kind'],
               },
+              id: { anyOf: [{ type: 'string' }, { type: 'number' }] },
               text: { type: 'string' },
               options: {
                 type: 'array',
@@ -192,6 +196,7 @@ const finalizeImportJobDeclaration = {
                 type: 'object',
                 additionalProperties: false,
                 properties: {
+                  id: { anyOf: [{ type: 'string' }, { type: 'number' }] },
                   text: { type: 'string' },
                   options: {
                     type: 'array',
@@ -231,6 +236,8 @@ function buildExtractPrompt({ pageIndex, noteText }) {
 Hard rules (MUST follow):
 1) You MUST call the function "extract_page_bundle" exactly once. Do NOT output any other text.
 2) The returned object MUST have pageIndex = ${pageIndex}.
+2.1) ALWAYS include the "head" field. If not needed, set "head" = null (do NOT omit the field).
+2.2) Respect the question numbers shown in the photo. If a question has a visible number (e.g. "12.", "(12)", "12、"), put that number into the question's "id" field exactly (prefer digits only). Do NOT invent ids; if unclear, leave id empty.
 3) "head" must be null unless the FIRST question on this page is CLEARLY a continuation from the previous page (e.g., starts from option C/D/E, or only leftover options without a new question stem). If the first question is complete, head MUST be null.
 4) "tail" MUST ALWAYS be present:
    - If the LAST question is complete, set tail.kind="complete" and put the full question into tail.question.
@@ -251,6 +258,7 @@ Hard rules (MUST follow):
 1) You MUST call the function "finalize_import_job" exactly once. Do NOT output any other text.
 2) Keep the same pageIndex set as the input. Do NOT invent extra pages.
 3) Keep question order stable within each page. Do NOT merge/split questions unless absolutely necessary for coherence.
+3.1) Preserve question "id" (question number) if present. Do NOT renumber questions.
 4) Do NOT invent content that is not supported by the extracted text/options/answer. If a question is unclear, keep explanation empty and add a warning.
 5) If you can provide a SHORT explanation (2-5 sentences) and a SHORT knowledge point, you may fill "explanation"/"knowledgeTitle"/"knowledge". Otherwise leave them empty strings.
 

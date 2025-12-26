@@ -22,6 +22,12 @@ function isNonEmptyString(x) {
 function validateBundle(bundle, expectedPageIndex) {
   if (!bundle || typeof bundle !== 'object') return 'bundle must be object';
   if (Number(bundle.pageIndex) !== Number(expectedPageIndex)) return 'pageIndex mismatch';
+
+  // Models sometimes omit optional fields; normalize for robust downstream logic.
+  if (bundle.head === undefined) bundle.head = null;
+  if (bundle.chapterTitleCandidate === undefined) bundle.chapterTitleCandidate = '';
+  if (bundle.warnings === undefined) bundle.warnings = [];
+
   if (!Array.isArray(bundle.questions)) return 'questions must be array';
   if (!bundle.tail || typeof bundle.tail !== 'object') return 'tail must be object';
   if (bundle.head !== null && typeof bundle.head !== 'object') return 'head must be null or object';
@@ -41,6 +47,7 @@ function validateFinalizeOutput(out) {
     if (!Array.isArray(p.questions)) return 'page.questions must be array';
     for (const q of p.questions) {
       if (!q || typeof q !== 'object') return 'question must be object';
+      if (q.id !== undefined && q.id !== null && typeof q.id !== 'string' && typeof q.id !== 'number') return 'question.id must be string|number';
       if (typeof q.text !== 'string') return 'question.text must be string';
       if (!Array.isArray(q.options)) return 'question.options must be array';
       for (const o of q.options) {
@@ -287,6 +294,7 @@ function normalizeJobRow(job) {
     createdAt: job.created_at,
     updatedAt: job.updated_at,
     progress: safeJsonParse(job.progress_json, null),
+    result: job.result_json ? safeJsonParse(job.result_json, null) : null,
     error: job.error || null,
   };
 }
@@ -311,6 +319,7 @@ function mergeTailHead(prevTail, nextHead) {
   const headFrag = nextHead && typeof nextHead === 'object' ? nextHead : null;
   const merged = {
     sourceRefs: [],
+    id: null,
     text: '',
     options: [],
     answer: '',
@@ -318,6 +327,7 @@ function mergeTailHead(prevTail, nextHead) {
 
   if (tailFrag) {
     merged.sourceRefs.push(tailFrag.sourceRef || { pageIndex: null, kind: 'tail' });
+    if (typeof tailFrag.id === 'string' || typeof tailFrag.id === 'number') merged.id = tailFrag.id;
     if (typeof tailFrag.text === 'string') merged.text += tailFrag.text.trim();
     if (Array.isArray(tailFrag.options)) merged.options.push(...tailFrag.options);
     if (typeof tailFrag.answer === 'string') merged.answer = tailFrag.answer;
@@ -325,6 +335,7 @@ function mergeTailHead(prevTail, nextHead) {
 
   if (headFrag) {
     merged.sourceRefs.push(headFrag.sourceRef || { pageIndex: null, kind: 'head' });
+    if ((merged.id === null || merged.id === undefined) && (typeof headFrag.id === 'string' || typeof headFrag.id === 'number')) merged.id = headFrag.id;
     if (typeof headFrag.text === 'string') {
       const t = headFrag.text.trim();
       if (t) merged.text = merged.text ? `${merged.text}\n${t}` : t;
@@ -400,6 +411,7 @@ function finalizeBundlesToChapters({ jobId, bundles }) {
         const merged = mergeTailHead(tail, nextHead);
         cur.questions.push({
           sourceRef: { pageIndex: cur.pageIndex, localIndex: cur.questions.length },
+          id: merged.id,
           text: merged.text || '',
           options: merged.options || [],
           answer: merged.answer || '',
@@ -641,6 +653,7 @@ function startImportScheduler({ db, patchLibrary }) {
         pageIndex: p.pageIndex,
         title: p.title,
         questions: (Array.isArray(p.questions) ? p.questions : []).map((q) => ({
+          id: q && (typeof q.id === 'string' || typeof q.id === 'number') ? q.id : '',
           text: typeof q.text === 'string' ? q.text : '',
           options: Array.isArray(q.options)
             ? q.options.map((o) => ({ label: typeof o.label === 'string' ? o.label : '', content: typeof o.content === 'string' ? o.content : '' }))

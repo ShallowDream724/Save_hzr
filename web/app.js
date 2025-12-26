@@ -3173,21 +3173,69 @@
         });
     }
 
-    function renderAiImportResultFromJob(job) {
+    function formatSecondsShort(sec) {
+      sec = Math.max(0, Math.floor(Number(sec) || 0));
+      if (sec < 60) return sec + 's';
+      var m = Math.floor(sec / 60);
+      var s = sec % 60;
+      if (m < 60) return m + 'm' + (s ? (s + 's') : '');
+      var h = Math.floor(m / 60);
+      m = m % 60;
+      return h + 'h' + (m ? (m + 'm') : '');
+    }
+
+    function secondsUntil(iso) {
+      if (!iso) return 0;
+      var t = Date.parse(String(iso));
+      if (!Number.isFinite(t)) return 0;
+      return Math.max(0, Math.round((t - Date.now()) / 1000));
+    }
+
+    function renderAiImportResultFromJob(job, items) {
       if (!els.aiImportResult) return;
       var result = job && job.result ? job.result : null;
-      if (!result || !result.insertedChapters || !result.insertedChapters.length) {
+      var inserted = (result && Array.isArray(result.insertedChapters)) ? result.insertedChapters : [];
+      var warnings = (result && Array.isArray(result.warnings)) ? result.warnings : [];
+
+      var failed = [];
+      var list = Array.isArray(items) ? items : [];
+      for (var i0 = 0; i0 < list.length; i0++) {
+        var it0 = list[i0];
+        if (!it0 || it0.kind !== 'extract') continue;
+        if (it0.status !== 'failed') continue;
+        failed.push({ idx: it0.idx, error: it0.error || '' });
+      }
+
+      if (!inserted.length && !warnings.length && !failed.length) {
         els.aiImportResult.innerHTML = '';
         return;
       }
       var html = '';
-      for (var i = 0; i < result.insertedChapters.length; i++) {
-        var ch = result.insertedChapters[i];
+      for (var i = 0; i < inserted.length; i++) {
+        var ch = inserted[i];
         if (!ch || !ch.id) continue;
         html += '<div class="ai-import-result-item" data-chid="' + escapeHtml(ch.id) + '">' +
           '<div class="ai-import-result-title">' + escapeHtml(ch.title || ch.id) + '</div>' +
           '<button class="ai-import-open-btn" type="button">打开</button>' +
         '</div>';
+      }
+
+      for (var f = 0; f < failed.length; f++) {
+        var fr = failed[f];
+        var idx = (fr && fr.idx !== undefined && fr.idx !== null) ? Number(fr.idx) : NaN;
+        var msg = fr && fr.error ? String(fr.error) : '未知错误';
+        var title = Number.isFinite(idx) ? ('第 ' + (idx + 1) + ' 页失败') : '页面失败';
+        html += '<div class="ai-import-result-item ai-import-result-item--fail">' +
+          '<div class="ai-import-result-title">' + escapeHtml(title) + '</div>' +
+          '<div class="ai-import-result-sub">' + escapeHtml(msg) + '</div>' +
+        '</div>';
+      }
+
+      if (warnings.length) {
+        html += '<details class="ai-import-warnings">' +
+          '<summary>提示（' + warnings.length + '）</summary>' +
+          '<div class="ai-import-warnings-body">' + escapeHtml(warnings.join('\n')) + '</div>' +
+        '</details>';
       }
       els.aiImportResult.innerHTML = html;
     }
@@ -3256,6 +3304,7 @@
     function applyAiImportSnapshot(payload) {
       var job = payload && payload.job ? payload.job : null;
       if (!job || !job.progress) return;
+      var items = payload && Array.isArray(payload.items) ? payload.items : [];
 
       var p = job.progress;
       var total = Number(p.totalPages) || 0;
@@ -3284,7 +3333,7 @@
       }
 
       if (job.status === 'done' || job.status === 'done_with_errors' || job.status === 'failed') {
-        renderAiImportResultFromJob(job);
+        renderAiImportResultFromJob(job, items);
       }
 
       if (p.status === 'done' || p.status === 'done_with_errors' || p.status === 'failed') {
@@ -3299,7 +3348,47 @@
           var b = getActiveBook();
           if (b && b.id && aiImport.jobId) pullCloudAiUpdatesForJob(String(b.id), String(aiImport.jobId));
         } catch (_) {}
+        return;
       }
+
+      // Real-time stage hint derived from server items (no guessing).
+      try {
+        var runningIt = null;
+        var retryIt = null;
+        for (var i = 0; i < items.length; i++) {
+          var it = items[i];
+          if (!it) continue;
+          if (it.kind === 'extract' && it.status === 'running' && runningIt === null) runningIt = it;
+          if (it.kind === 'extract' && it.status === 'retry_wait') {
+            if (!retryIt) retryIt = it;
+            else {
+              var a = secondsUntil(it.delayedUntil);
+              var b2 = secondsUntil(retryIt.delayedUntil);
+              if (a && (!b2 || a < b2)) retryIt = it;
+            }
+          }
+        }
+
+        if (p.status === 'running') {
+          if (runningIt) {
+            var pi = Number(runningIt.idx);
+            var at = Number(runningIt.attempt) || 1;
+            setAiImportHint('识别中：第 ' + (Number.isFinite(pi) ? (pi + 1) : '?') + ' 页（尝试 ' + at + '/3）…');
+          } else if (retryIt) {
+            var ri = Number(retryIt.idx);
+            var sec = secondsUntil(retryIt.delayedUntil);
+            setAiImportHint('等待重试：第 ' + (Number.isFinite(ri) ? (ri + 1) : '?') + ' 页（约 ' + formatSecondsShort(sec) + ' 后）');
+          } else {
+            setAiImportHint('识别中…');
+          }
+        } else if (p.status === 'queued') {
+          setAiImportHint('排队中…');
+        } else if (p.status === 'finalizing') {
+          setAiImportHint('整理题目中…');
+        } else if (p.status === 'writing') {
+          setAiImportHint('写入题库中…');
+        }
+      } catch (_) {}
     }
 
     function subscribeAiImportJobEvents(jobId) {
