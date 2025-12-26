@@ -1720,8 +1720,10 @@ h2 {
 .analysis-title i {
     width: 30px;
     height: 30px;
-    display: inline-grid;
-    place-items: center;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
     border-radius: 999px;
     background: var(--analysis-bg-1);
     border: 1px solid var(--analysis-border);
@@ -1730,13 +1732,15 @@ h2 {
         0 0 0 6px var(--analysis-bg-2),
         0 18px 40px rgba(15,23,42,0.10);
 }
-.analysis-title i {
-    background: color-mix(in srgb, var(--analysis-color) 12%, rgba(255,255,255,0.92));
-    border-color: color-mix(in srgb, var(--analysis-color) 18%, rgba(148,163,184,0.22));
-    box-shadow:
-        0 0 0 6px color-mix(in srgb, var(--analysis-color) 12%, transparent),
-        0 0 0 14px color-mix(in srgb, var(--analysis-color) 6%, transparent),
-        0 18px 40px rgba(15,23,42,0.10);
+@supports (background: color-mix(in srgb, red 50%, white)) {
+    .analysis-title i {
+        background: color-mix(in srgb, var(--analysis-color) 12%, rgba(255,255,255,0.92));
+        border-color: color-mix(in srgb, var(--analysis-color) 18%, rgba(148,163,184,0.22));
+        box-shadow:
+            0 0 0 6px color-mix(in srgb, var(--analysis-color) 12%, transparent),
+            0 0 0 14px color-mix(in srgb, var(--analysis-color) 6%, transparent),
+            0 18px 40px rgba(15,23,42,0.10);
+    }
 }
 .knowledge-details {
     margin-top: 14px;
