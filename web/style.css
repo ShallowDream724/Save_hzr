@@ -302,9 +302,8 @@ body.home-mode .fab-menu { display: inline-flex; }
 
 /* HUD - warm, product-like toolbar */
 .home-hud {
-    position: sticky;
-    top: 12px;
-    top: calc(12px + env(safe-area-inset-top));
+    position: relative;
+    top: auto;
     z-index: 5000;
     display: grid;
     grid-template-columns: 1fr auto;
@@ -731,7 +730,7 @@ body.home-mode .book-container:hover { z-index: 7000; }
 @media (max-width: 720px) {
     .home-view { --book-h: clamp(220px, 36vh, 320px); }
     .home-scroll { padding: 14px; padding-top: calc(14px + env(safe-area-inset-top)); }
-    .home-hud { top: 10px; top: calc(10px + env(safe-area-inset-top)); padding: 14px 14px 12px; border-radius: 18px; }
+    .home-hud { top: auto; padding: 14px 14px 12px; border-radius: 18px; }
     .home-hud-title { font-size: 1.25rem; }
     .home-hud-subtitle { font-size: 0.92rem; }
     body.home-mode .home-hud .modal-btn { padding: 9px 12px; font-size: 0.88rem; }
@@ -1775,7 +1774,7 @@ h2 {
     .main-content { margin-left: 0; }
     .fab-menu { display: inline-flex; }
     .menu-toggle { display: inline-flex; }
-    .top-bar { position: sticky; top: calc(10px + env(safe-area-inset-top)); }
+    .top-bar { position: relative; top: auto; }
 }
 
 @media (max-width: 420px) {
