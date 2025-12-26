@@ -23,10 +23,15 @@ services:
       - "127.0.0.1:8787:8787"
     restart: unless-stopped
     networks:
+      - default
       - ai_net
+
 networks:
   ai_net:
-    external: true
+    # Optional: attach to an additional network (e.g. for a dockerized reverse proxy).
+    # If you don't need it, keep it as default-created (external=false).
+    name: ${AI_NET_NAME:-ai_net}
+    external: ${AI_NET_EXTERNAL:-false}
     
 volumes:
   pharm_sync_data:
