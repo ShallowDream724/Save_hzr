@@ -1326,26 +1326,99 @@ body.home-transitioning #booksGrid .book-more { opacity: 0 !important; }
 .top-bar .menu-toggle { flex: none; width: 44px; height: 44px; }
 
 .fab-menu {
+    /* --- 基础定位 --- */
     position: fixed;
     right: 16px;
     bottom: 16px;
-    width: 52px;
-    height: 52px;
-    border-radius: 999px;
-    border: 1px solid rgba(148,163,184,0.32);
-    background: linear-gradient(180deg, rgba(255,255,255,0.92), rgba(255,255,255,0.80));
-    box-shadow: 0 22px 70px rgba(15,23,42,0.18);
-    z-index: 2000;
-    display: none;
+    width: 56px; /* 稍微加大一点，让彩环更明显 */
+    height: 56px;
+    
+    /* --- 布局 --- */
+    display: flex;
     align-items: center;
     justify-content: center;
+    
+    /* --- 形状与背景 --- */
+    border-radius: 50%;
+    /* 纯白背景，去掉所有灰色边框 */
+    background: #ffffff; 
+    
+    /* 避免系统默认描边/黑色 focus 圈；阴影用偏冷的蓝灰色（不出“黑圈”） */
+    border: 0;
+    outline: none;
+    -webkit-appearance: none;
+    appearance: none;
+    box-shadow:
+        0 10px 24px rgba(66, 133, 244, 0.14),
+        0 2px 6px rgba(15, 23, 42, 0.04);
+    
     cursor: pointer;
-    touch-action: none;
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
-    transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease, background 0.12s ease;
+    z-index: 2000;
+    transition: transform 0.2s ease;
 }
-.fab-menu:hover { border-color: var(--accent-soft); box-shadow: 0 28px 90px rgba(15,23,42,0.22); }
+.fab-menu:focus-visible {
+    box-shadow:
+        0 0 0 4px rgba(66, 133, 244, 0.22),
+        0 10px 24px rgba(66, 133, 244, 0.14),
+        0 2px 6px rgba(15, 23, 42, 0.04);
+}
+
+/* --- 核心：参考图风格的彩色厚环 --- */
+.fab-menu::before {
+    content: "";
+    position: absolute;
+    inset: 0; /* 撑满整个按钮 */
+    border-radius: 50%;
+    
+    /* 关键点1：厚度 */
+    /* 这里控制环的粗细*/
+    padding: 2.5px; 
+    
+    /* 关键点2：Google 经典四色 (红黄绿蓝) */
+    /* 使用 conic-gradient 模拟参考图的色块分布 */
+    background: conic-gradient(
+        from 0deg, 
+        #EA4335, /* 红 */
+        #FBBC05, /* 黄 */
+        #34A853, /* 绿 */
+        #4285F4, /* 蓝 */
+        #EA4335  /* 闭环回到红 */
+    );
+    
+    /* 关键点3：挖空中间，只留边框 */
+    -webkit-mask: 
+        linear-gradient(#fff 0 0) content-box, 
+        linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    
+    /* 关键点4：默认静止，不转 */
+    animation: spin-ring 1.5s linear infinite;
+    animation-play-state: paused; 
+}
+
+/* --- 交互：鼠标放上去才转 --- */
+.fab-menu:hover {
+    transform: scale(1.05); /* 整体轻微放大 */
+}
+
+.fab-menu:hover::before {
+    /* 鼠标悬停时，开始旋转 */
+    animation-play-state: running;
+}
+
+/* --- 点击反馈 --- */
+.fab-menu:active {
+    transform: scale(0.95);
+}
+
+/* --- 旋转动画定义 --- */
+@keyframes spin-ring {
+    to { transform: rotate(360deg); }
+}
+
+
+
 
 .toast-host {
     position: fixed;
@@ -2170,40 +2243,109 @@ h2 {
     align-items: center;
     gap: 8px;
 }
+/* 容器：深一点的凹槽，为了衬托亮色的按钮 */
 .ai-model-switch {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
-    padding: 3px;
+    gap: 6px;
+    padding: 4px;
     border-radius: 999px;
-    border: 1px solid rgba(148,163,184,0.28);
-    background: rgba(241,245,249,0.88);
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.75), 0 8px 18px rgba(15,23,42,0.06);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+    /* 容器背景稍微深一点，增加对比度 */
+    background: rgba(230, 235, 240, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    /* 深色内阴影，制造“坑”的感觉 */
+    box-shadow: 
+        inset 0 2px 6px rgba(0, 0, 0, 0.06),
+        0 1px 0 rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
 }
-.ai-model-switch--small { padding: 2px; gap: 2px; }
+
+.ai-model-switch--small { padding: 3px; gap: 3px; }
+
+/* 选项通用样式 */
 .ai-model-option {
+    position: relative;
     border: 1px solid transparent;
     background: transparent;
-    padding: 6px 12px;
+    padding: 8px 18px;
     border-radius: 999px;
     cursor: pointer;
-    color: rgba(15,23,42,0.72);
-    font-weight: 800;
+    /* 未选中状态颜色 */
+    color: #64748b;
+    font-weight: 700;
     font-size: 0.92rem;
     line-height: 1;
-    transition: background 160ms ease, color 160ms ease, box-shadow 160ms ease;
+    transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
     user-select: none;
+    z-index: 1;
 }
-.ai-model-switch--small .ai-model-option { padding: 6px 10px; font-size: 0.9rem; }
-.ai-model-option:hover { background: rgba(255,255,255,0.7); color: #0f172a; }
+
+.ai-model-switch--small .ai-model-option { padding: 6px 12px; font-size: 0.85rem; }
+
+/* 悬停未选中态 */
+.ai-model-option:hover:not(.active) {
+    color: #334155;
+    background: rgba(255, 255, 255, 0.4);
+}
+
+/* 点击时的Q弹缩放 */
+.ai-model-option:active {
+    transform: scale(0.94);
+}
+
+/* --- 核心：彩色果冻选中态 --- */
 .ai-model-option.active {
-    background: rgba(255,255,255,0.95);
-    color: #0f172a;
-    box-shadow: 0 8px 18px rgba(15,23,42,0.10);
-    border: 1px solid rgba(148,163,184,0.22);
+    /* 1. 字体变白，加一点点阴影增加可读性 */
+    color: #ffffff;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+    
+    /* 2. 默认苹果蓝：从左上到右下的微渐变 */
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    
+    /* 3. 复杂的果冻光影 */
+    box-shadow: 
+        /* 顶部高光：锐利的白色半透明线，制造玻璃感 */
+        inset 0 1px 0 rgba(255, 255, 255, 0.35),
+        /* 底部反光：微弱的深色内阴影，增加厚度 */
+        inset 0 -2px 0 rgba(0, 0, 0, 0.1),
+        /* 外部投影：关键！使用同色系的蓝色投影，而不是黑色，制造发光感 */
+        0 4px 10px rgba(37, 99, 235, 0.3),
+        0 2px 4px rgba(37, 99, 235, 0.1);
+        
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
+
+/* --- 额外口味：可以通过添加类名来改变颜色 --- */
+
+/* 莓果紫 (Berry) */
+.ai-model-option.active.berry {
+    background: linear-gradient(135deg, #a855f7 0%, #7c3aed 100%);
+    box-shadow: 
+        inset 0 1px 0 rgba(255, 255, 255, 0.35),
+        inset 0 -2px 0 rgba(0, 0, 0, 0.1),
+        0 4px 10px rgba(124, 58, 237, 0.3);
+}
+
+/* 蜜桃粉 (Peach) */
+.ai-model-option.active.peach {
+    background: linear-gradient(135deg, #f472b6 0%, #db2777 100%);
+    box-shadow: 
+        inset 0 1px 0 rgba(255, 255, 255, 0.35),
+        inset 0 -2px 0 rgba(0, 0, 0, 0.1),
+        0 4px 10px rgba(219, 39, 119, 0.35);
+}
+
+/* 苹果绿 (Mint) */
+.ai-model-option.active.mint {
+    background: linear-gradient(135deg, #2dd4bf 0%, #0d9488 100%);
+    box-shadow: 
+        inset 0 1px 0 rgba(255, 255, 255, 0.35),
+        inset 0 -2px 0 rgba(0, 0, 0, 0.1),
+        0 4px 10px rgba(13, 148, 136, 0.3);
+}
+
+
 .ai-chat-model,
 .ai-import-model,
 .ai-history-scope,
