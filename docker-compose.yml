@@ -22,6 +22,11 @@ services:
     ports:
       - "127.0.0.1:8787:8787"
     restart: unless-stopped
-
+    networks:
+      - ai_net
+networks:
+  ai_net:
+    external: true
+    
 volumes:
   pharm_sync_data:
