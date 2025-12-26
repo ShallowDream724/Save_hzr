@@ -368,6 +368,8 @@
           setAiChatHint('未建立对话（请从题目或 AI 历史打开）');
           return;
         }
+        // Keep server-side preference aligned with the model user selects for the first message.
+        try { payload.modelPref = modelPref; } catch (_) {}
         setAiChatHint('建立对话…');
         ensureConversation = apiFetch('/api/ai/conversations', { method: 'POST', body: JSON.stringify(payload) })
           .then(function (res) { if (!res.ok) throw new Error('create failed'); return res.json(); })

@@ -78,6 +78,18 @@
 
       var icon = (typeof book.icon === 'string' && book.icon) ? book.icon : '✚';
       if (!isValidBookIcon(icon)) icon = '✚';
+
+      var titleOverrides = {};
+      if (book.chapterTitleOverrides && typeof book.chapterTitleOverrides === 'object' && !Array.isArray(book.chapterTitleOverrides)) {
+        for (var k in book.chapterTitleOverrides) {
+          if (!Object.prototype.hasOwnProperty.call(book.chapterTitleOverrides, k)) continue;
+          var v = book.chapterTitleOverrides[k];
+          if (typeof v !== 'string') continue;
+          v = v.trim();
+          if (!v) continue;
+          titleOverrides[String(k)] = v;
+        }
+      }
       return {
         id: (typeof book.id === 'string' && book.id) ? book.id : uid('b'),
         title: (typeof book.title === 'string' && book.title.trim()) ? book.title.trim() : '未命名书',
@@ -88,6 +100,7 @@
         folders: Array.isArray(book.folders) ? book.folders : [],
         layoutMap: (book.layoutMap && typeof book.layoutMap === 'object' && !Array.isArray(book.layoutMap)) ? book.layoutMap : {},
         chapterOrder: (book.chapterOrder && typeof book.chapterOrder === 'object' && !Array.isArray(book.chapterOrder)) ? book.chapterOrder : {},
+        chapterTitleOverrides: titleOverrides,
         deletedChapterIds: Array.isArray(book.deletedChapterIds) ? book.deletedChapterIds : [],
         createdAt: (typeof book.createdAt === 'string' && book.createdAt) ? book.createdAt : new Date().toISOString(),
         updatedAt: (typeof book.updatedAt === 'string' && book.updatedAt) ? book.updatedAt : new Date().toISOString()
@@ -155,6 +168,7 @@
         folders: Array.isArray(lib.folders) ? lib.folders : [],
         layoutMap: (lib.layoutMap && typeof lib.layoutMap === 'object' && !Array.isArray(lib.layoutMap)) ? lib.layoutMap : {},
         chapterOrder: (lib.chapterOrder && typeof lib.chapterOrder === 'object' && !Array.isArray(lib.chapterOrder)) ? lib.chapterOrder : {},
+        chapterTitleOverrides: (lib.chapterTitleOverrides && typeof lib.chapterTitleOverrides === 'object' && !Array.isArray(lib.chapterTitleOverrides)) ? lib.chapterTitleOverrides : {},
         deletedChapterIds: Array.isArray(lib.deletedChapterIds) ? lib.deletedChapterIds : [],
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()

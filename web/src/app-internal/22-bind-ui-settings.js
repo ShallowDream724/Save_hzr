@@ -166,6 +166,7 @@
                 chapters: Array.isArray(book.chapters) ? book.chapters : [],
                 layoutMap: (book.layoutMap && typeof book.layoutMap === 'object' && !Array.isArray(book.layoutMap)) ? book.layoutMap : {},
                 chapterOrder: (book.chapterOrder && typeof book.chapterOrder === 'object' && !Array.isArray(book.chapterOrder)) ? book.chapterOrder : {},
+                chapterTitleOverrides: (book.chapterTitleOverrides && typeof book.chapterTitleOverrides === 'object' && !Array.isArray(book.chapterTitleOverrides)) ? book.chapterTitleOverrides : {},
                 deletedChapterIds: Array.isArray(book.deletedChapterIds) ? book.deletedChapterIds : []
               }
             };
@@ -189,6 +190,7 @@
               chapters: Array.isArray(b.chapters) ? b.chapters : [],
               layoutMap: (b.layoutMap && typeof b.layoutMap === 'object' && !Array.isArray(b.layoutMap)) ? b.layoutMap : {},
               chapterOrder: (b.chapterOrder && typeof b.chapterOrder === 'object' && !Array.isArray(b.chapterOrder)) ? b.chapterOrder : {},
+              chapterTitleOverrides: (b.chapterTitleOverrides && typeof b.chapterTitleOverrides === 'object' && !Array.isArray(b.chapterTitleOverrides)) ? b.chapterTitleOverrides : {},
               deletedChapterIds: Array.isArray(b.deletedChapterIds) ? b.deletedChapterIds : []
             });
           }

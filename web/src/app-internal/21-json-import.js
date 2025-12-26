@@ -36,6 +36,8 @@
           folders: [],
           chapters: [ normalizeSheetObj(raw, false) ],
           layoutMap: {},
+          chapterOrder: {},
+          chapterTitleOverrides: {},
           deletedChapterIds: []
         };
       }
@@ -49,7 +51,7 @@
         if (allOk) {
           var list = [];
           for (var j = 0; j < raw.length; j++) list.push(normalizeSheetObj(raw[j], false));
-          return { kind: 'list', folders: [], chapters: list, layoutMap: {}, deletedChapterIds: [] };
+          return { kind: 'list', folders: [], chapters: list, layoutMap: {}, chapterOrder: {}, chapterTitleOverrides: {}, deletedChapterIds: [] };
         }
       }
 
@@ -66,6 +68,8 @@
             folders: raw.folders,
             chapters: fullSheets,
             layoutMap: raw.layoutMap || {},
+            chapterOrder: (raw.chapterOrder && typeof raw.chapterOrder === 'object' && !Array.isArray(raw.chapterOrder)) ? raw.chapterOrder : {},
+            chapterTitleOverrides: (raw.chapterTitleOverrides && typeof raw.chapterTitleOverrides === 'object' && !Array.isArray(raw.chapterTitleOverrides)) ? raw.chapterTitleOverrides : {},
             deletedChapterIds: raw.deletedChapterIds || raw.deleted || []
           };
         }
@@ -113,7 +117,7 @@
           }
         }
 
-        return { kind: 'tree', folders: outFolders, chapters: outChapters, layoutMap: outMap, deletedChapterIds: [] };
+        return { kind: 'tree', folders: outFolders, chapters: outChapters, layoutMap: outMap, chapterOrder: {}, chapterTitleOverrides: {}, deletedChapterIds: [] };
       }
 
       // 5) 多 sheet（chapters / sheets）- 无 folders 的纯列表
@@ -125,7 +129,7 @@
             list2.push(normalizeSheetObj(rootSheets[k], false));
           }
         }
-        return { kind: 'list', folders: [], chapters: list2, layoutMap: {}, deletedChapterIds: [] };
+        return { kind: 'list', folders: [], chapters: list2, layoutMap: {}, chapterOrder: {}, chapterTitleOverrides: {}, deletedChapterIds: [] };
       }
 
       return null;
@@ -205,11 +209,52 @@
         if (chapterIdMap[did]) newDeleted.push(chapterIdMap[did]);
         else newDeleted.push(did); // 静态章节删除可能直接是 static_*
       }
-  
+
+      // chapterOrder remap（如果导入提供了）
+      var newChapterOrder = {};
+      var order = (lib.chapterOrder && typeof lib.chapterOrder === 'object' && !Array.isArray(lib.chapterOrder)) ? lib.chapterOrder : null;
+      if (order) {
+        for (var key in order) {
+          if (!Object.prototype.hasOwnProperty.call(order, key)) continue;
+          var arr = order[key];
+          if (!Array.isArray(arr)) continue;
+          var mappedKey = (String(key) === 'root') ? 'root' : (folderIdMap[String(key)] || null);
+          if (!mappedKey) continue;
+          var outArr = [];
+          var seen = {};
+          for (var i = 0; i < arr.length; i++) {
+            var oldId = String(arr[i] || '');
+            var mappedId = chapterIdMap[oldId] || oldId;
+            if (!mappedId) continue;
+            if (seen[mappedId]) continue;
+            seen[mappedId] = true;
+            outArr.push(mappedId);
+          }
+          newChapterOrder[mappedKey] = outArr;
+        }
+      }
+
+      // chapterTitleOverrides remap（如果导入提供了）
+      var newTitleOverrides = {};
+      var ov = (lib.chapterTitleOverrides && typeof lib.chapterTitleOverrides === 'object' && !Array.isArray(lib.chapterTitleOverrides)) ? lib.chapterTitleOverrides : null;
+      if (ov) {
+        for (var chId in ov) {
+          if (!Object.prototype.hasOwnProperty.call(ov, chId)) continue;
+          var title = ov[chId];
+          if (typeof title !== 'string') continue;
+          title = title.trim();
+          if (!title) continue;
+          var mappedChId = chapterIdMap[String(chId)] || String(chId);
+          newTitleOverrides[mappedChId] = title;
+        }
+      }
+
       return {
         folders: newFolders,
         chapters: newChapters,
         layoutMap: newLayoutMap,
+        chapterOrder: newChapterOrder,
+        chapterTitleOverrides: newTitleOverrides,
         deletedChapterIds: newDeleted
       };
     }
@@ -240,6 +285,8 @@
         book.folders = normalized.folders;
         book.chapters = normalized.chapters;
         book.layoutMap = normalized.layoutMap;
+        book.chapterOrder = normalized.chapterOrder || {};
+        book.chapterTitleOverrides = normalized.chapterTitleOverrides || {};
         book.deletedChapterIds = normalized.deletedChapterIds || [];
   
         currentChapterId = null;
@@ -256,6 +303,34 @@
       for (var j = 0; j < normalized.chapters.length; j++) book.chapters.push(normalized.chapters[j]);
       for (var chId in normalized.layoutMap) {
         if (normalized.layoutMap.hasOwnProperty(chId)) book.layoutMap[chId] = normalized.layoutMap[chId];
+      }
+      if (normalized.chapterOrder && typeof normalized.chapterOrder === 'object') {
+        if (!book.chapterOrder || typeof book.chapterOrder !== 'object' || Array.isArray(book.chapterOrder)) book.chapterOrder = {};
+        for (var ok in normalized.chapterOrder) {
+          if (!Object.prototype.hasOwnProperty.call(normalized.chapterOrder, ok)) continue;
+          if (!Array.isArray(normalized.chapterOrder[ok])) continue;
+          if (!Array.isArray(book.chapterOrder[ok])) book.chapterOrder[ok] = [];
+          var exist = {};
+          for (var oi = 0; oi < book.chapterOrder[ok].length; oi++) exist[String(book.chapterOrder[ok][oi])] = true;
+          for (var oj = 0; oj < normalized.chapterOrder[ok].length; oj++) {
+            var cid = String(normalized.chapterOrder[ok][oj] || '');
+            if (!cid || exist[cid]) continue;
+            exist[cid] = true;
+            book.chapterOrder[ok].push(cid);
+          }
+        }
+      }
+      if (normalized.chapterTitleOverrides && typeof normalized.chapterTitleOverrides === 'object') {
+        if (!book.chapterTitleOverrides || typeof book.chapterTitleOverrides !== 'object' || Array.isArray(book.chapterTitleOverrides)) book.chapterTitleOverrides = {};
+        for (var rk in normalized.chapterTitleOverrides) {
+          if (!Object.prototype.hasOwnProperty.call(normalized.chapterTitleOverrides, rk)) continue;
+          if (Object.prototype.hasOwnProperty.call(book.chapterTitleOverrides, rk)) continue;
+          var rt = normalized.chapterTitleOverrides[rk];
+          if (typeof rt !== 'string') continue;
+          rt = rt.trim();
+          if (!rt) continue;
+          book.chapterTitleOverrides[rk] = rt;
+        }
       }
       // deleted: 合并（去重）
       if (!book.deletedChapterIds) book.deletedChapterIds = [];
@@ -282,6 +357,8 @@
             folders: Array.isArray(b.folders) ? b.folders : [],
             chapters: Array.isArray(b.chapters) ? b.chapters : [],
             layoutMap: (b.layoutMap && typeof b.layoutMap === 'object' && !Array.isArray(b.layoutMap)) ? b.layoutMap : {},
+            chapterOrder: (b.chapterOrder && typeof b.chapterOrder === 'object' && !Array.isArray(b.chapterOrder)) ? b.chapterOrder : {},
+            chapterTitleOverrides: (b.chapterTitleOverrides && typeof b.chapterTitleOverrides === 'object' && !Array.isArray(b.chapterTitleOverrides)) ? b.chapterTitleOverrides : {},
             deletedChapterIds: Array.isArray(b.deletedChapterIds) ? b.deletedChapterIds : []
           };
           var normalized = makeUniqueIdsForImport(lib, true, { includePresets: false });

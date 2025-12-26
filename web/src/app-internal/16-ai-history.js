@@ -150,29 +150,23 @@
       var scope = homeVisible ? 'general' : 'book';
       var book = (!homeVisible) ? getActiveBook() : null;
 
-      setAiHistoryHint('创建对话…');
-      apiFetch('/api/ai/conversations', {
-        method: 'POST',
-        body: JSON.stringify({
-          scope: scope,
-          bookId: (scope === 'book' && book && book.id) ? String(book.id) : null,
-          modelPref: 'flash'
-        })
-      }).then(function (res) {
-        if (!res.ok) throw new Error('create failed');
-        return res.json();
-      }).then(function (j) {
-        if (!j || !j.conversationId) throw new Error('bad response');
-        closeAiHistoryModal();
-        aiChat.conversationId = j.conversationId;
-        aiChat.scope = scope;
-        aiChat.lastQuestionContext = '';
-        aiChat.pendingSelectedText = '';
-        renderAiChatQuote();
-        openAiChatModal();
-        return loadAiConversation(j.conversationId);
-      }).catch(function (e) {
-        setAiHistoryHint('创建失败：' + (e && e.message ? e.message : '网络错误'));
+      // Lazy-create: do NOT create server conversation until user sends the first message.
+      closeAiHistoryModal();
+      aiChat.conversationId = null;
+      aiChat.scope = scope;
+      aiChat.lastQuestionContext = '';
+      aiChat.pendingSelectedText = '';
+      renderAiChatQuote();
+      try { clearAiMessages(); } catch (_) {}
+      try { if (els.aiChatTitle) els.aiChatTitle.textContent = '新对话'; } catch (_) {}
+      try { setModelSwitchValue(els.aiChatModelSwitch, 'flash'); } catch (_) {}
+      var pref = 'flash';
+      try { pref = getModelFromSwitch(els.aiChatModelSwitch, 'flash'); } catch (_) { pref = 'flash'; }
+      setPendingCreate({
+        scope: scope,
+        bookId: (scope === 'book' && book && book.id) ? String(book.id) : null,
+        modelPref: pref
       });
+      setAiChatHint('输入问题开始对话');
+      openAiChatModal();
     }
-

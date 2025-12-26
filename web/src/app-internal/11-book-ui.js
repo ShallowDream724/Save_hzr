@@ -391,6 +391,7 @@
         '</div>' +
         '<div class="item-actions">' +
           '<i class="fa-solid fa-grip-lines drag-handle" title="拖拽"></i>' +
+          '<i class="fa-solid fa-pen action-icon rename" title="重命名"></i>' +
           '<i class="fa-solid fa-trash action-icon delete" title="删除章节"></i>' +
         '</div>';
   
@@ -407,6 +408,60 @@
         delIcon.onclick = function (e) {
           e.stopPropagation();
           deleteChapter(chapter.id);
+        };
+      }
+
+      // rename
+      var renameIcon = div.querySelector('.action-icon.rename');
+      if (renameIcon) {
+        renameIcon.onclick = function (e) {
+          e.stopPropagation();
+          var book = getActiveBook();
+          var cur = (chapter && typeof chapter.title === 'string') ? chapter.title.trim() : '';
+          var next = prompt('重命名章节', cur || '未命名章节');
+          if (next === null) return;
+          next = String(next || '').trim();
+          if (!next) {
+            showToast('章节名不能为空', { timeoutMs: 2200 });
+            return;
+          }
+          if (next.length > 80) {
+            showToast('章节名过长（最多 80 字）', { timeoutMs: 2200 });
+            return;
+          }
+
+          var id = String(chapter.id || '');
+          if (!id) return;
+
+          if (String(id).indexOf('static_') === 0 || chapter.isStatic) {
+            if (!book.chapterTitleOverrides || typeof book.chapterTitleOverrides !== 'object' || Array.isArray(book.chapterTitleOverrides)) {
+              book.chapterTitleOverrides = {};
+            }
+            var base = '';
+            for (var i = 0; i < staticData.length; i++) {
+              if (staticData[i] && staticData[i].id === id) { base = String(staticData[i].title || '').trim(); break; }
+            }
+            if (base && next === base) delete book.chapterTitleOverrides[id];
+            else book.chapterTitleOverrides[id] = next;
+          } else {
+            var list = book.chapters || [];
+            for (var j = 0; j < list.length; j++) {
+              if (list[j] && list[j].id === id) {
+                list[j].title = next;
+                break;
+              }
+            }
+          }
+
+          try { book.updatedAt = new Date().toISOString(); } catch (_) {}
+          saveData();
+          renderSidebar();
+          try {
+            if (currentChapterId === id) {
+              var ch2 = findChapterById(id);
+              if (els.chapterTitle) els.chapterTitle.innerText = (ch2 && ch2.title) ? String(ch2.title) : next;
+            }
+          } catch (_) {}
         };
       }
   
