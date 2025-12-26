@@ -110,4 +110,4 @@ sudo certbot --nginx -d your-domain.example
 ## CodePen（可选）
 CodePen 也能用，但**默认只能本地保存**；想跨设备同步，需要把 `API_BASE` 指向你的服务：
 - 在 HTML 里设置：`window.API_BASE = 'https://your-domain.example';`
-- 前端文件依赖：`web/index.html` 依赖 `web/style.css`、`web/app.js`、以及同源的 `web/presets.json`
+- 前端文件依赖：`web/index.html` 依赖 `web/style.css`、`web/src/app-internal/*.js`、以及同源的 `web/presets.json`/`web/default.json`

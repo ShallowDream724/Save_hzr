@@ -60,6 +60,12 @@ body {
     -webkit-font-smoothing: antialiased;
 }
 
+/* When a modal is open, prevent background scroll (home uses its own scroll container). */
+body.modal-open .home-scroll,
+body.modal-open .chapter-list {
+    overflow: hidden !important;
+}
+
 /* ============================================
    APP (non-home) visual system (2025 refresh)
    - Home view + book opening animation must stay unchanged.
@@ -332,11 +338,10 @@ body.home-mode .home-hud .modal-btn {
     font-weight: 600;
     color: #475569;
     font-size: 0.9rem;
-    transition: all 0.2s ease;
+    transition: background 180ms ease, border-color 180ms ease, box-shadow 180ms ease, color 180ms ease;
 }
 
 body.home-mode .home-hud .modal-btn:hover {
-    transform: translateY(-2px);
     background: #fff;
     box-shadow: 0 10px 28px rgba(15,23,42,0.12);
 }
@@ -461,6 +466,11 @@ body.home-transitioning .home-hud { opacity: 0; pointer-events: none; }
     transform: rotateY(25deg) translateZ(20px) translateY(-10px);
     z-index: 7000;
 }
+/* Ensure book tooltip/menus can float above the Home HUD (z-index stacking context). */
+body.home-mode .book-container:hover { z-index: 7000; }
+/* During the open-book animation, JS sets an inline z-index that can still be under the Home HUD.
+   Keep the animation visually “on top” without touching the JS state machine. */
+.book-container.book-opening { z-index: 8000 !important; }
 
 @media (hover: none) {
     .book-container.idle:hover { transform: rotateY(30deg) rotateZ(-2deg); }
@@ -811,9 +821,14 @@ body.home-transitioning #booksGrid .book-more { opacity: 0 !important; }
     transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
     overflow: hidden;
 
-    background: var(--glass-bg);
-    border-right: 1px solid rgba(255,255,255,0.3);
-    box-shadow: 4px 0 24px rgba(0,0,0,0.04);
+    background:
+        radial-gradient(900px 620px at 12% 0%, var(--accent-soft), transparent 62%),
+        linear-gradient(180deg, rgba(255,255,255,0.86), rgba(255,255,255,0.74));
+    background:
+        radial-gradient(900px 620px at 12% 0%, color-mix(in srgb, var(--accent-color) 10%, transparent), transparent 62%),
+        linear-gradient(180deg, rgba(255,255,255,0.86), rgba(255,255,255,0.74));
+    border-right: 1px solid rgba(148,163,184,0.20);
+    box-shadow: 10px 0 34px rgba(15, 23, 42, 0.08);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
 }
@@ -895,11 +910,11 @@ body.home-transitioning #booksGrid .book-more { opacity: 0 !important; }
     background: rgba(255,255,255,0.7);
     color: #1e293b;
     border-color: rgba(148,163,184,0.22);
-    box-shadow: 0 10px 28px rgba(15,23,42,0.10);
+    box-shadow: 0 8px 22px rgba(15,23,42,0.08);
 }
 .list-item.active {
     background: white;
-    box-shadow: 0 10px 28px rgba(15,23,42,0.10);
+    box-shadow: 0 8px 22px rgba(15,23,42,0.08);
     color: var(--accent-color);
     font-weight: 700;
     border-color: var(--accent-soft);
@@ -1105,7 +1120,7 @@ body.home-transitioning #booksGrid .book-more { opacity: 0 !important; }
     z-index: 1400;
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    transition: all 0.3s ease;
+    transition: background 220ms ease, box-shadow 220ms ease, border-color 220ms ease;
 }
 .top-bar:hover {
     background: rgba(255,255,255,0.9);
@@ -1380,52 +1395,70 @@ h2 {
 
 .analysis-box {
     margin-top: 24px;
-    background: linear-gradient(180deg, var(--analysis-bg-1), var(--analysis-bg-2));
+    border-radius: 18px;
     border: 1px solid var(--analysis-border);
-    padding: 20px 20px 20px 22px;
-    border-radius: 16px;
+    background:
+        radial-gradient(900px 520px at 20% -10%, var(--analysis-bg-1), transparent 60%),
+        linear-gradient(180deg, rgba(255,255,255,0.96), rgba(255,255,255,0.88));
+    background:
+        radial-gradient(900px 520px at 20% -10%, color-mix(in srgb, var(--analysis-color) 14%, transparent), transparent 60%),
+        linear-gradient(180deg, rgba(255,255,255,0.96), rgba(255,255,255,0.88));
+    padding: 18px 18px 16px;
     position: relative;
     overflow: hidden;
-    box-shadow: 0 16px 40px rgba(15,23,42,0.08);
-}
-.analysis-box::before {
-    content: "";
-    position: absolute;
-    left: 10px;
-    top: 12px;
-    bottom: 12px;
-    width: 4px;
-    border-radius: 999px;
-    background: linear-gradient(180deg, var(--analysis-bar), rgba(255,255,255,0));
-    opacity: 0.85;
-    pointer-events: none;
+    box-shadow: 0 18px 60px rgba(15,23,42,0.10);
 }
 .analysis-title {
-    font-weight: 700;
-    color: var(--analysis-title);
+    font-weight: 900;
+    color: #0f172a;
     margin-bottom: 12px;
     display: flex;
     align-items: center;
     gap: 8px;
     font-size: 1rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.2px;
 }
-.analysis-title i { opacity: 0.85; }
+.analysis-title i {
+    width: 30px;
+    height: 30px;
+    display: inline-grid;
+    place-items: center;
+    border-radius: 999px;
+    background: var(--analysis-bg-1);
+    border: 1px solid var(--analysis-border);
+    color: var(--analysis-color);
+    box-shadow:
+        0 0 0 6px var(--analysis-bg-2),
+        0 18px 40px rgba(15,23,42,0.10);
+}
+.analysis-title i {
+    background: color-mix(in srgb, var(--analysis-color) 12%, rgba(255,255,255,0.92));
+    border-color: color-mix(in srgb, var(--analysis-color) 18%, rgba(148,163,184,0.22));
+    box-shadow:
+        0 0 0 6px color-mix(in srgb, var(--analysis-color) 12%, transparent),
+        0 0 0 14px color-mix(in srgb, var(--analysis-color) 6%, transparent),
+        0 18px 40px rgba(15,23,42,0.10);
+}
 .knowledge-details {
     margin-top: 14px;
     border: 1px solid var(--knowledge-border);
-    border-radius: 14px;
-    background: #fff;
+    border-radius: 18px;
+    background: rgba(255,255,255,0.92);
     overflow: hidden;
-    box-shadow: 0 10px 24px rgba(12,84,96,0.06);
+    box-shadow: 0 16px 50px rgba(15,23,42,0.08);
 }
 .knowledge-summary {
-    background: linear-gradient(180deg, var(--knowledge-bg-1), var(--knowledge-bg-2));
-    padding: 12px 14px;
+    background:
+        radial-gradient(900px 520px at 20% -10%, var(--knowledge-bg-1), transparent 60%),
+        linear-gradient(180deg, rgba(255,255,255,0.94), rgba(255,255,255,0.80));
+    background:
+        radial-gradient(900px 520px at 20% -10%, color-mix(in srgb, var(--knowledge-color) 14%, transparent), transparent 60%),
+        linear-gradient(180deg, rgba(255,255,255,0.94), rgba(255,255,255,0.80));
+    padding: 12px 16px;
     cursor: pointer;
-    font-weight: 800;
-    color: var(--knowledge-title);
+    font-weight: 900;
+    color: #0f172a;
+    letter-spacing: 0.2px;
     list-style: none;
     display: flex;
     align-items: center;
@@ -1433,15 +1466,42 @@ h2 {
     transition: background 0.15s ease, color 0.15s ease;
 }
 .knowledge-summary:hover {
-    background: linear-gradient(180deg, var(--knowledge-bg-1), var(--knowledge-bg-2));
-    color: var(--knowledge-title);
+    background:
+        radial-gradient(900px 520px at 20% -10%, var(--knowledge-bg-1), transparent 60%),
+        linear-gradient(180deg, rgba(255,255,255,0.94), rgba(255,255,255,0.80));
+    background:
+        radial-gradient(900px 520px at 20% -10%, color-mix(in srgb, var(--knowledge-color) 14%, transparent), transparent 60%),
+        linear-gradient(180deg, rgba(255,255,255,0.94), rgba(255,255,255,0.80));
+    color: #0f172a;
     box-shadow: inset 0 0 0 1px var(--knowledge-border);
 }
-.knowledge-summary i { flex-shrink: 0; margin: 0; }
+.knowledge-summary i {
+    width: 30px;
+    height: 30px;
+    display: inline-grid;
+    place-items: center;
+    border-radius: 999px;
+    background: var(--knowledge-bg-1);
+    border: 1px solid var(--knowledge-border);
+    color: var(--knowledge-color);
+    box-shadow:
+        0 0 0 6px var(--knowledge-bg-2),
+        0 18px 40px rgba(15,23,42,0.08);
+    flex: none;
+    margin: 0;
+}
+.knowledge-summary i {
+    background: color-mix(in srgb, var(--knowledge-color) 12%, rgba(255,255,255,0.92));
+    border-color: color-mix(in srgb, var(--knowledge-color) 18%, rgba(148,163,184,0.22));
+    box-shadow:
+        0 0 0 6px color-mix(in srgb, var(--knowledge-color) 12%, transparent),
+        0 0 0 14px color-mix(in srgb, var(--knowledge-color) 6%, transparent),
+        0 18px 40px rgba(15,23,42,0.10);
+}
 .knowledge-summary::-webkit-details-marker { display: none; }
 .knowledge-summary::after { content: '\f078'; font-family: "Font Awesome 6 Free"; font-weight: 900; margin-left: auto; transition: 0.2s; }
 .knowledge-details[open] .knowledge-summary::after { transform: rotate(180deg); }
-.knowledge-content { padding: 14px 14px 16px; color: #2b3b46; }
+.knowledge-content { padding: 14px 16px 16px; color: #2b3b46; }
 .knowledge-content ul { padding-left: 20px; margin: 10px 0; }
 .knowledge-content li { margin-bottom: 5px; }
 .knowledge-details[open] .knowledge-content { animation: fadeIn 160ms ease; }
@@ -1503,6 +1563,7 @@ h2 {
     font-size: 0.95rem;
     color: #334155;
 }
+.modal-box textarea { resize: vertical; }
 
 #importTextarea {
     resize: vertical;
@@ -1741,9 +1802,9 @@ h2 {
     gap: 4px;
     padding: 3px;
     border-radius: 999px;
-    border: 1px solid rgba(148,163,184,0.28);
-    background: rgba(255,255,255,0.88);
-    box-shadow: 0 10px 24px rgba(15,23,42,0.10);
+    border: 1px solid rgba(148,163,184,0.22);
+    background: rgba(255,255,255,0.82);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.65), 0 10px 24px rgba(15,23,42,0.08);
 }
 .ai-model-switch--small { padding: 2px; gap: 2px; }
 .ai-model-option {
@@ -1752,7 +1813,7 @@ h2 {
     padding: 6px 12px;
     border-radius: 999px;
     cursor: pointer;
-    color: #475569;
+    color: rgba(15,23,42,0.66);
     font-weight: 900;
     font-size: 0.92rem;
     line-height: 1;
@@ -1764,7 +1825,7 @@ h2 {
 .ai-model-option.active {
     background: var(--accent-color);
     color: rgba(255,255,255,0.96);
-    box-shadow: 0 12px 26px rgba(15,23,42,0.16);
+    box-shadow: 0 12px 26px rgba(15,23,42,0.14);
 }
 .ai-chat-model,
 .ai-import-model,
@@ -2066,6 +2127,11 @@ h2 {
     align-items: center;
     justify-content: space-between;
     gap: 12px;
+}
+.ai-import-header .icon-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 12px;
 }
 .ai-import-title {
     font-weight: 900;

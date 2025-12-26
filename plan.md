@@ -3,8 +3,9 @@
 本文档用于说明并指导实现「题目快捷问 AI」「书内拍照导入」「全站风控队列」「多端同步的历史对话」等能力。当前仓库已落地基础版本；本文件作为后续迭代的长期规范与设计参考。
 
 > 现状速览（方便定位接入点）
-> - 前端题卡渲染：`web/app.js:2159`（`createQuestionCard` 在 `web/app.js:2180`）
-> - 前端 API 封装：`web/app.js:1046`（`apiFetch` 自动带 JWT）
+> - 前端题卡渲染：`web/src/app-internal/12-chapter-view.js:25`（`createQuestionCard`）
+> - 前端 API 封装：`web/src/app-internal/07-cloud-sync.js:73`（`apiFetch` 自动带 JWT）
+> - Home/开书动画（保护区）：`web/src/app-internal/11-book-ui.js`（`openBookWithAnimation` / `cleanupBookOpenAnim`）
 > - 后端入口：`server/src/server.js:1`（Express + SQLite + JWT）
 > - Gemini 参考实现（你搬来的 AMC/All-Model-Chat）：`All-Model-Chat/all-model-chat/services/api/baseApi.ts:78`、`All-Model-Chat/all-model-chat/utils/domainUtils.ts:245`
 
@@ -265,7 +266,7 @@ SQLite 继续可用（现有就是 SQLite）。任务系统要求：
 - `sourceRef`: `{ pageIndex, localIndex }`（localIndex 从 0 开始，按该页题目出现顺序）
 - 其余字段见下方 Question 定义
 
-Question（对齐现有题卡字段，见 `web/app.js:2180`）
+Question（对齐现有题卡字段，见 `web/src/app-internal/12-chapter-view.js:25`）
 - `id`: string|number
 - `text`: string（Markdown/纯文本）
 - `options`: `{label, content}[]`
@@ -407,7 +408,7 @@ AI 对话窗口需要在 **首页** 与 **书内** 都可打开：
 ## 8. Markdown/LaTeX 渲染复用 + CSP 安全分析
 
 ### 8.1 为什么要做（不仅是“更好看”）
-当前题卡渲染用 `innerHTML` 拼接（见 `web/app.js:2185`），如果未来题目内容来自 AI 导入，就存在 XSS 风险：模型可能输出 `<script>` 或危险属性。
+当前题卡渲染用 `innerHTML` 拼接（见 `web/src/app-internal/12-chapter-view.js:25`），如果未来题目内容来自 AI 导入，就存在 XSS 风险：模型可能输出 `<script>` 或危险属性。
 
 把题干/解析/知识点统一走 “Markdown -> sanitize -> DOM” 能显著降低风险，且能复用到聊天窗口（你也希望复用）。
 
@@ -449,9 +450,8 @@ AI 对话窗口需要在 **首页** 与 **书内** 都可打开：
 ## 10. 代码结构与封装性（为什么必须做）
 
 ### 10.1 当前风险点
-- `web/app.js` 是单文件大闭包（约 170KB），继续往里塞 AI/队列/对话/渲染逻辑，会导致：
-  - 回归风险变高（任何改动都可能影响拖拽/同步/渲染）
-  - 功能边界不清晰（后续维护成本指数级上升）
+- 旧版 `web/app.js` 的单文件大闭包风险已消除：前端已拆分为 `web/src/app-internal/*`（每文件 ≤ 500 行），并通过 `web/index.html` 串联加载。
+- 仍需注意：题卡渲染与 Markdown/LaTeX 的渲染链路需要持续关注 XSS（同源脚本 + DOMPurify + 白名单策略）。
 
 ### 10.2 现代化重构路线（你已授权，推荐）
 你明确表示可以重构、也偏好“2025 最现代”的工程化。我建议采用 **strangler** 方式：不一次性推翻现有功能，而是先把新模块工程化，然后逐步迁移旧代码。
@@ -475,10 +475,10 @@ Home/开书动画（必须保护）
   - 不引入外链脚本（走同源 bundle）
 
 迁移策略（尽量不伤现有功能）：
-1) **先不动原 `web/app.js` 的核心功能**（拖拽/同步/题库渲染都保持）
-2) 新增一个现代化入口（例如 `web/src/ai/*`），只负责 AI 相关 UI（聊天窗、导入窗、历史中心、Markdown 渲染）
-3) 现有页面通过一个很小的桥接点挂载新 UI（例如在 `web/app.js` 里只添加“打开 AI 面板”的事件）
-4) 等 AI 功能稳定后，再逐步迁移题卡渲染到新渲染器（解决 XSS + 支持 Markdown/LaTeX）
+1) **先冻结 Home/开书动画为保护区**：不动 DOM/关键 CSS 语义/状态机（`web/src/app-internal/11-book-ui.js`）。
+2) 前端已完成“按功能拆分小文件”（`web/src/app-internal/*`），后续可在不改变行为的前提下继续模块化与抽象。
+3) 若未来引入 Vite/TS/React：建议只做构建与模块管理，不改变现有 DOM 结构；并把 bundle 输出与源代码隔离（避免把打包产物当源码维护）。
+4) 等 AI 功能稳定后，再逐步改造题卡渲染链路（减少 `innerHTML` / 强化 sanitize / 统一 Markdown+LaTeX 渲染）。
 
 这样你可以先私下测试新版本，成熟后再逐步替换旧实现，风险最小。
 

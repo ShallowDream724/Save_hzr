@@ -13,7 +13,37 @@
     <script src="./vendor/markdown-it.min.js" defer></script>
     <script src="./vendor/katex/katex.min.js" defer></script>
     <script src="./vendor/katex/auto-render.min.js" defer></script>
-    <script src="./app.js" defer></script>
+
+    <!-- App (split into small modules; keep each file <= 500 lines) -->
+    <script src="./src/app-internal/01-compat.js" defer></script>
+    <script src="./src/app-internal/02-data.js" defer></script>
+    <script src="./src/app-internal/03-dom.js" defer></script>
+    <script src="./src/app-internal/04-utils.js" defer></script>
+    <script src="./src/app-internal/05-modal-scroll-lock.js" defer></script>
+    <script src="./src/app-internal/06-local-storage.js" defer></script>
+    <script src="./src/app-internal/07-cloud-sync.js" defer></script>
+    <script src="./src/app-internal/08-chapter-interop.js" defer></script>
+    <script src="./src/app-internal/09-chapter-find.js" defer></script>
+    <script src="./src/app-internal/10-sidebar-home.js" defer></script>
+    <script src="./src/app-internal/11-book-ui.js" defer></script>
+    <script src="./src/app-internal/12-chapter-view.js" defer></script>
+    <script src="./src/app-internal/13-ai-chat.js" defer></script>
+    <script src="./src/app-internal/14-ai-import-ui.js" defer></script>
+    <script src="./src/app-internal/15-ai-import-runtime.js" defer></script>
+    <script src="./src/app-internal/16-ai-history.js" defer></script>
+    <script src="./src/app-internal/17-ai-selection.js" defer></script>
+    <script src="./src/app-internal/18-chapter-delete.js" defer></script>
+    <script src="./src/app-internal/19-drag-core.js" defer></script>
+    <script src="./src/app-internal/20-drag-runtime.js" defer></script>
+    <script src="./src/app-internal/21-json-import.js" defer></script>
+    <script src="./src/app-internal/22-bind-ui-layout.js" defer></script>
+    <script src="./src/app-internal/22-bind-ui-books.js" defer></script>
+    <script src="./src/app-internal/22-bind-ui-import.js" defer></script>
+    <script src="./src/app-internal/22-bind-ui-settings.js" defer></script>
+    <script src="./src/app-internal/22-bind-ui-sync.js" defer></script>
+    <script src="./src/app-internal/22-bind-ui-ai.js" defer></script>
+    <script src="./src/app-internal/22-bind-ui-entry.js" defer></script>
+    <script src="./src/app-internal/23-startup.js" defer></script>
 </head>
 <body>
 
