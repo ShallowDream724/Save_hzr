@@ -174,7 +174,7 @@ function createLibraryPatcher(db) {
         if (tombstones.has(chapterId)) continue;
         if (existingChapterIds.has(chapterId)) continue;
 
-        const title = page && typeof page.title === 'string' && page.title.trim() ? page.title.trim() : `AI导入 第${pageIndex + 1}页`;
+        const title = page && typeof page.title === 'string' && page.title.trim() ? page.title.trim() : `导入章节（${pageIndex + 1}）`;
         const questions = ensureArray(page.questions).map((q, idx) =>
           normalizeQuestion(q, idx + 1, { jobId, pageIndex, localIndex: idx })
         );

@@ -44,6 +44,51 @@ function mergeTailHead(prevTail, nextHead) {
   return merged;
 }
 
+function pickFirstQuestionText(bundle) {
+  if (!bundle || typeof bundle !== 'object') return '';
+
+  const qs = Array.isArray(bundle.questions) ? bundle.questions : [];
+  for (const q of qs) {
+    const t = q && typeof q.text === 'string' ? q.text.trim() : '';
+    if (t) return t;
+  }
+
+  const tail = bundle.tail;
+  if (tail && tail.kind === 'complete' && tail.question && typeof tail.question.text === 'string') {
+    const t = tail.question.text.trim();
+    if (t) return t;
+  }
+  if (tail && tail.kind === 'fragment' && tail.fragment && typeof tail.fragment.text === 'string') {
+    const t = tail.fragment.text.trim();
+    if (t) return t;
+  }
+
+  const head = bundle.head;
+  if (head && typeof head.text === 'string') {
+    const t = head.text.trim();
+    if (t) return t;
+  }
+
+  return '';
+}
+
+function fallbackTitleFromContent(bundle) {
+  const raw = pickFirstQuestionText(bundle);
+  if (!raw) return '';
+  let t = String(raw).replace(/\s+/g, ' ').trim();
+  // Remove leading question number: "(12) 12. 12、" etc.
+  t = t.replace(/^[（(]?\s*\d+\s*[）)]?\s*[.、:：]?\s*/u, '');
+  t = t.replace(/^[Qq]\s*\d+\s*[.、:：]?\s*/u, '');
+  t = t.trim();
+  if (!t) return '';
+  // Truncate to a readable title length.
+  const max = 18;
+  if (t.length > max) t = t.slice(0, max).trim() + '…';
+  // Avoid very generic prefixes becoming the whole title.
+  if (t === '下列' || t === '关于' || t === '以下' || t === '哪项') return '';
+  return t;
+}
+
 function finalizeBundlesToChapters({ jobId, bundles }) {
   const sorted = [...bundles].sort((a, b) => Number(a.pageIndex) - Number(b.pageIndex));
   const warnings = [];
@@ -52,13 +97,19 @@ function finalizeBundlesToChapters({ jobId, bundles }) {
     warnings.push({ pageIndex: sorted[0].pageIndex, message: 'First page returned a head fragment; dropped.' });
   }
 
-  const pageResults = sorted.map((b) => ({
-    pageIndex: Number(b.pageIndex),
-    title: isNonEmptyString(b.chapterTitleCandidate) ? b.chapterTitleCandidate.trim() : `AI导入 第${Number(b.pageIndex) + 1}页`,
-    questions: Array.isArray(b.questions) ? [...b.questions] : [],
-    tail: b.tail,
-    head: b.head,
-  }));
+  const pageResults = sorted.map((b) => {
+    const pageIndex = Number(b.pageIndex);
+    const candidate = isNonEmptyString(b.chapterTitleCandidate) ? b.chapterTitleCandidate.trim() : '';
+    const fromText = candidate ? '' : fallbackTitleFromContent(b);
+    const title = candidate || fromText || `导入章节（${Number(pageIndex) + 1}）`;
+    return {
+      pageIndex,
+      title,
+      questions: Array.isArray(b.questions) ? [...b.questions] : [],
+      tail: b.tail,
+      head: b.head,
+    };
+  });
 
   // Apply tail/head stitching rules.
   for (let i = 0; i < pageResults.length; i++) {
@@ -145,4 +196,3 @@ function finalizeBundlesToChapters({ jobId, bundles }) {
 }
 
 module.exports = { finalizeBundlesToChapters };
-
