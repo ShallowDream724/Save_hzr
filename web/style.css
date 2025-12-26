@@ -185,7 +185,33 @@ body.sidebar-collapsed .icon-btn { width: 46px; height: 46px; flex: none; border
     background: var(--knowledge-bg-1);
     border-radius: 0 12px 12px 0;
 }
-.analysis-content .bold-em, .knowledge-content .bold-em { box-shadow: 0 10px 22px var(--emphasis-soft-2); }
+.analysis-content table, .knowledge-content table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin: 12px 0;
+    border: 1px solid rgba(148,163,184,0.26);
+    border-radius: 14px;
+    overflow: hidden;
+    background: rgba(255,255,255,0.75);
+}
+.analysis-content th, .analysis-content td,
+.knowledge-content th, .knowledge-content td {
+    padding: 9px 10px;
+    border-bottom: 1px solid rgba(148,163,184,0.22);
+    border-right: 1px solid rgba(148,163,184,0.18);
+    vertical-align: top;
+}
+.analysis-content th:last-child, .analysis-content td:last-child,
+.knowledge-content th:last-child, .knowledge-content td:last-child { border-right: 0; }
+.analysis-content tr:last-child td,
+.knowledge-content tr:last-child td { border-bottom: 0; }
+.analysis-content thead th,
+.knowledge-content thead th {
+    background: rgba(99,102,241,0.08);
+    color: #0f172a;
+    font-weight: 850;
+}
 
 /* --- 2. 布局框架 --- */
 .app-container {
@@ -1937,13 +1963,19 @@ h2 {
     word-break: break-word;
     box-shadow: 0 16px 40px rgba(15,23,42,0.10);
 }
+.ai-msg.assistant .ai-bubble,
+.ai-msg.system .ai-bubble {
+    width: 100%;
+    max-width: none;
+    box-shadow: none;
+}
 .ai-bubble.user {
     background: linear-gradient(180deg, rgba(99,102,241,0.94), rgba(79,70,229,0.94));
     border: 1px solid rgba(99,102,241,0.45);
     color: rgba(255,255,255,0.96);
 }
 .ai-bubble.assistant {
-    background: rgba(255,255,255,0.92);
+    background: rgba(255,255,255,0.84);
     border: 1px solid rgba(148,163,184,0.24);
     color: #0f172a;
 }
@@ -1960,6 +1992,11 @@ h2 {
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
     font-size: 0.94rem;
     opacity: 0.96;
+}
+.ai-bubble[data-placeholder="1"] .ai-bubble-content {
+    font-family: inherit;
+    font-style: italic;
+    opacity: 0.78;
 }
 
 /* Markdown baseline */
@@ -1980,6 +2017,33 @@ h2 {
     padding: 0 6px;
     border-radius: 8px;
 }
+.ai-bubble-content table, .ai-chat-context-text table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin: 10px 0;
+    border: 1px solid rgba(148,163,184,0.26);
+    border-radius: 14px;
+    overflow: hidden;
+    background: rgba(255,255,255,0.80);
+}
+.ai-bubble-content th, .ai-bubble-content td,
+.ai-chat-context-text th, .ai-chat-context-text td {
+    padding: 9px 10px;
+    border-bottom: 1px solid rgba(148,163,184,0.22);
+    border-right: 1px solid rgba(148,163,184,0.18);
+    vertical-align: top;
+}
+.ai-bubble-content th:last-child, .ai-bubble-content td:last-child,
+.ai-chat-context-text th:last-child, .ai-chat-context-text td:last-child { border-right: 0; }
+.ai-bubble-content tr:last-child td,
+.ai-chat-context-text tr:last-child td { border-bottom: 0; }
+.ai-bubble-content thead th,
+.ai-chat-context-text thead th {
+    background: rgba(99,102,241,0.08);
+    color: #0f172a;
+    font-weight: 850;
+}
 .ai-bubble-content pre {
     margin: 10px 0;
     padding: 10px 12px;
@@ -1996,7 +2060,7 @@ h2 {
     display: flex;
     flex-direction: column;
     gap: 10px;
-    margin: 10px 16px 16px;
+    margin: 10px 16px 12px;
     padding: 12px 12px;
     border-radius: 18px;
     border: 1px solid rgba(148,163,184,0.22);
@@ -2074,10 +2138,11 @@ h2 {
 }
 
 .ai-chat-hint {
-    margin: 0 16px 16px;
-    min-height: 18px;
+    display: none;
+    margin: 0 2px;
+    padding: 0 2px;
     color: #64748b;
-    font-size: 0.92rem;
+    font-size: 0.88rem;
     white-space: pre-line;
 }
 
@@ -2094,7 +2159,6 @@ h2 {
     .ai-chat-context { margin: 10px 12px 0; }
     .ai-chat-messages { margin: 10px 12px 0; padding: 12px; }
     .ai-chat-input { margin: 10px 12px 12px; }
-    .ai-chat-hint { margin: 0 12px 12px; }
     .ai-bubble { max-width: 94%; }
 }
 
@@ -2109,7 +2173,6 @@ h2 {
     }
     .ai-chat-header { padding-top: calc(14px + env(safe-area-inset-top)); }
     .ai-chat-input { margin-bottom: calc(12px + env(safe-area-inset-bottom)); }
-    .ai-chat-hint { margin-bottom: calc(12px + env(safe-area-inset-bottom)); }
 }
 
 @media (hover: hover) and (pointer: fine) and (min-width: 900px) {

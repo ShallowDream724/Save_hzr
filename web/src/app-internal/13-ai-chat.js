@@ -186,7 +186,9 @@
 
     function setAiChatHint(text) {
       if (!els.aiChatHint) return;
-      els.aiChatHint.textContent = text ? String(text) : '';
+      var s = text ? String(text) : '';
+      els.aiChatHint.textContent = s;
+      try { els.aiChatHint.style.display = s ? '' : 'none'; } catch (_) {}
     }
 
     function openAiChatModal() {
@@ -324,14 +326,15 @@
 
       if (els.aiChatInput) els.aiChatInput.value = '';
       autoGrowTextarea(els.aiChatInput, 220);
-      setAiChatHint('AI 思考中…');
+      setAiChatHint('');
 
       appendAiBubble('user', msg);
       var assistantBubble = appendAiBubble('assistant', '');
       if (assistantBubble) {
         assistantBubble._raw = '';
         try { assistantBubble.dataset.streaming = '1'; } catch (_) {}
-        try { if (assistantBubble._contentEl) assistantBubble._contentEl.textContent = ''; } catch (_) {}
+        try { assistantBubble.dataset.placeholder = '1'; } catch (_) {}
+        try { if (assistantBubble._contentEl) assistantBubble._contentEl.textContent = 'AI 思考中…'; } catch (_) {}
       }
       aiChat.busy = true;
       if (els.aiChatSendBtn) els.aiChatSendBtn.disabled = true;
@@ -344,6 +347,7 @@
           if (event === 'delta') {
             var t = (data && typeof data.text === 'string') ? data.text : '';
             if (!t) return;
+            try { if (assistantBubble && assistantBubble.removeAttribute) assistantBubble.removeAttribute('data-placeholder'); } catch (_) {}
             assistantBubble._raw = (assistantBubble._raw || '') + t;
             var contentEl = assistantBubble._contentEl || assistantBubble;
             try { contentEl.textContent = assistantBubble._raw; } catch (_) {}
@@ -353,15 +357,23 @@
           if (event === 'error') {
             var m = (data && data.message) ? String(data.message) : '请求失败';
             setAiChatHint('失败：' + m);
-            try { if (assistantBubble && assistantBubble.removeAttribute) assistantBubble.removeAttribute('data-streaming'); } catch (_) {}
+            try {
+              if (assistantBubble && assistantBubble.removeAttribute) {
+                assistantBubble.removeAttribute('data-streaming');
+                assistantBubble.removeAttribute('data-placeholder');
+              }
+            } catch (_) {}
             return;
           }
           if (event === 'done') {
             setAiChatHint('');
             try {
+              if (assistantBubble && assistantBubble.removeAttribute) {
+                assistantBubble.removeAttribute('data-streaming');
+                assistantBubble.removeAttribute('data-placeholder');
+              }
               if (assistantBubble && (assistantBubble._raw || '').trim()) {
                 var contentEl2 = assistantBubble._contentEl || assistantBubble;
-                if (assistantBubble.removeAttribute) assistantBubble.removeAttribute('data-streaming');
                 renderMarkdownInto(contentEl2, assistantBubble._raw || '');
               }
             } catch (_) {}

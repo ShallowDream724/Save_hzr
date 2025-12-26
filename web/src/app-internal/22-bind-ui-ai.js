@@ -67,6 +67,10 @@
             aiChatWindow.startY = e.clientY;
             aiChatWindow.startLeft = cur.left;
             aiChatWindow.startTop = cur.top;
+            aiChatWindow.dragWidth = cur.width;
+            aiChatWindow.dragHeight = cur.height;
+            aiChatWindow.lastLeft = cur.left;
+            aiChatWindow.lastTop = cur.top;
 
             try { els.aiChatHeader.setPointerCapture(e.pointerId); } catch (_) {}
           } catch (_) {}
@@ -81,16 +85,24 @@
             var dx = e.clientX - aiChatWindow.startX;
             var dy = e.clientY - aiChatWindow.startY;
 
-            var r = getAiChatBoxRect();
-            if (!r) return;
+            var w = Number(aiChatWindow.dragWidth);
+            var h = Number(aiChatWindow.dragHeight);
+            if (!Number.isFinite(w) || !Number.isFinite(h)) {
+              var r = getAiChatBoxRect();
+              if (!r) return;
+              w = r.width;
+              h = r.height;
+            }
 
-            var maxL = Math.max(10, (window.innerWidth || 1200) - r.width - 10);
-            var maxT = Math.max(10, (window.innerHeight || 800) - r.height - 10);
+            var maxL = Math.max(10, (window.innerWidth || 1200) - w - 10);
+            var maxT = Math.max(10, (window.innerHeight || 800) - h - 10);
             var nextL = clamp(aiChatWindow.startLeft + dx, 10, maxL);
             var nextT = clamp(aiChatWindow.startTop + dy, 10, maxT);
 
             els.aiChatBox.style.left = Math.round(nextL) + 'px';
             els.aiChatBox.style.top = Math.round(nextT) + 'px';
+            aiChatWindow.lastLeft = nextL;
+            aiChatWindow.lastTop = nextT;
           } catch (_) {}
         }, { passive: true });
 
@@ -328,4 +340,3 @@
       addEvt(document, 'pointerup', scheduleAiSelUpdate, { passive: true });
       addEvt(window, 'scroll', hideAiSelBtn, { passive: true });
     }
-

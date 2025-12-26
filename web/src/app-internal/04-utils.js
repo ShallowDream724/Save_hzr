@@ -140,13 +140,24 @@
       // Users (and AI) often write:
       // $$\n\n...formula...\n\n$$
       // which Markdown turns into separate <p> blocks ("$$", "formula", "$$"), breaking display-math rendering.
-      // We normalize $$ blocks by removing leading/trailing blank lines and collapsing multiple blank lines.
+      // We normalize $$ blocks by collapsing whitespace so delimiters + body stay in the same text node.
       s = s.replace(/\$\$([\s\S]*?)\$\$/g, function (_, inner) {
         var body = (inner === null || inner === undefined) ? '' : String(inner);
         body = body.replace(/\r\n/g, '\n');
         body = body.trim();
-        body = body.replace(/\n{2,}/g, '\n');
-        return '$$\n' + body + '\n$$';
+        body = body.replace(/\n+/g, ' ');
+        body = body.replace(/[ \t]{2,}/g, ' ');
+        return '$$' + body + '$$';
+      });
+
+      // Same for \[ ... \] blocks (display math).
+      s = s.replace(/\\\[([\s\S]*?)\\\]/g, function (_, inner2) {
+        var body2 = (inner2 === null || inner2 === undefined) ? '' : String(inner2);
+        body2 = body2.replace(/\r\n/g, '\n');
+        body2 = body2.trim();
+        body2 = body2.replace(/\n+/g, ' ');
+        body2 = body2.replace(/[ \t]{2,}/g, ' ');
+        return '\\[' + body2 + '\\]';
       });
 
       return s;
