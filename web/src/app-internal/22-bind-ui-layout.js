@@ -158,8 +158,12 @@
           fabDrag.active = false;
           try { els.fabMenu.releasePointerCapture(e.pointerId); } catch (_) {}
           if (!fabDrag.moved) {
-            // Home page: use the same draggable hamburger as a HUD toggle
-            if (homeVisible) {
+            // Home page: use the same draggable hamburger as a HUD toggle.
+            // NOTE: use DOM class as source of truth to avoid state desync on mobile.
+            var inHomeMode = false;
+            try { inHomeMode = !!(document.body && document.body.classList && document.body.classList.contains('home-mode')); } catch (_) { inHomeMode = false; }
+            if (!inHomeMode) inHomeMode = !!homeVisible;
+            if (inHomeMode) {
               try {
                 var hud = document.querySelector('.home-hud');
                 if (hud && hud.classList) hud.classList.toggle('collapsed');
