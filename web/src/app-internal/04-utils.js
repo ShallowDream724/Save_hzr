@@ -14,6 +14,50 @@
       });
     }
 
+    function clampTextChars(s, maxChars) {
+      s = String(s || '');
+      maxChars = Number(maxChars);
+      if (!Number.isFinite(maxChars) || maxChars <= 0) return '';
+      if (s.length <= maxChars) return s;
+      return s.slice(0, maxChars) + '…';
+    }
+
+    function topBarTitleMaxChars() {
+      var w = 1024;
+      try { w = Number(window.innerWidth) || 1024; } catch (_) { w = 1024; }
+      if (w <= 720) return 10; // phone: max 10 chars (avoid overflow)
+      if (w <= 1024) return 28;
+      return 64;
+    }
+
+    function setTopBarTitle(fullTitle) {
+      if (!els || !els.chapterTitle) return;
+      var full = String(fullTitle || '');
+      try { els.chapterTitle.dataset.fullTitle = full; } catch (_) {}
+      try { els.chapterTitle.title = full; } catch (_) {}
+      els.chapterTitle.innerText = clampTextChars(full, topBarTitleMaxChars());
+    }
+
+    function refreshTopBarTitleClamp() {
+      if (!els || !els.chapterTitle) return;
+      var full = '';
+      try { full = String(els.chapterTitle.dataset.fullTitle || ''); } catch (_) { full = ''; }
+      if (!full) full = String(els.chapterTitle.innerText || '');
+      setTopBarTitle(full);
+    }
+
+    // Keep the title clamp correct on orientation change / resize.
+    (function () {
+      var t = null;
+      addEvt(window, 'resize', function () {
+        if (t) clearTimeout(t);
+        t = setTimeout(function () {
+          t = null;
+          refreshTopBarTitleClamp();
+        }, 80);
+      }, { passive: true });
+    })();
+
     function hashStr(str) {
       str = String(str || '');
       var h = 5381;

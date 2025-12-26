@@ -7,7 +7,8 @@
       var chapter = findChapterById(id);
       if (!chapter || isDeleted(id)) return;
   
-      if (els.chapterTitle) els.chapterTitle.innerText = chapter.title;
+      if (typeof setTopBarTitle === 'function') setTopBarTitle(chapter.title);
+      else if (els.chapterTitle) els.chapterTitle.innerText = chapter.title;
   
       renderSidebar();
   
@@ -20,6 +21,7 @@
   
       window.scrollTo(0, 0);
       if (window.innerWidth <= 768 && els.sidebar) els.sidebar.classList.remove('active');
+      if (typeof persistViewState === 'function') persistViewState();
     }
   
     function createQuestionCard(q) {

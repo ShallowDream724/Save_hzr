@@ -67,7 +67,8 @@
           syncModalScrollLock();
           hideHomeView();
           renderSidebar();
-          if (els.chapterTitle) els.chapterTitle.innerText = '请选择章节';
+          if (typeof setTopBarTitle === 'function') setTopBarTitle('请选择章节');
+          else if (els.chapterTitle) els.chapterTitle.innerText = '请选择章节';
           if (els.questionsContainer) els.questionsContainer.innerHTML = '';
           showToast('已创建：' + title, { timeoutMs: 2400 });
           return;
@@ -114,7 +115,8 @@
                     // After import: open the book immediately (no extra dialogs)
                     hideHomeView();
                     renderSidebar();
-                    if (els.chapterTitle) els.chapterTitle.innerText = '请选择章节';
+                    if (typeof setTopBarTitle === 'function') setTopBarTitle('请选择章节');
+                    else if (els.chapterTitle) els.chapterTitle.innerText = '请选择章节';
                     if (els.questionsContainer) els.questionsContainer.innerHTML = '';
                   }
                 } catch (err) {
@@ -134,4 +136,3 @@
       if (els.bookCreateBtn) els.bookCreateBtn.onclick = submitBookModal;
       if (els.bookNameInput) els.bookNameInput.addEventListener('keydown', function (e) { if (e && e.key === 'Enter') submitBookModal(); });
     }
-

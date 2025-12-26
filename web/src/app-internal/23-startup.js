@@ -21,8 +21,25 @@
         bindUIOnce();
         installGuardsOnce();
         updateSyncStatus();
-        renderSidebar();
-        showHomeView();
+        var restored = false;
+        try {
+          var vs = (typeof loadViewState === 'function') ? loadViewState() : null;
+          if (vs && vs.bookId) setActiveBook(vs.bookId);
+          renderSidebar();
+          if (vs && vs.homeVisible === false) {
+            hideHomeView();
+            if (typeof setTopBarTitle === 'function') setTopBarTitle('请选择章节');
+            else if (els.chapterTitle) els.chapterTitle.innerText = '请选择章节';
+            restored = true;
+
+            if (vs.chapterId) {
+              var canLoad = false;
+              try { canLoad = !!(findChapterById(vs.chapterId) && !isDeleted(vs.chapterId)); } catch (_) { canLoad = false; }
+              if (canLoad) loadChapter(vs.chapterId);
+            }
+          }
+        } catch (_) { restored = false; }
+        if (!restored) showHomeView();
         tryBootstrapFromCloud().then(function () {
           if (!appData.ui) appData.ui = defaultUi();
           appData.ui = normalizeUi(appData.ui);
@@ -30,6 +47,7 @@
           applyAppThemeFromActiveBook();
           renderSidebar();
           if (homeVisible) renderHome();
+          else if (currentChapterId) loadChapter(currentChapterId);
         });
 
         initialized = true;

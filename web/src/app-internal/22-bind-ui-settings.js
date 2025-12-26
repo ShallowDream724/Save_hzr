@@ -233,7 +233,8 @@
           appData = defaultAppData();
           appData.ui = keepUi;
           currentChapterId = null;
-          if (els.chapterTitle) els.chapterTitle.innerText = '请选择章节';
+          if (typeof setTopBarTitle === 'function') setTopBarTitle('请选择章节');
+          else if (els.chapterTitle) els.chapterTitle.innerText = '请选择章节';
           if (els.questionsContainer) els.questionsContainer.innerHTML = '';
 
           try {

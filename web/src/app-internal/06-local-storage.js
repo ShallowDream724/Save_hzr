@@ -57,3 +57,32 @@
       loadLocalData();
     }
 
+    // Persist last view (home vs chapter) across refresh.
+    var VIEW_STATE_KEY = 'hzr_view_state_v1';
+
+    function loadViewState() {
+      try {
+        var raw = localStorage.getItem(VIEW_STATE_KEY);
+        if (!raw) return null;
+        var j = JSON.parse(raw);
+        if (!j || typeof j !== 'object') return null;
+        return {
+          homeVisible: !!j.homeVisible,
+          bookId: (typeof j.bookId === 'string' && j.bookId) ? j.bookId : null,
+          chapterId: (typeof j.chapterId === 'string' && j.chapterId) ? j.chapterId : null
+        };
+      } catch (_) {
+        return null;
+      }
+    }
+
+    function persistViewState() {
+      try {
+        var payload = {
+          homeVisible: !!homeVisible,
+          bookId: (appData && typeof appData.currentBookId === 'string' && appData.currentBookId) ? appData.currentBookId : null,
+          chapterId: (typeof currentChapterId === 'string' && currentChapterId) ? currentChapterId : null
+        };
+        localStorage.setItem(VIEW_STATE_KEY, JSON.stringify(payload));
+      } catch (_) {}
+    }

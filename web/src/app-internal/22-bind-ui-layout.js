@@ -198,6 +198,17 @@
       bindOverlayClose(els.aiImportModal);
       bindOverlayClose(els.aiHistoryModal);
 
+      // Sticky close "X" inside modal content (follows scroll).
+      addEvt(document, 'click', function (e) {
+        var t = e && e.target;
+        var btn = (t && t.closest) ? t.closest('.modal-close-x') : null;
+        if (!btn) return;
+        var overlay = btn.closest ? btn.closest('.modal-overlay') : null;
+        if (!overlay) return;
+        overlay.classList.remove('open');
+        syncModalScrollLock();
+      }, { passive: true, capture: true });
+
       // ESC：关闭 toast + 弹窗 + 侧边栏（移动端）
       addEvt(document, 'keydown', function (e) {
         if (!e || e.key !== 'Escape') return;

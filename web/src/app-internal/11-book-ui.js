@@ -104,7 +104,8 @@
           saveData();
           hideHomeView();
           renderSidebar();
-          if (els.chapterTitle) els.chapterTitle.innerText = '请选择章节';
+          if (typeof setTopBarTitle === 'function') setTopBarTitle('请选择章节');
+          else if (els.chapterTitle) els.chapterTitle.innerText = '请选择章节';
           if (els.questionsContainer) els.questionsContainer.innerHTML = '';
         }
         return;
@@ -236,7 +237,8 @@
             saveData();
             hideHomeView();
             renderSidebar();
-            if (els.chapterTitle) els.chapterTitle.innerText = '请选择章节';
+            if (typeof setTopBarTitle === 'function') setTopBarTitle('请选择章节');
+            else if (els.chapterTitle) els.chapterTitle.innerText = '请选择章节';
             if (els.questionsContainer) els.questionsContainer.innerHTML = '';
             setTimeout(function () {
               setWhiteOverlayVisible(false);
@@ -250,7 +252,8 @@
         saveData();
         hideHomeView();
         renderSidebar();
-        if (els.chapterTitle) els.chapterTitle.innerText = '请选择章节';
+        if (typeof setTopBarTitle === 'function') setTopBarTitle('请选择章节');
+        else if (els.chapterTitle) els.chapterTitle.innerText = '请选择章节';
         if (els.questionsContainer) els.questionsContainer.innerHTML = '';
       }
     }
@@ -385,7 +388,7 @@
         : '<i class="fa-regular fa-file-lines" title="导入内容" style="color:#7f8c8d;"></i>';
   
       div.innerHTML =
-        '<div style="display:flex; align-items:center; gap:8px; overflow:hidden; pointer-events:none;">' +
+        '<div style="display:flex; align-items:center; gap:8px; overflow:hidden; pointer-events:none; flex:1; min-width:0;">' +
           icon +
           '<span class="item-title">' + escapeHtml(chapter.title) + '</span>' +
         '</div>' +
@@ -458,11 +461,12 @@
           try {
             if (currentChapterId === id) {
               var ch2 = findChapterById(id);
-              if (els.chapterTitle) els.chapterTitle.innerText = (ch2 && ch2.title) ? String(ch2.title) : next;
-            }
-          } catch (_) {}
-        };
-      }
+            if (typeof setTopBarTitle === 'function') setTopBarTitle((ch2 && ch2.title) ? String(ch2.title) : next);
+            else if (els.chapterTitle) els.chapterTitle.innerText = (ch2 && ch2.title) ? String(ch2.title) : next;
+          }
+        } catch (_) {}
+      };
+    }
   
       // drag bind
       bindDragStart(div, chapter.id);

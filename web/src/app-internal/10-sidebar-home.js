@@ -128,12 +128,14 @@
       currentChapterId = null;
       if (els.homeView) els.homeView.style.display = '';
       if (els.questionsContainer) els.questionsContainer.style.display = 'none';
-      if (els.chapterTitle) els.chapterTitle.innerText = '主页';
+      if (typeof setTopBarTitle === 'function') setTopBarTitle('主页');
+      else if (els.chapterTitle) els.chapterTitle.innerText = '主页';
       try { document.body.classList.add('home-mode'); } catch (_) {}
       try { document.body.classList.remove('home-transitioning'); } catch (_) {}
       setWhiteOverlayVisible(false);
       renderHome();
       renderSidebar(); // keep sidebar in sync (shows active book’s chapters when entering a book)
+      if (typeof persistViewState === 'function') persistViewState();
     }
 
     function hideHomeView() {
@@ -143,6 +145,7 @@
       try { document.body.classList.remove('home-mode'); } catch (_) {}
       try { document.body.classList.remove('home-transitioning'); } catch (_) {}
       setWhiteOverlayVisible(false);
+      if (typeof persistViewState === 'function') persistViewState();
     }
 
     var whiteOverlayEl = null;
