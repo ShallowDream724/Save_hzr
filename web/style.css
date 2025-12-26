@@ -938,6 +938,8 @@ body.home-transitioning #booksGrid .book-more { opacity: 0 !important; }
     border-color: rgba(148,163,184,0.22);
     box-shadow: 0 8px 22px rgba(15,23,42,0.08);
 }
+.chapter-item { color: #0f172a; }
+.chapter-item:hover { color: #0f172a; }
 .list-item.active {
     background: white;
     box-shadow: 0 8px 22px rgba(15,23,42,0.08);
