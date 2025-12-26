@@ -23,15 +23,13 @@ services:
       - "127.0.0.1:8787:8787"
     restart: unless-stopped
     networks:
-      - default
       - ai_net
-
 networks:
   ai_net:
-    # Optional: attach to an additional network (e.g. for a dockerized reverse proxy).
-    # If you don't need it, keep it as default-created (external=false).
+    # Share an external network with Nginx Proxy Manager (so it can reach `pharm-sync:8787`).
+    # Create it once: `docker network create ai_net`
     name: ${AI_NET_NAME:-ai_net}
-    external: ${AI_NET_EXTERNAL:-false}
+    external: ${AI_NET_EXTERNAL:-true}
     
 volumes:
   pharm_sync_data:

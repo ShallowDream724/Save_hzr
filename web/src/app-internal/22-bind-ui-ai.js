@@ -344,5 +344,7 @@
       // Selection -> floating "ask AI" button
       addEvt(document, 'selectionchange', scheduleAiSelUpdate, { passive: true });
       addEvt(document, 'pointerup', scheduleAiSelUpdate, { passive: true });
+      addEvt(document, 'touchend', scheduleAiSelUpdate, { passive: true });
+      addEvt(document, 'mouseup', scheduleAiSelUpdate, { passive: true });
       addEvt(window, 'scroll', hideAiSelBtn, { passive: true });
     }

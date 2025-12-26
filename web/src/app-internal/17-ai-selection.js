@@ -64,6 +64,10 @@
       try {
         var range = sel.rangeCount ? sel.getRangeAt(0) : null;
         rect = range ? range.getBoundingClientRect() : null;
+        if (rect && rect.width === 0 && rect.height === 0 && range && range.getClientRects) {
+          var rects = range.getClientRects();
+          if (rects && rects.length) rect = rects[0];
+        }
       } catch (_) { rect = null; }
       if (!rect) { hideAiSelBtn(); return; }
 
