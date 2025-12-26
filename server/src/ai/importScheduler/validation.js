@@ -34,6 +34,24 @@ function validateBundle(bundle, expectedPageIndex) {
     if (Number(bundle.head.sourceRef.pageIndex) !== Number(expectedPageIndex)) return 'head.sourceRef.pageIndex mismatch';
     if (bundle.head.sourceRef.kind !== 'head') return 'head.sourceRef.kind invalid';
   }
+
+  // questions must be complete and include learning fields (explanation/knowledge)
+  for (const q of bundle.questions) {
+    if (!q || typeof q !== 'object') return 'question must be object';
+    if (typeof q.text !== 'string') return 'question.text must be string';
+    if (q.options === undefined || q.options === null) q.options = [];
+    if (!Array.isArray(q.options)) return 'question.options must be array';
+    for (const o of q.options) {
+      if (!o || typeof o !== 'object') return 'option must be object';
+      if (typeof o.label !== 'string' || typeof o.content !== 'string') return 'option.label/content must be string';
+    }
+    if (q.answer === undefined || q.answer === null) q.answer = '';
+    if (typeof q.answer !== 'string') q.answer = String(q.answer);
+
+    if (!isNonEmptyString(q.explanation)) return 'question.explanation required';
+    if (!isNonEmptyString(q.knowledgeTitle)) return 'question.knowledgeTitle required';
+    if (!isNonEmptyString(q.knowledge)) return 'question.knowledge required';
+  }
   return null;
 }
 

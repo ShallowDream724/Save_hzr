@@ -113,7 +113,11 @@
         var bookI = document.createElement('i');
         bookI.className = 'fa-solid fa-book-medical';
         summary.appendChild(bookI);
-        summary.appendChild(document.createTextNode(' 知识点：' + String(q.knowledgeTitle || '相关考点')));
+
+        var titleSpan = document.createElement('span');
+        titleSpan.className = 'knowledge-summary-title';
+        renderMarkdownInto(titleSpan, '知识点： ' + String(q.knowledgeTitle || '相关考点'), { inline: true });
+        summary.appendChild(titleSpan);
 
         var kCont = document.createElement('div');
         kCont.className = 'knowledge-content';

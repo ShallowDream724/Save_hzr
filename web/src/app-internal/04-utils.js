@@ -131,12 +131,41 @@
       } catch (_) {}
     }
 
+    function normalizeMathBlocks(raw) {
+      var s = (raw === null || raw === undefined) ? '' : String(raw);
+      // Normalize CRLF -> LF for consistent parsing.
+      s = s.replace(/\r\n/g, '\n');
+
+      // KaTeX auto-render expects $$...$$ pairs to exist in the same text node.
+      // Users (and AI) often write:
+      // $$\n\n...formula...\n\n$$
+      // which Markdown turns into separate <p> blocks ("$$", "formula", "$$"), breaking display-math rendering.
+      // We normalize $$ blocks by removing leading/trailing blank lines and collapsing multiple blank lines.
+      s = s.replace(/\$\$([\s\S]*?)\$\$/g, function (_, inner) {
+        var body = (inner === null || inner === undefined) ? '' : String(inner);
+        body = body.replace(/\r\n/g, '\n');
+        body = body.trim();
+        body = body.replace(/\n{2,}/g, '\n');
+        return '$$\n' + body + '\n$$';
+      });
+
+      return s;
+    }
+
     function renderMarkdownInto(el, mdText, opts) {
       if (!el) return;
       opts = opts || {};
-      var raw = (mdText === null || mdText === undefined) ? '' : String(mdText);
+      var raw = normalizeMathBlocks(mdText);
       var md = getMarkdownIt();
       var html = md ? (opts.inline ? md.renderInline(raw) : md.render(raw)) : escapeHtml(raw).replace(/\n/g, '<br>');
+
+      // Normalize Markdown emphasis tags to our UI styles (fallback when AI uses Markdown **...** / *...*).
+      html = String(html || '')
+        .replace(/<strong>/g, "<span class='bold-em'>")
+        .replace(/<\/strong>/g, '</span>')
+        .replace(/<em>/g, "<span class='italic-em'>")
+        .replace(/<\/em>/g, '</span>');
+
       html = sanitizeHtmlWithPurify(html);
       el.innerHTML = html;
       // Ensure links are safe
@@ -242,4 +271,3 @@
     function getScrollY() {
       return window.scrollY || document.documentElement.scrollTop || document.body.scrollTop || 0;
     }
-

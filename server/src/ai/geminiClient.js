@@ -90,7 +90,7 @@ const extractPageBundleDeclaration = {
             knowledgeTitle: { type: 'string' },
             knowledge: { type: 'string' },
           },
-          required: ['sourceRef', 'text', 'answer'],
+          required: ['sourceRef', 'text', 'answer', 'explanation', 'knowledgeTitle', 'knowledge'],
         },
       },
       tail: {
@@ -208,7 +208,10 @@ Hard rules (MUST follow):
 7) For each question in "questions", you MUST fill "explanation", "knowledgeTitle", and "knowledge". These fields are rendered directly in a study UI, so write them as helpful learning notes:
    - Use clear Chinese.
    - Use Markdown + LaTeX when helpful.
-   - Use emphasis to make key terms stand out (supported: Markdown **bold** or <span class="highlight">...</span> or <span class="underline-em">...</span>; no other HTML).
+   - Use emphasis to make key terms stand out using our UI styles (preferred):
+     - <span class="highlight">...</span> (highlight color is user-configured)
+     - <span class="bold-em">...</span> (strong emphasis)
+     - <span class="underline-em">...</span> (underline)
 8) Do NOT invent. If unclear, keep fields empty where appropriate and add a warning string.
 9) Output Markdown/LaTeX-friendly text. Do NOT output arbitrary HTML (only the allowed span classes above).
 ${note}`.trim();
@@ -228,7 +231,10 @@ Hard rules (MUST follow):
    - Write clear Chinese learning notes: explain why the answer is correct, and briefly mention common pitfalls.
    - Provide a short knowledgeTitle + a knowledge paragraph that summarizes the key concept.
    - If the question is unclear/missing info, do NOT invent. Explain what is unclear and what extra info is needed; still provide a safe knowledgeTitle/knowledge about how to verify/re-capture the content, and add a warning string.
-5) Use Markdown + LaTeX for readability. Use emphasis to highlight key terms (supported: **bold**, <span class="highlight">...</span>, <span class="underline-em">...</span>; no other HTML).
+5) Use Markdown + LaTeX for readability. Use emphasis to highlight key terms using our UI styles (preferred):
+   - <span class="highlight">...</span> (highlight color is user-configured)
+   - <span class="bold-em">...</span>
+   - <span class="underline-em">...</span>
 6) Keep each page "title" exactly as input (do NOT change titles).
 
 Input pages JSON:
