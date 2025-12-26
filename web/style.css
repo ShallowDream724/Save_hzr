@@ -2072,6 +2072,9 @@ h2 {
     #syncStatus { background: transparent; padding: 0; max-width: none; }
     #syncStatus .sync-label { display: none; }
 
+    /* Phone-only: make the draggable hamburger respond immediately on Android (avoid scroll/selection gesture hijack). */
+    .fab-menu { touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+
     /* Phone-only patch: fix the "解析" icon circle rendering (avoid heavy rings/shadows on mobile). */
     .analysis-title i {
         width: 26px;

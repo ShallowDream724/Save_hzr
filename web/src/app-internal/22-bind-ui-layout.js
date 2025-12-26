@@ -130,7 +130,10 @@
         } catch (_) {}
 
         addEvt(els.fabMenu, 'pointerdown', function (e) {
-          if (!e || e.button !== 0) return;
+          if (!e) return;
+          // Touch/pen PointerEvent may have `button` undefined/-1 on some Android WebViews;
+          // only enforce left-click for real mouse input.
+          if (e.pointerType === 'mouse' && e.button !== 0) return;
           fabDrag.active = true;
           fabDrag.moved = false;
           fabDrag.pid = e.pointerId;
@@ -147,10 +150,15 @@
           if (!fabDrag.active || fabDrag.pid !== e.pointerId) return;
           var dx = e.clientX - fabDrag.startX;
           var dy = e.clientY - fabDrag.startY;
-          if (!fabDrag.moved && (Math.abs(dx) + Math.abs(dy) > 6)) fabDrag.moved = true;
+          if (!fabDrag.moved && (Math.abs(dx) + Math.abs(dy) > 4)) fabDrag.moved = true;
           if (!fabDrag.moved) return;
           var pos = placeFab(fabDrag.left + dx, fabDrag.top + dy);
           try { localStorage.setItem(FAB_KEY, JSON.stringify(pos)); } catch (_) {}
+        }, { passive: false });
+
+        // Prevent long-press context menu on mobile which can feel like "needs 2s to respond".
+        addEvt(els.fabMenu, 'contextmenu', function (e) {
+          try { e.preventDefault(); } catch (_) {}
         }, { passive: false });
 
         function endFab(e) {
