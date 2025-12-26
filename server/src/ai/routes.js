@@ -100,12 +100,45 @@ function listJobItems(db, jobId) {
   return db.prepare('SELECT * FROM ai_job_items WHERE job_id=? ORDER BY idx ASC').all(jobId);
 }
 
-function userHasCloudLibrary(db, userId) {
+function ensureCloudLibraryForUser(db, userId, { bookId, bookMeta }) {
   try {
     const row = db.prepare('SELECT data_json FROM libraries WHERE user_id = ?').get(userId);
-    if (!row || !row.data_json) return false;
-    const data = safeJsonParse(row.data_json, null);
-    if (!data || typeof data !== 'object') return false;
+    if (row && row.data_json) return true;
+  } catch (_) {}
+
+  const now = isoNow();
+  const meta = bookMeta && typeof bookMeta === 'object' ? bookMeta : {};
+  const title = typeof meta.title === 'string' && meta.title.trim() ? meta.title.trim() : '未命名书';
+  const theme = typeof meta.theme === 'string' && meta.theme.trim() ? meta.theme.trim() : 'blue';
+  const icon = typeof meta.icon === 'string' && meta.icon.trim() ? meta.icon.trim() : '✚';
+
+  const empty = {
+    ui: {},
+    books: [
+      {
+        id: bookId,
+        title,
+        theme,
+        icon,
+        includePresets: false,
+        chapters: [],
+        folders: [],
+        layoutMap: {},
+        deletedChapterIds: [],
+        createdAt: now,
+        updatedAt: now,
+      },
+    ],
+    currentBookId: bookId,
+  };
+
+  try {
+    db.prepare(
+      `
+      INSERT OR IGNORE INTO libraries (user_id, data_json, version, updated_at)
+      VALUES (?, ?, 1, ?)
+    `
+    ).run(userId, JSON.stringify(empty), now);
     return true;
   } catch (_) {
     return false;
@@ -220,9 +253,16 @@ function registerAiRoutes(app, { db, authMiddleware, importScheduler }) {
     if (files.length === 0) { cleanupUploadedFiles(req.files); return res.status(400).json({ error: 'images[] required' }); }
     if (files.length > 9) { cleanupUploadedFiles(req.files); return res.status(400).json({ error: 'max 9 images' }); }
 
-    if (!userHasCloudLibrary(db, userId)) {
+    // AI import should not hard-require "sync enabled". If the user hasn't uploaded yet,
+    // we auto-initialize an empty library (and book shell) so background jobs can still write results safely.
+    if (
+      !ensureCloudLibraryForUser(db, userId, {
+        bookId,
+        bookMeta: { title: bookTitle, theme: bookTheme, icon: bookIcon },
+      })
+    ) {
       cleanupUploadedFiles(req.files);
-      return res.status(400).json({ error: 'cloud library not initialized (enable sync & upload first)' });
+      return res.status(500).json({ error: 'failed to initialize library for import' });
     }
 
     try {
