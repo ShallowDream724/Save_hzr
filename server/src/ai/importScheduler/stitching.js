@@ -1,7 +1,20 @@
 const { isNonEmptyString } = require('./helpers');
 
+function unwrapTail(tail) {
+  if (!tail || typeof tail !== 'object') return null;
+
+  // New format: tail is the question/fragment object itself.
+  if (tail.sourceRef && typeof tail.sourceRef === 'object' && tail.sourceRef.kind === 'tail') return tail;
+
+  // Backward compatibility: old format used tail.kind + {question|fragment}.
+  if (tail.kind === 'complete' && tail.question && typeof tail.question === 'object') return tail.question;
+  if (tail.kind === 'fragment' && tail.fragment && typeof tail.fragment === 'object') return tail.fragment;
+
+  return tail;
+}
+
 function mergeTailHead(prevTail, nextHead) {
-  const tailFrag = prevTail && prevTail.kind === 'fragment' ? prevTail.fragment : null;
+  const tailFrag = unwrapTail(prevTail);
   const headFrag = nextHead && typeof nextHead === 'object' ? nextHead : null;
   const merged = {
     sourceRefs: [],
@@ -53,13 +66,9 @@ function pickFirstQuestionText(bundle) {
     if (t) return t;
   }
 
-  const tail = bundle.tail;
-  if (tail && tail.kind === 'complete' && tail.question && typeof tail.question.text === 'string') {
-    const t = tail.question.text.trim();
-    if (t) return t;
-  }
-  if (tail && tail.kind === 'fragment' && tail.fragment && typeof tail.fragment.text === 'string') {
-    const t = tail.fragment.text.trim();
+  const tail = unwrapTail(bundle.tail);
+  if (tail && typeof tail.text === 'string') {
+    const t = tail.text.trim();
     if (t) return t;
   }
 
@@ -93,10 +102,6 @@ function finalizeBundlesToChapters({ jobId, bundles }) {
   const sorted = [...bundles].sort((a, b) => Number(a.pageIndex) - Number(b.pageIndex));
   const warnings = [];
 
-  if (sorted.length > 0 && sorted[0].head) {
-    warnings.push({ pageIndex: sorted[0].pageIndex, message: 'First page returned a head fragment; dropped.' });
-  }
-
   const pageResults = sorted.map((b) => {
     const pageIndex = Number(b.pageIndex);
     const candidate = isNonEmptyString(b.chapterTitleCandidate) ? b.chapterTitleCandidate.trim() : '';
@@ -111,68 +116,105 @@ function finalizeBundlesToChapters({ jobId, bundles }) {
     };
   });
 
-  // Apply tail/head stitching rules.
+  function normalizeOptions(options) {
+    if (!Array.isArray(options)) return [];
+    const out = [];
+    for (const opt of options) {
+      const label = opt && typeof opt.label === 'string' ? opt.label.trim() : '';
+      if (!label) continue;
+      out.push({ label, content: typeof opt.content === 'string' ? opt.content : '' });
+    }
+    return out;
+  }
+
+  function fragmentToQuestion(fragment, pageIndex, localIndex, sourceRefs) {
+    if (!fragment || typeof fragment !== 'object') return null;
+
+    const id = typeof fragment.id === 'string' || typeof fragment.id === 'number' ? fragment.id : null;
+    const text = typeof fragment.text === 'string' ? fragment.text.trim() : '';
+    const options = normalizeOptions(fragment.options);
+    const answer = typeof fragment.answer === 'string' ? fragment.answer : '';
+
+    if (!text && !options.length && !answer) return null;
+
+    const q = {
+      sourceRef: { pageIndex, localIndex },
+      id,
+      text: text || '',
+      options,
+      answer: answer || '',
+      explanation: '',
+      knowledgeTitle: '',
+      knowledge: '',
+    };
+    if (Array.isArray(sourceRefs) && sourceRefs.length) q.__fragmentMerge = sourceRefs;
+    return q;
+  }
+
+  // Hard rule: first page head is always dropped (it cannot be stitched).
+  if (pageResults.length > 0 && pageResults[0].head) {
+    warnings.push({ pageIndex: pageResults[0].pageIndex, message: 'First page head dropped.' });
+    pageResults[0].head = null;
+  }
+
+  // Apply deterministic tail/head stitching rules.
   for (let i = 0; i < pageResults.length; i++) {
     const cur = pageResults[i];
     const next = pageResults[i + 1] || null;
 
-    const tail = cur.tail;
-    const isAdjacent = !!(next && Number(next.pageIndex) === Number(cur.pageIndex) + 1);
-    const nextHead = isAdjacent && next ? next.head : null;
+    const tail = cur ? unwrapTail(cur.tail) : null;
+    const isLastPage = i === pageResults.length - 1;
+    const isSinglePage = pageResults.length === 1;
 
-    if (i === pageResults.length - 1) {
-      if (tail && tail.kind === 'complete' && tail.question) {
-        cur.questions.push(tail.question);
-      } else if (tail && tail.kind === 'fragment') {
-        warnings.push({ pageIndex: cur.pageIndex, message: 'Last page tail is fragment; dropped.' });
+    const isAdjacent = !!(next && Number(next.pageIndex) === Number(cur.pageIndex) + 1);
+    const nextHead = isAdjacent && next && next.head ? next.head : null;
+
+    if (isLastPage) {
+      if (isSinglePage) {
+        const q = fragmentToQuestion(tail, cur.pageIndex, cur.questions.length, null);
+        if (q) cur.questions.push(q);
+      } else if (tail) {
+        warnings.push({ pageIndex: cur.pageIndex, message: 'Last page tail dropped.' });
       }
       break;
     }
 
+    if (!tail) {
+      warnings.push({ pageIndex: cur.pageIndex, message: 'Missing tail; cannot stitch.' });
+      if (next && next.head) {
+        warnings.push({ pageIndex: next.pageIndex, message: 'Page head dropped because previous tail is missing.' });
+        next.head = null;
+      }
+      continue;
+    }
+
     if (!isAdjacent) {
       // There is a gap (failed/missing pages). Never stitch across it.
-      if (tail && tail.kind === 'complete' && tail.question) {
-        cur.questions.push(tail.question);
-      } else if (tail && tail.kind === 'fragment') {
-        warnings.push({ pageIndex: cur.pageIndex, message: 'Tail is fragment but next page is not adjacent; dropped.' });
-      }
+      const q = fragmentToQuestion(tail, cur.pageIndex, cur.questions.length, null);
+      if (q) cur.questions.push(q);
+      else warnings.push({ pageIndex: cur.pageIndex, message: 'Tail is empty; dropped.' });
+
       if (next && next.head) {
-        warnings.push({ pageIndex: next.pageIndex, message: 'Page has head fragment but previous page is missing; dropped.' });
+        warnings.push({ pageIndex: next.pageIndex, message: 'Page head dropped because previous page is missing.' });
         next.head = null;
       }
       continue;
     }
 
     if (nextHead) {
-      if (tail && tail.kind === 'fragment') {
-        const merged = mergeTailHead(tail, nextHead);
-        cur.questions.push({
-          sourceRef: { pageIndex: cur.pageIndex, localIndex: cur.questions.length },
-          id: merged.id,
-          text: merged.text || '',
-          options: merged.options || [],
-          answer: merged.answer || '',
-          explanation: '',
-          knowledgeTitle: '',
-          knowledge: '',
-          __fragmentMerge: merged.sourceRefs || [],
-        });
-      } else if (tail && tail.kind === 'complete' && tail.question) {
-        cur.questions.push(tail.question);
-        warnings.push({ pageIndex: next.pageIndex, message: 'Page head fragment ignored because previous tail was complete.' });
-      } else if (tail && tail.kind === 'fragment') {
-        warnings.push({ pageIndex: cur.pageIndex, message: 'Tail fragment present but could not merge with head; dropped.' });
-      }
+      const merged = mergeTailHead(tail, nextHead);
+      const q = fragmentToQuestion(merged, cur.pageIndex, cur.questions.length, merged.sourceRefs || null);
+      if (q) cur.questions.push(q);
+      else warnings.push({ pageIndex: cur.pageIndex, message: 'Merged tail/head is empty; dropped.' });
 
       next.head = null;
       continue;
     }
 
-    if (tail && tail.kind === 'complete' && tail.question) {
-      cur.questions.push(tail.question);
-    } else if (tail && tail.kind === 'fragment') {
-      warnings.push({ pageIndex: cur.pageIndex, message: 'Tail is fragment but next page head is empty; dropped.' });
-    }
+    // No next head => treat tail as a complete question and attach to the current page.
+    const q = fragmentToQuestion(tail, cur.pageIndex, cur.questions.length, null);
+    if (q) cur.questions.push(q);
+    else warnings.push({ pageIndex: cur.pageIndex, message: 'Tail is empty; dropped.' });
   }
 
   // Drop remaining head/tail from the output.

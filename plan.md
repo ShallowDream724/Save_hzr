@@ -344,19 +344,22 @@ Question（对齐现有题卡字段，见 `web/src/app-internal/12-chapter-view.
 
 2) **顺序拼接（服务端 deterministic pre-merge）**
    - 按 `pageIndex` 排序，把所有页拼成一个有序序列。
-   - 合并规则（尽量保守，避免错拼）：
-     - 若 `next.head != null`：视为“上一页尾题续到本页”，尝试合并 `prev.tail` + `next.head`，合并后的题 **归属上一页 chapter**（即“归位到前一页”）
-     - 若 `next.head == null`：视为“上一页尾题完整”，直接把 `prev.tail.kind='complete'` 的题作为上一页 chapter 的最后一道题
-       - 若 `prev.tail.kind='fragment'` 但 `next.head == null`：判定为模型自相矛盾，先记录 `warnings`，并把该 fragment 交给 finalize 阶段决定（修复/丢弃），避免把残片当成完整题写入
-     - 对第一页 `head`（如果模型仍输出了不完整头）：直接丢弃
-     - 对最后一页 `tail` 若为 fragment（或 `continues='to_next'`）：直接丢弃
-   - 若不确定，先不合并，把疑似断裂标记成 `warnings` 交给 finalize 阶段判断。
+   - 合并规则（**确定性、业务逻辑主导**）：
+     - `head`：只在“本页第一题明显是上一页续题残余”时才应输出；否则必须为 `null`。
+     - `tail`：**永远输出本页最后一题**（不判断完整/不完整，只负责把能看到的 `id/text/options/answer` 尽量填上）。
+     - 丢弃规则：
+       - **第一页 `head` 必丢弃**（没有上一页可拼）。
+       - **最后一页 `tail` 必丢弃**（没有下一页可拼）。
+       - 仅 1 页导入：为避免丢题，允许把该页 `tail` 当作普通题附加到本页末尾。
+     - 拼接规则（从第一页开始，上一页归位）：
+       - 若 `next.head != null`：合并 `prev.tail + next.head`，合并后的题 **插入 prev 页末尾**（跨页题归属上一页 chapter）。
+       - 若 `next.head == null`：把 `prev.tail` 视为完整题，直接插入 prev 页末尾。
+     - 断页/缺页：若 `pageIndex` 不相邻，**禁止跨缺口拼接**；把 `prev.tail` 当作完整题插入，且丢弃 `next.head`。
 
 3) **最终归并与补全（finalize_import_job）**
-   - 在所有页解析结束后，用用户选择的模型（Pro/Flash）做一次“修复/补全/生成解析（可选）”：
-     - 输入：服务端拼接后的结果（按页的 questions + 合并候选 + warnings）+ 片段 `sourceRef`
-     - 输出：`chapters[]`（每页一个 chapter，默认放根目录），其中跨页合并题归属上一页 chapter
-   - 为解决“归位”难点：要求模型为每道最终题输出 `sourceRefs`（它由哪些片段/题组成），服务端可校验“覆盖率/顺序/去重”，必要时按最小 `pageIndex/localIndex` 重新排序。
+   - 在所有页解析结束后，用用户选择的模型（Pro/Flash）做一次“生成解析/知识点（可选）+ 章节名润色”：
+     - 输入：**服务端已拼好的完整题**（按页的 `questions`）+ `warnings`
+     - 输出：仍是按页 `pages[]`（每页一个 chapter，默认放根目录），其中跨页合并题已由服务端归位到上一页，无需模型再处理断页。
 
 > 你提出的方案（头/尾片段 + 结束后再调用一次合并）是可行的，关键在于：**中间产物必须带来源锚点（sourceRef），并且合并输出必须可校验**，否则很容易“拼错题/漏题/乱序”。
 

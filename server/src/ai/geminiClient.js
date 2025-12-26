@@ -12,7 +12,7 @@ function getModelId(model) {
 const extractPageBundleDeclaration = {
   name: 'extract_page_bundle',
   description:
-    "Extract questions from a single page image. Return head (only if the first question is clearly a continuation), questions (complete only), and tail (always present, complete or fragment). Do NOT include head/tail inside 'questions'.",
+    "Extract questions from a single page image. Return head (only if the first question is clearly a continuation), questions (complete only), and tail (always present: the LAST question on the page). Do NOT include head/tail inside 'questions'.",
   parametersJsonSchema: {
     type: 'object',
     additionalProperties: false,
@@ -97,80 +97,38 @@ const extractPageBundleDeclaration = {
         type: 'object',
         additionalProperties: false,
         properties: {
-          kind: { type: 'string', enum: ['complete', 'fragment'] },
-          question: {
+          sourceRef: {
             type: 'object',
             additionalProperties: false,
             properties: {
-              sourceRef: {
-                type: 'object',
-                additionalProperties: false,
-                properties: {
-                  pageIndex: { type: 'number' },
-                  localIndex: { type: 'number' },
-                },
-                required: ['pageIndex', 'localIndex'],
-              },
-              id: { anyOf: [{ type: 'string' }, { type: 'number' }] },
-              text: { type: 'string' },
-              options: {
-                type: 'array',
-                items: {
-                  type: 'object',
-                  additionalProperties: false,
-                  properties: {
-                    label: { type: 'string' },
-                    content: { type: 'string' },
-                  },
-                  required: ['label', 'content'],
-                },
-              },
-              answer: { type: 'string' },
-              explanation: { type: 'string' },
-              knowledgeTitle: { type: 'string' },
-              knowledge: { type: 'string' },
+              pageIndex: { type: 'number' },
+              kind: { type: 'string', enum: ['tail'] },
             },
-            required: ['sourceRef', 'text', 'options', 'answer'],
+            required: ['pageIndex', 'kind'],
           },
-          fragment: {
-            type: 'object',
-            additionalProperties: false,
-            properties: {
-              sourceRef: {
-                type: 'object',
-                additionalProperties: false,
-                properties: {
-                  pageIndex: { type: 'number' },
-                  kind: { type: 'string', enum: ['tail'] },
-                },
-                required: ['pageIndex', 'kind'],
+          id: { anyOf: [{ type: 'string' }, { type: 'number' }] },
+          text: { type: 'string' },
+          options: {
+            type: 'array',
+            items: {
+              type: 'object',
+              additionalProperties: false,
+              properties: {
+                label: { type: 'string' },
+                content: { type: 'string' },
               },
-              id: { anyOf: [{ type: 'string' }, { type: 'number' }] },
-              text: { type: 'string' },
-              options: {
-                type: 'array',
-                items: {
-                  type: 'object',
-                  additionalProperties: false,
-                  properties: {
-                    label: { type: 'string' },
-                    content: { type: 'string' },
-                  },
-                  required: ['label', 'content'],
-                },
-              },
-              answer: { type: 'string' },
-              continues: { type: 'string', enum: ['from_prev', 'to_next', 'none'] },
+              required: ['label', 'content'],
             },
-            required: ['sourceRef'],
           },
+          answer: { type: 'string' },
+          continues: { type: 'string', enum: ['from_prev', 'to_next', 'none'] },
           warnings: { type: 'array', items: { type: 'string' } },
         },
-        required: ['kind'],
+        required: ['sourceRef'],
       },
       warnings: { type: 'array', items: { type: 'string' } },
     },
-    required: ['pageIndex', 'questions', 'tail'],
+    required: ['pageIndex', 'chapterTitleCandidate', 'head', 'questions', 'tail'],
   },
 };
 
@@ -240,9 +198,9 @@ Hard rules (MUST follow):
 2.2) CRITICAL: Respect the question numbers shown in the photo. If a question has a visible number (e.g. "12.", "(12)", "12、"), put that number into the question's "id" field (prefer digits only). Do NOT invent ids; if unclear, leave id empty.
 2.3) Provide "chapterTitleCandidate": a short Chinese chapter/topic title for THIS page's main content (max 18 chars). Prefer on-page headings if present. Do NOT use generic placeholders like "AI导入", "第X页", "Page". If you truly cannot infer a topic, set it to an empty string.
 3) "head" must be null unless the FIRST question on this page is CLEARLY a continuation from the previous page (e.g., starts from option C/D/E, or only leftover options without a new question stem). If the first question is complete, head MUST be null.
-4) "tail" MUST ALWAYS be present:
-   - If the LAST question is complete, set tail.kind="complete" and put the full question into tail.question.
-   - If the LAST question continues to the next page, set tail.kind="fragment" and put the fragment into tail.fragment, with continues="to_next" if confident.
+4) "tail" MUST ALWAYS be present and MUST ALWAYS contain the LAST question on this page.
+   - Do NOT decide whether it is complete or continues; just capture what you can see (id/text/options/answer if visible).
+   - If some parts are not visible, leave them empty.
 5) Do NOT include the head question or the tail question inside "questions".
 6) "questions" must contain only COMPLETE questions that are fully readable on this page.
 7) Do NOT invent. If unclear, keep fields empty where appropriate and add a warning string.
@@ -258,7 +216,7 @@ function buildFinalizePrompt({ pages, noteText }) {
 Hard rules (MUST follow):
 1) You MUST call the function "finalize_import_job" exactly once. Do NOT output any other text.
 2) Keep the same pageIndex set as the input. Do NOT invent extra pages.
-3) Keep question order stable within each page. Do NOT merge/split questions unless absolutely necessary for coherence.
+3) The questions are already stitched and complete. Keep question order stable within each page. Do NOT merge/split questions.
 3.1) Preserve question "id" (question number) if present. Do NOT renumber questions.
 4) Do NOT invent content that is not supported by the extracted text/options/answer. If a question is unclear, keep explanation empty and add a warning.
 5) If you can provide a SHORT explanation (2-5 sentences) and a SHORT knowledge point, you may fill "explanation"/"knowledgeTitle"/"knowledge". Otherwise leave them empty strings.

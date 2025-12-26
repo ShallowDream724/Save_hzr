@@ -12,8 +12,13 @@ function validateBundle(bundle, expectedPageIndex) {
   if (!Array.isArray(bundle.questions)) return 'questions must be array';
   if (!bundle.tail || typeof bundle.tail !== 'object') return 'tail must be object';
   if (bundle.head !== null && typeof bundle.head !== 'object') return 'head must be null or object';
-  if (!isNonEmptyString(bundle.tail.kind) || (bundle.tail.kind !== 'complete' && bundle.tail.kind !== 'fragment')) {
-    return 'tail.kind invalid';
+  if (!bundle.tail.sourceRef || typeof bundle.tail.sourceRef !== 'object') return 'tail.sourceRef required';
+  if (Number(bundle.tail.sourceRef.pageIndex) !== Number(expectedPageIndex)) return 'tail.sourceRef.pageIndex mismatch';
+  if (bundle.tail.sourceRef.kind !== 'tail') return 'tail.sourceRef.kind invalid';
+  if (bundle.head !== null) {
+    if (!bundle.head.sourceRef || typeof bundle.head.sourceRef !== 'object') return 'head.sourceRef required';
+    if (Number(bundle.head.sourceRef.pageIndex) !== Number(expectedPageIndex)) return 'head.sourceRef.pageIndex mismatch';
+    if (bundle.head.sourceRef.kind !== 'head') return 'head.sourceRef.kind invalid';
   }
   return null;
 }
@@ -46,4 +51,3 @@ function validateFinalizeOutput(out) {
 }
 
 module.exports = { validateBundle, validateFinalizeOutput };
-
