@@ -390,7 +390,6 @@
           '<span class="item-title">' + escapeHtml(chapter.title) + '</span>' +
         '</div>' +
         '<div class="item-actions">' +
-          '<i class="fa-solid fa-grip-lines drag-handle" title="拖拽"></i>' +
           '<i class="fa-solid fa-pen action-icon rename" title="重命名"></i>' +
           '<i class="fa-solid fa-trash action-icon delete" title="删除章节"></i>' +
         '</div>';
