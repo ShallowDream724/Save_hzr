@@ -237,8 +237,8 @@ Hard rules (MUST follow):
 1) You MUST call the function "extract_page_bundle" exactly once. Do NOT output any other text.
 2) The returned object MUST have pageIndex = ${pageIndex}.
 2.1) ALWAYS include the "head" field. If not needed, set "head" = null (do NOT omit the field).
-2.2) Respect the question numbers shown in the photo. If a question has a visible number (e.g. "12.", "(12)", "12、"), put that number into the question's "id" field exactly (prefer digits only). Do NOT invent ids; if unclear, leave id empty.
-2.3) Provide a short "chapterTitleCandidate" in Chinese that summarizes the main topic of this page (max 18 chars). Prefer the chapter/section heading in the photo if present. Do NOT use generic placeholders like "AI导入", "第X页", "Page". If you truly cannot infer a topic, set it to an empty string.
+2.2) CRITICAL: Respect the question numbers shown in the photo. If a question has a visible number (e.g. "12.", "(12)", "12、"), put that number into the question's "id" field (prefer digits only). Do NOT invent ids; if unclear, leave id empty.
+2.3) Provide "chapterTitleCandidate": a short Chinese chapter/topic title for THIS page's main content (max 18 chars). Prefer on-page headings if present. Do NOT use generic placeholders like "AI导入", "第X页", "Page". If you truly cannot infer a topic, set it to an empty string.
 3) "head" must be null unless the FIRST question on this page is CLEARLY a continuation from the previous page (e.g., starts from option C/D/E, or only leftover options without a new question stem). If the first question is complete, head MUST be null.
 4) "tail" MUST ALWAYS be present:
    - If the LAST question is complete, set tail.kind="complete" and put the full question into tail.question.
@@ -262,7 +262,10 @@ Hard rules (MUST follow):
 3.1) Preserve question "id" (question number) if present. Do NOT renumber questions.
 4) Do NOT invent content that is not supported by the extracted text/options/answer. If a question is unclear, keep explanation empty and add a warning.
 5) If you can provide a SHORT explanation (2-5 sentences) and a SHORT knowledge point, you may fill "explanation"/"knowledgeTitle"/"knowledge". Otherwise leave them empty strings.
-6) Replace each page "title" with a short, human-friendly chapter name in Chinese based on the page content (max 18 chars). Do NOT use generic placeholders like "AI导入", "第X页", "Page". If multiple pages share the same topic, you may add a subtle suffix like "（上）/（下）/（续）" to reduce confusion.
+5.1) You MAY use simple Markdown + LaTeX for readability:
+     - Emphasize 1-3 key terms with **bold** or <span class="highlight">highlight</span>.
+     - Use short lists when helpful. Do NOT output arbitrary HTML (only the highlight span is allowed).
+6) Replace each page "title" with a short, human-friendly chapter name in Chinese based on THAT page's main content (max 18 chars). Do NOT use generic placeholders like "AI导入", "第X页", "Page".
 
 Input pages JSON:
 ${input}
