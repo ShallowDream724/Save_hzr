@@ -43,7 +43,14 @@
       try { sel = window.getSelection(); } catch (_) { sel = null; }
       if (!sel || sel.isCollapsed) { hideAiSelBtn(); return; }
       var text = String(sel.toString() || '').trim();
-      if (!text || text.length < 2) { hideAiSelBtn(); return; }
+      if (!text) { hideAiSelBtn(); return; }
+      // Allow single-character selection (common on mobile / CJK), but avoid obvious noise.
+      if (text.length === 1) {
+        // If it's just punctuation/whitespace-like, ignore.
+        if (/^[\s\u200B\u200C\u200D\uFEFF\u3000.,;:!?'"“”‘’()（）【】\[\]{}<>《》、，。；：！？·\-—_~`|\\\/]+$/.test(text)) {
+          hideAiSelBtn(); return;
+        }
+      }
 
       var node = sel.anchorNode || sel.focusNode;
       var el = null;

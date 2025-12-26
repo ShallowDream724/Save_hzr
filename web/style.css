@@ -1186,12 +1186,14 @@ body.home-transitioning #booksGrid .book-more { opacity: 0 !important; }
 .menu-toggle {
     display: none;
     border: none;
-    background: transparent;
+    background: rgba(255,255,255,0.35);
     font-size: 1.4rem;
     margin-right: 8px;
     cursor: pointer;
     color: #64748b;
     padding: 4px;
+    border-radius: 14px;
+    box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--accent-color) 55%, transparent), 0 10px 26px rgba(15,23,42,0.10);
     transition: color 0.2s;
 }
 .menu-toggle:hover { color: var(--accent-color); }
@@ -1200,11 +1202,34 @@ body.home-transitioning #booksGrid .book-more { opacity: 0 !important; }
     margin-left: auto;
     font-size: 0.85rem !important;
     color: #64748b !important;
-    font-weight: 600;
+    font-weight: 700;
     background: rgba(241, 245, 249, 0.8);
     padding: 4px 10px;
     border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    max-width: min(360px, 48vw);
+    overflow: hidden;
 }
+.sync-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Sync traffic light */
+.status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+    background: #ef4444;
+    box-shadow: 0 0 0 4px rgba(239,68,68,0.16);
+    flex: none;
+}
+.status-dot--ok { background: #22c55e; box-shadow: 0 0 0 4px rgba(34,197,94,0.16); }
+.status-dot--warn { background: #f59e0b; box-shadow: 0 0 0 4px rgba(245,158,11,0.16); }
+.status-dot--err { background: #ef4444; box-shadow: 0 0 0 4px rgba(239,68,68,0.18); }
+.status-dot--off { background: #ef4444; box-shadow: 0 0 0 4px rgba(239,68,68,0.16); }
+
+/* Fix only the two top-bar action buttons (they can become overly wide due to `.icon-btn { flex: 1; }`). */
+#aiHistoryBtn.icon-btn, #aiImportBtn.icon-btn { flex: none; width: 52px; }
 
 .fab-menu {
     position: fixed;
@@ -1801,7 +1826,9 @@ h2 {
     .main-content { margin-left: 0; }
     .fab-menu { display: inline-flex; }
     .menu-toggle { display: inline-flex; }
-    .top-bar { position: relative; top: auto; }
+    .top-bar { position: sticky; top: calc(10px + env(safe-area-inset-top)); }
+    #syncStatus { background: transparent; padding: 0; max-width: none; }
+    #syncStatus .sync-label { display: none; }
 }
 
 @media (max-width: 420px) {
@@ -1836,10 +1863,28 @@ h2 {
         white-space: nowrap;
         text-overflow: ellipsis;
         font-size: 0.82rem !important;
-        padding: 4px 8px;
+        padding: 0;
+        background: transparent;
     }
     #aiHistoryBtn { order: 5; }
     #aiImportBtn { order: 6; }
+}
+
+/* Home HUD: on narrow phones, pin "新建书" to the top-right of the title area to avoid wrapping. */
+@media (max-width: 420px) {
+    .home-hud { position: relative; }
+    .home-hud-brand { padding-right: 108px; }
+    #newBookBtn.modal-btn.primary {
+        position: absolute;
+        right: 14px;
+        top: 14px;
+        padding: 9px 12px;
+        font-size: 0.9rem;
+        border-radius: 999px;
+        box-shadow: 0 10px 26px rgba(15,23,42,0.16);
+        white-space: nowrap;
+    }
+    .home-hud-actions { justify-content: flex-start; }
 }
 
 /* ---------------------------

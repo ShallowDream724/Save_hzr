@@ -100,7 +100,10 @@
                 <button id="menuToggle" class="menu-toggle"><i class="fa-solid fa-bars"></i></button>
                 <button id="homeBtn" class="menu-toggle" title="主页"><i class="fa-solid fa-book"></i></button>
                 <h2 id="currentChapterTitle">请选择章节</h2>
-                <div id="syncStatus" style="margin-left:auto; font-size:0.9rem; color:#888;"></div>
+                <div id="syncStatus" class="sync-status" style="margin-left:auto;">
+                    <span class="status-dot status-dot--off" aria-hidden="true"></span>
+                    <span class="sync-label"></span>
+                </div>
                 <button id="aiHistoryBtn" class="action-btn icon-btn" type="button" title="AI 历史/新对话">
                     <i class="fa-solid fa-robot"></i>
                 </button>

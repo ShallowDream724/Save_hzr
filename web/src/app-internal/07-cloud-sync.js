@@ -39,34 +39,59 @@
 
       var dot = 'status-dot--off';
       var label = '';
+      var state = 'off'; // off | warn | ok | err
 
       if (text) {
         label = String(text);
-        if (label.indexOf('失败') !== -1) dot = 'status-dot--err';
-        else if (label.indexOf('冲突') !== -1) dot = 'status-dot--warn';
-        else if (label.indexOf('同步中') !== -1) dot = 'status-dot--warn';
-        else dot = getToken() ? 'status-dot--ok' : 'status-dot--off';
+        if (label.indexOf('失败') !== -1) { dot = 'status-dot--err'; state = 'err'; }
+        else if (label.indexOf('冲突') !== -1) { dot = 'status-dot--warn'; state = 'warn'; }
+        else if (label.indexOf('同步中') !== -1) { dot = 'status-dot--warn'; state = 'warn'; }
+        else { dot = getToken() ? 'status-dot--ok' : 'status-dot--off'; state = getToken() ? 'ok' : 'off'; }
       } else {
         var t = getToken();
         if (!t) {
           dot = 'status-dot--off';
           label = '未登录 · 仅本地';
+          state = 'off';
         } else if (cloud.bootstrapFailed) {
           dot = 'status-dot--err';
           label = '已登录 · 同步失败（未启用）';
+          state = 'err';
         } else if (!cloud.bootstrapDone) {
           dot = 'status-dot--warn';
           label = '已登录 · 同步初始化中…';
+          state = 'warn';
         } else if (!cloud.syncEnabled) {
           dot = 'status-dot--warn';
           label = '已登录 · 未启用自动同步';
+          state = 'warn';
         } else {
           dot = 'status-dot--ok';
           label = '已登录 · 自动同步';
+          state = 'ok';
         }
       }
 
-      els.syncStatus.innerHTML = '<span class="status-dot ' + dot + '"></span>' + escapeHtml(label);
+      // Prefer structured DOM (dot + label) but keep backward-compatible fallback.
+      try {
+        els.syncStatus.dataset.state = state;
+        els.syncStatus.title = label;
+        els.syncStatus.setAttribute('aria-label', label);
+      } catch (_) {}
+      var dotEl = null;
+      var labelEl = null;
+      try { dotEl = els.syncStatus.querySelector('.status-dot'); } catch (_) { dotEl = null; }
+      try { labelEl = els.syncStatus.querySelector('.sync-label'); } catch (_) { labelEl = null; }
+
+      if (dotEl) {
+        dotEl.className = 'status-dot ' + dot;
+      }
+      if (labelEl) {
+        labelEl.textContent = label;
+      }
+      if (!dotEl || !labelEl) {
+        els.syncStatus.innerHTML = '<span class="status-dot ' + dot + '"></span><span class="sync-label">' + escapeHtml(label) + '</span>';
+      }
       if (els.syncModalStatus) els.syncModalStatus.textContent = getToken() ? '已登录 · 自动同步' : '未登录 · 仅本地';
     }
 
