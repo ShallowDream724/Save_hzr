@@ -9,6 +9,7 @@ var exam = {
   phase: 'idle', // idle | picker | running | result
   bookId: null,
   bookTitle: '',
+  returnState: null,
 
   // picker model (in-memory)
   pool: null, // { folders: [{id,title,chapters:[{id,title,count,questions:[{qid,idx}]}],count}], root: {...}, total }
@@ -29,6 +30,86 @@ var exam = {
 };
 
 function examNow() { return Date.now ? Date.now() : new Date().getTime(); }
+
+function examCaptureReturnState() {
+  var st = {
+    at: new Date().toISOString(),
+    homeVisible: !!homeVisible,
+    bookId: (appData && typeof appData.currentBookId === 'string' && appData.currentBookId) ? String(appData.currentBookId) : null,
+    chapterId: (typeof currentChapterId === 'string' && currentChapterId) ? String(currentChapterId) : null,
+    scrollY: 0,
+    homeScrollTop: 0
+  };
+  try { st.scrollY = (typeof getScrollY === 'function') ? Number(getScrollY()) || 0 : 0; } catch (_) { st.scrollY = 0; }
+  try {
+    var sc = null;
+    if (els && els.homeView && els.homeView.querySelector) sc = els.homeView.querySelector('.home-scroll');
+    if (!sc) sc = document.querySelector('.home-scroll');
+    if (sc) st.homeScrollTop = Number(sc.scrollTop) || 0;
+  } catch (_) { st.homeScrollTop = 0; }
+  return st;
+}
+
+function examRestoreReturnState() {
+  var st = exam.returnState;
+  exam.returnState = null;
+  if (!st || typeof st !== 'object') return;
+
+  var wantBookId = (typeof st.bookId === 'string' && st.bookId) ? String(st.bookId) : null;
+  try {
+    var curBookId = (appData && typeof appData.currentBookId === 'string' && appData.currentBookId) ? String(appData.currentBookId) : null;
+    if (wantBookId && curBookId !== wantBookId) setActiveBook(wantBookId);
+  } catch (_) {}
+
+  // Restore view (home vs chapter) + chapter id
+  var wantHome = !!st.homeVisible;
+  var wantChapterId = (typeof st.chapterId === 'string' && st.chapterId) ? String(st.chapterId) : null;
+
+  if (wantHome) {
+    try { showHomeView(); } catch (_) {}
+    // Restore home scroll position after unlock.
+    var top = Math.max(0, Number(st.homeScrollTop) || 0);
+    setTimeout(function () {
+      try {
+        var sc = null;
+        if (els && els.homeView && els.homeView.querySelector) sc = els.homeView.querySelector('.home-scroll');
+        if (!sc) sc = document.querySelector('.home-scroll');
+        if (sc) sc.scrollTop = top;
+      } catch (_) {}
+    }, 0);
+    return;
+  }
+
+  // Not home: try restore chapter view, else fall back to blank "请选择章节"
+  if (wantChapterId) {
+    var already = false;
+    try {
+      var curCh = (typeof currentChapterId === 'string' && currentChapterId) ? String(currentChapterId) : null;
+      already = !homeVisible && curCh === wantChapterId;
+    } catch (_) { already = false; }
+
+    if (!already) {
+      try {
+        var ok = !!(findChapterById(wantChapterId) && !isDeleted(wantChapterId));
+        if (ok) loadChapter(wantChapterId);
+      } catch (_) {}
+    }
+  } else {
+    try { hideHomeView(); } catch (_) {}
+    try { currentChapterId = null; } catch (_) {}
+    try {
+      if (typeof setTopBarTitle === 'function') setTopBarTitle('请选择章节');
+      else if (els && els.chapterTitle) els.chapterTitle.innerText = '请选择章节';
+    } catch (_) {}
+    try { renderSidebar(); } catch (_) {}
+  }
+
+  // Restore scroll (chapter view uses window scroll).
+  var y = Math.max(0, Number(st.scrollY) || 0);
+  setTimeout(function () {
+    try { window.scrollTo(0, y); } catch (_) {}
+  }, 0);
+}
 
 function examResetState() {
   examStopTimer();
@@ -122,6 +203,7 @@ function examOpenModal() {
 
 function examCloseModal() {
   examStopTimer();
+  try { examRestoreReturnState(); } catch (_) {}
   try { if (typeof hideAiSelBtn === 'function') hideAiSelBtn(); } catch (_) {}
   try { if (els.examExitModal) els.examExitModal.classList.remove('open'); } catch (_) {}
   try { if (els.examModal) els.examModal.classList.remove('open'); } catch (_) {}

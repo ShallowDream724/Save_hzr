@@ -5,15 +5,20 @@
 var uiExamBound = false;
 
 function openExamForBookId(bookId) {
+  var ret = null;
+  try { ret = (typeof examCaptureReturnState === 'function') ? examCaptureReturnState() : null; } catch (_) { ret = null; }
   try { if (typeof closeBookMenu === 'function') closeBookMenu(); } catch (_) {}
   try { if (typeof hideAiSelBtn === 'function') hideAiSelBtn(); } catch (_) {}
 
-  if (bookId) setActiveBook(String(bookId));
+  var curBookId = null;
+  try { curBookId = (appData && typeof appData.currentBookId === 'string' && appData.currentBookId) ? String(appData.currentBookId) : null; } catch (_) { curBookId = null; }
+  if (bookId && String(bookId) !== String(curBookId)) setActiveBook(String(bookId));
   var book = getActiveBook();
   if (!book || !book.id) return;
 
   // Reset runtime state, but keep saved progress in localStorage.
   examResetState();
+  try { exam.returnState = ret; } catch (_) {}
   examInitForBook(book);
 
   examOpenModal();
