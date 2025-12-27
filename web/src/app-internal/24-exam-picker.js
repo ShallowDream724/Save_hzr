@@ -121,11 +121,11 @@ function examRenderPicker() {
   var book = getActiveBook();
   if (!book || !book.id) return;
 
-  exam.active = true;
-  exam.phase = 'picker';
+  examStopTimer();
   exam.elapsedMs = 0;
   examUpdateTimerUi();
-  examStopTimer();
+  exam.active = true;
+  exam.phase = 'picker';
 
   examInitForBook(book);
   var pool = exam.pool;
