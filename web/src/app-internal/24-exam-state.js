@@ -12,6 +12,7 @@ var exam = {
   bookTitle: '',
   returnState: null,
   _autosaveTimer: 0,
+  mode: 'all', // all | wrong | new | review
 
   // picker model (in-memory)
   pool: null, // { folders: [{id,title,chapters:[{id,title,count,questions:[{qid,idx}]}],count}], root: {...}, total }
@@ -169,6 +170,7 @@ function examResetState() {
   exam.bookId = null;
   exam.bookTitle = '';
   exam.pool = null;
+  exam.mode = 'all';
   exam.selectedChapterIds = [];
   exam.totalQuestions = 0;
   exam.questions = [];
@@ -448,16 +450,19 @@ function examComputePool(book) {
   return { folders: folderList, root: root.count > 0 ? root : null, total: total };
 }
 
-function examBuildQuestionSet(pool, selectedChapterIds, wantCount) {
+function examBuildQuestionSet(pool, selectedChapterIds, wantCount, mode) {
   pool = pool || exam.pool;
   if (!pool || !Array.isArray(selectedChapterIds) || !selectedChapterIds.length) return [];
+
+  mode = (typeof mode === 'string' && mode) ? String(mode) : (exam && exam.mode ? String(exam.mode) : 'all');
+  if (!(mode === 'all' || mode === 'wrong' || mode === 'new' || mode === 'review')) mode = 'all';
 
   var selected = {};
   for (var i = 0; i < selectedChapterIds.length; i++) selected[String(selectedChapterIds[i])] = true;
 
   // Favorites: must-include + smart de-dup (exclude must questions from random pool)
   var favId = (typeof FAVORITES_CHAPTER_ID === 'string' && FAVORITES_CHAPTER_ID) ? FAVORITES_CHAPTER_ID : '';
-  var includeFav = !!(favId && selected[favId]);
+  var includeFav = (mode === 'all') && !!(favId && selected[favId]);
   var must = [];
   var mustSet = {};
   if (includeFav) {
@@ -486,10 +491,31 @@ function examBuildQuestionSet(pool, selectedChapterIds, wantCount) {
   function addGroup(folderId, folderTitle, chapters) {
     var chs = [];
     var total = 0;
+    var now = 0;
+    if (mode === 'review') {
+      try { now = (typeof studyNow === 'function') ? studyNow() : Date.now(); } catch (_) { now = Date.now(); }
+    }
     for (var j = 0; j < chapters.length; j++) {
       var ch = chapters[j];
       if (!ch || !selected[String(ch.id)] || !Array.isArray(ch.questions) || !ch.questions.length) continue;
       var qs = ch.questions.slice();
+
+      if (mode !== 'all' && qs.length) {
+        var keptByMode = [];
+        for (var mi = 0; mi < qs.length; mi++) {
+          var qref0 = qs[mi];
+          if (!qref0 || !qref0.qid) continue;
+          var qid0 = String(qref0.qid);
+          if (!qid0) continue;
+          var ok = false;
+          if (mode === 'wrong') ok = (typeof studyIsWrong === 'function') ? !!studyIsWrong(ch.id, qid0) : false;
+          else if (mode === 'new') ok = (typeof studyIsUnseen === 'function') ? !!studyIsUnseen(ch.id, qid0) : false;
+          else if (mode === 'review') ok = (typeof studyIsDue === 'function') ? !!studyIsDue(ch.id, qid0, null, now) : false;
+          if (ok) keptByMode.push(qref0);
+        }
+        qs = keptByMode;
+      }
+
       if (includeFav && qs.length) {
         var kept = [];
         for (var qi = 0; qi < qs.length; qi++) {

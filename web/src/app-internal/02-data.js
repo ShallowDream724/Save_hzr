@@ -102,6 +102,7 @@
         chapterOrder: (book.chapterOrder && typeof book.chapterOrder === 'object' && !Array.isArray(book.chapterOrder)) ? book.chapterOrder : {},
         chapterTitleOverrides: titleOverrides,
         favorites: (book.favorites && typeof book.favorites === 'object' && !Array.isArray(book.favorites)) ? book.favorites : {},
+        study: (book.study && typeof book.study === 'object' && !Array.isArray(book.study)) ? book.study : {},
         deletedChapterIds: Array.isArray(book.deletedChapterIds) ? book.deletedChapterIds : [],
         createdAt: (typeof book.createdAt === 'string' && book.createdAt) ? book.createdAt : new Date().toISOString(),
         updatedAt: (typeof book.updatedAt === 'string' && book.updatedAt) ? book.updatedAt : new Date().toISOString()
@@ -171,6 +172,7 @@
         chapterOrder: (lib.chapterOrder && typeof lib.chapterOrder === 'object' && !Array.isArray(lib.chapterOrder)) ? lib.chapterOrder : {},
         chapterTitleOverrides: (lib.chapterTitleOverrides && typeof lib.chapterTitleOverrides === 'object' && !Array.isArray(lib.chapterTitleOverrides)) ? lib.chapterTitleOverrides : {},
         favorites: (lib.favorites && typeof lib.favorites === 'object' && !Array.isArray(lib.favorites)) ? lib.favorites : {},
+        study: (lib.study && typeof lib.study === 'object' && !Array.isArray(lib.study)) ? lib.study : {},
         deletedChapterIds: Array.isArray(lib.deletedChapterIds) ? lib.deletedChapterIds : [],
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()

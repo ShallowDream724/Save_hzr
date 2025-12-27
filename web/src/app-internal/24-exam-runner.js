@@ -288,6 +288,7 @@ function examAnswerQuestion(card, qref, pickedLabel) {
   var isCorrect = picked === correctLabel;
 
   exam.answers[key] = { picked: picked, correct: isCorrect };
+  try { if (typeof studyUpdateOnAnswer === 'function') studyUpdateOnAnswer(qref.chapterId, qref.qid, isCorrect); } catch (_) {}
   if (isCorrect) exam.streak = (Number(exam.streak) || 0) + 1;
   else exam.streak = 0;
 

@@ -21,9 +21,16 @@
       els.sidebarCollapseBtn = document.getElementById('sidebarCollapseBtn');
       els.sidebarHomeTopBtn = document.getElementById('sidebarHomeTopBtn');
       els.sidebarExamBtn = document.getElementById('sidebarExamBtn');
+      els.sidebarSearchBtn = document.getElementById('sidebarSearchBtn');
       els.fabMenu = document.getElementById('fabMenu');
       els.toTopBtn = document.getElementById('toTopBtn');
       els.toastHost = document.getElementById('toastHost');
+
+      // search modal
+      els.searchModal = document.getElementById('searchModal');
+      els.searchInput = document.getElementById('searchInput');
+      els.searchResults = document.getElementById('searchResults');
+      els.searchStatus = document.getElementById('searchStatus');
 
       els.addFolderBtn = document.getElementById('addFolderBtn');
       els.importBtn = document.getElementById('importBtn');

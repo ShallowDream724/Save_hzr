@@ -152,6 +152,14 @@
           uiUpdateCollapseIcon();
         };
       }
+      if (els.sidebarSearchBtn) {
+        els.sidebarSearchBtn.onclick = function () {
+          try {
+            if (typeof openSearchModal === 'function') openSearchModal();
+            else showToast('搜索功能未就绪', { timeoutMs: 2000 });
+          } catch (_) {}
+        };
+      }
 
       // Home HUD shortcuts (sync / saves / settings)
       if (els.homeSyncBtn) {
@@ -385,6 +393,7 @@
       bindOverlayClose(els.bookModal);
       bindOverlayClose(els.authModal);
       bindOverlayClose(els.settingsModal);
+      bindOverlayClose(els.searchModal);
       bindOverlayClose(els.aiChatModal);
       bindOverlayClose(els.aiImportModal);
       bindOverlayClose(els.aiHistoryModal);
@@ -402,16 +411,29 @@
 
       // ESC：关闭 toast + 弹窗 + 侧边栏（移动端）
       addEvt(document, 'keydown', function (e) {
-        if (!e || e.key !== 'Escape') return;
+        if (!e) return;
+
+        // VSCode-like: Ctrl/Cmd + Shift + F opens global search.
+        if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'F' || e.key === 'f')) {
+          try { e.preventDefault(); } catch (_) {}
+          try { if (typeof openSearchModal === 'function') openSearchModal(); } catch (_) {}
+          return;
+        }
+
+        if (e.key !== 'Escape') return;
         hideToast();
         if (els.importModal) els.importModal.classList.remove('open');
         if (els.authModal) els.authModal.classList.remove('open');
         if (els.settingsModal) els.settingsModal.classList.remove('open');
+        try {
+          if (typeof closeSearchModal === 'function') closeSearchModal();
+          else if (els.searchModal) els.searchModal.classList.remove('open');
+        } catch (_) {}
         if (els.aiChatModal) els.aiChatModal.classList.remove('open');
         if (els.aiImportModal) els.aiImportModal.classList.remove('open');
         if (els.aiHistoryModal) els.aiHistoryModal.classList.remove('open');
         syncModalScrollLock();
         if (els.sidebar && uiIsCompactLayout()) els.sidebar.classList.remove('active');
         uiUpdateCollapseIcon();
-      }, { passive: true });
+      }, { passive: false });
     }

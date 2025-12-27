@@ -72,6 +72,7 @@
           els.bookModal,
           els.authModal,
           els.settingsModal,
+          els.searchModal,
           els.aiChatModal,
           els.aiImportModal,
           els.aiHistoryModal
