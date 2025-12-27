@@ -3312,6 +3312,7 @@ h2 {
     padding-bottom: 20px;
 }
 .exam-qcard { width: min(920px, 90%); }
+.exam-qcard .q-id { flex: none; white-space: nowrap; min-width: 44px; text-align: center; }
 
 .exam-qcard.exam-revealed .option-item { cursor: default; }
 .exam-opt-mark {

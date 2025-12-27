@@ -21,6 +21,19 @@
           openAiChatForQuestionId(qid, '', chapterId);
         }, false);
       }
+      if (els.examRunnerView) {
+        els.examRunnerView.addEventListener('click', function (e) {
+          var t = e && e.target ? e.target : null;
+          if (!t || !t.closest) return;
+          var btn = t.closest('.ai-ask-btn');
+          if (!btn) return;
+          var card = btn.closest('.question-card');
+          var qid = (card && card.dataset) ? card.dataset.qid : null;
+          if (!qid) return;
+          var chapterId = (card && card.dataset && card.dataset.chapterId) ? String(card.dataset.chapterId) : null;
+          openAiChatForQuestionId(qid, '', chapterId);
+        }, false);
+      }
       if (els.aiChatCloseBtn) {
         els.aiChatCloseBtn.onclick = function () { closeAiChatModal(); };
       }

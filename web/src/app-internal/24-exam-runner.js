@@ -115,7 +115,7 @@ function examCreateQuestionCard(qref, idx) {
 
   var idEl = document.createElement('span');
   idEl.className = 'q-id';
-  idEl.textContent = '第 ' + (idx + 1) + ' 题';
+  idEl.textContent = String(idx + 1);
 
   var textEl = document.createElement('div');
   textEl.className = 'q-text';
