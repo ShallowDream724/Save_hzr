@@ -112,6 +112,8 @@
       // question cards
       var cards = document.querySelectorAll('.question-card');
       for (var i = 0; i < cards.length; i++) applyRandomHighlights(cards[i]);
+      // AI chat (messages + context)
+      if (els.aiChatModal) applyRandomHighlights(els.aiChatModal);
       // settings preview (and other modal content)
       if (els.settingsModal) applyRandomHighlights(els.settingsModal);
     }

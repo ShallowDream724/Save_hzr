@@ -248,6 +248,7 @@
       bubble.appendChild(content);
       bubble._contentEl = content;
       renderMarkdownInto(content, String(text || ''));
+      try { applyRandomHighlights(bubble); } catch (_) {}
       wrap.appendChild(bubble);
       els.aiChatMessages.appendChild(wrap);
       try { els.aiChatMessages.scrollTop = els.aiChatMessages.scrollHeight; } catch (_) {}
@@ -268,7 +269,10 @@
       if (!contextText && conv && conv.scope === 'question') contextText = aiChat.lastQuestionContext || '';
 
       var showContext = !!(conv && conv.scope === 'question' && contextText);
-      if (els.aiChatContextText) renderMarkdownInto(els.aiChatContextText, showContext ? contextText : '');
+      if (els.aiChatContextText) {
+        renderMarkdownInto(els.aiChatContextText, showContext ? contextText : '');
+        try { applyRandomHighlights(els.aiChatContextText); } catch (_) {}
+      }
       if (els.aiChatContextWrap) {
         if (showContext) els.aiChatContextWrap.style.display = '';
         else els.aiChatContextWrap.style.display = 'none';
@@ -419,6 +423,7 @@
               if (assistantBubble && (assistantBubble._raw || '').trim()) {
                 var contentEl2 = assistantBubble._contentEl || assistantBubble;
                 renderMarkdownInto(contentEl2, assistantBubble._raw || '');
+                try { applyRandomHighlights(assistantBubble); } catch (_) {}
               }
             } catch (_) {}
           }
