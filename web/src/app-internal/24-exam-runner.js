@@ -268,12 +268,15 @@ function examAnswerQuestion(card, qref, pickedLabel) {
 
   examApplyRevealUi(card, qref, q, picked);
   examUpdateRunnerHeader();
+  try { if (typeof examSaveSnapshot === 'function') examSaveSnapshot('running'); } catch (_) {}
+  try { if (typeof examMarkViewOpen === 'function') examMarkViewOpen(); } catch (_) {}
 
   var answered = examAnsweredCount();
   if (answered >= (Number(exam.totalQuestions) || 0) && answered > 0) {
     exam.phase = 'result';
     examStopTimer();
-    examClearSaved(exam.bookId);
+    try { if (typeof examSaveSnapshot === 'function') examSaveSnapshot('result'); } catch (_) {}
+    try { if (typeof examMarkViewOpen === 'function') examMarkViewOpen(); } catch (_) {}
     if (typeof examRenderResult === 'function') examRenderResult();
     try {
       var rb = els.examRunnerView ? els.examRunnerView.querySelector('#examResultBox') : null;
@@ -348,7 +351,7 @@ function examRenderRunner() {
   if (!els.examRunnerView || !els.examPickerView) return;
   examBindRunnerEventsOnce();
 
-  exam.phase = 'running';
+  if (exam.phase !== 'result') exam.phase = 'running';
   exam.active = true;
   exam.totalQuestions = Array.isArray(exam.questions) ? exam.questions.length : 0;
   exam.answers = (exam.answers && typeof exam.answers === 'object') ? exam.answers : {};
@@ -392,7 +395,6 @@ function examRenderRunner() {
   if (answered >= exam.totalQuestions && answered > 0) {
     exam.phase = 'result';
     examStopTimer();
-    examClearSaved(exam.bookId);
     var resultBox = els.examRunnerView.querySelector('#examResultBox');
     if (resultBox) resultBox.style.display = '';
     examRenderResult();
@@ -412,7 +414,7 @@ function examRenderRunner() {
 }
 
 function examResumeFromSaved(saved) {
-  if (!saved || saved.phase !== 'running') return false;
+  if (!saved || (saved.phase !== 'running' && saved.phase !== 'result')) return false;
   var book = getActiveBook();
   if (!book || !book.id) return false;
   if (String(book.id) !== String(exam.bookId || book.id)) examInitForBook(book);
@@ -445,8 +447,9 @@ function examResumeFromSaved(saved) {
   exam.elapsedMs = Math.max(0, Number(saved.elapsedMs) || 0);
 
   examUpdateTimerUi();
-  examStartTimer();
+  exam.phase = (saved.phase === 'result') ? 'result' : 'running';
+  if (exam.phase === 'running') examStartTimer();
   examRenderRunner();
-  showToast('已恢复上次考试进度', { timeoutMs: 2200 });
+  showToast(exam.phase === 'result' ? '已恢复考试结果' : '已恢复上次考试进度', { timeoutMs: 2200 });
   return true;
 }

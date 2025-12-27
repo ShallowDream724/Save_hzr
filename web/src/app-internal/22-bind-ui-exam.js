@@ -5,8 +5,15 @@
 var uiExamBound = false;
 
 function openExamForBookId(bookId) {
+  var opts = arguments.length > 1 ? arguments[1] : null;
+  opts = (opts && typeof opts === 'object') ? opts : null;
+
   var ret = null;
-  try { ret = (typeof examCaptureReturnState === 'function') ? examCaptureReturnState() : null; } catch (_) { ret = null; }
+  if (opts && opts.fromReload) {
+    ret = (opts.returnState && typeof opts.returnState === 'object') ? opts.returnState : null;
+  } else {
+    try { ret = (typeof examCaptureReturnState === 'function') ? examCaptureReturnState() : null; } catch (_) { ret = null; }
+  }
   try { if (typeof closeBookMenu === 'function') closeBookMenu(); } catch (_) {}
   try { if (typeof hideAiSelBtn === 'function') hideAiSelBtn(); } catch (_) {}
 
@@ -54,6 +61,20 @@ function examOpenExitModal() {
 function bindUiExamOnce() {
   if (uiExamBound) return;
   uiExamBound = true;
+
+  // Persist exam state on refresh/close tab.
+  try {
+    if (typeof window !== 'undefined' && !window.__hzrExamBeforeUnloadBound) {
+      window.__hzrExamBeforeUnloadBound = 1;
+      addEvt(window, 'beforeunload', function () {
+        try {
+          if (!examIsOpen()) return;
+          if (exam.phase === 'running' || exam.phase === 'result') examSaveSnapshot(exam.phase);
+          examMarkViewOpen();
+        } catch (_) {}
+      }, { passive: true });
+    }
+  } catch (_) {}
 
   if (els.sidebarExamBtn) {
     els.sidebarExamBtn.onclick = function () {

@@ -40,6 +40,15 @@
           }
         } catch (_) { restored = false; }
         if (!restored) showHomeView();
+
+        // Restore exam UI after refresh if it was open.
+        try {
+          var ev = (typeof examLoadViewMarker === 'function') ? examLoadViewMarker() : null;
+          if (ev && ev.open && ev.bookId && typeof openExamForBookId === 'function') {
+            openExamForBookId(ev.bookId, { fromReload: true, returnState: ev.returnState || null });
+          }
+        } catch (_) {}
+
         tryBootstrapFromCloud().then(function () {
           if (!appData.ui) appData.ui = defaultUi();
           appData.ui = normalizeUi(appData.ui);

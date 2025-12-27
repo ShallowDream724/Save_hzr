@@ -126,6 +126,7 @@ function examRenderPicker() {
   examUpdateTimerUi();
   exam.active = true;
   exam.phase = 'picker';
+  try { if (typeof examMarkViewOpen === 'function') examMarkViewOpen(); } catch (_) {}
 
   examInitForBook(book);
   var pool = exam.pool;
@@ -326,6 +327,8 @@ function examRenderPicker() {
       examUpdateTimerUi();
       exam.phase = 'running';
       examStartTimer();
+      try { if (typeof examSaveSnapshot === 'function') examSaveSnapshot('running'); } catch (_) {}
+      try { if (typeof examMarkViewOpen === 'function') examMarkViewOpen(); } catch (_) {}
 
       if (typeof examRenderRunner === 'function') examRenderRunner();
       return;

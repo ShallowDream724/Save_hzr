@@ -3,6 +3,7 @@
  * --------------------------- */
 
 var EXAM_STORE_KEY = 'hzr_exam_state_v1';
+var EXAM_VIEW_KEY = 'hzr_exam_view_v1';
 
 var exam = {
   active: false,
@@ -10,6 +11,7 @@ var exam = {
   bookId: null,
   bookTitle: '',
   returnState: null,
+  _autosaveTimer: 0,
 
   // picker model (in-memory)
   pool: null, // { folders: [{id,title,chapters:[{id,title,count,questions:[{qid,idx}]}],count}], root: {...}, total }
@@ -30,6 +32,52 @@ var exam = {
 };
 
 function examNow() { return Date.now ? Date.now() : new Date().getTime(); }
+
+function examLoadViewMarker() {
+  try {
+    var raw = localStorage.getItem(EXAM_VIEW_KEY);
+    if (!raw) return null;
+    var j = JSON.parse(raw);
+    if (!j || typeof j !== 'object') return null;
+    if (!j.open) return null;
+    if (typeof j.bookId !== 'string' || !j.bookId) return null;
+    return {
+      open: true,
+      bookId: String(j.bookId),
+      phase: (typeof j.phase === 'string' && j.phase) ? String(j.phase) : 'running',
+      returnState: (j.returnState && typeof j.returnState === 'object') ? j.returnState : null,
+      savedAt: (typeof j.savedAt === 'string' && j.savedAt) ? String(j.savedAt) : ''
+    };
+  } catch (_) {
+    return null;
+  }
+}
+
+function examWriteViewMarker(payload) {
+  try {
+    if (!payload) {
+      localStorage.removeItem(EXAM_VIEW_KEY);
+      return;
+    }
+    localStorage.setItem(EXAM_VIEW_KEY, JSON.stringify(payload));
+  } catch (_) {}
+}
+
+function examMarkViewOpen() {
+  if (!exam.bookId) return;
+  examWriteViewMarker({
+    v: 1,
+    open: true,
+    savedAt: new Date().toISOString(),
+    bookId: String(exam.bookId),
+    phase: String(exam.phase || 'running'),
+    returnState: (exam.returnState && typeof exam.returnState === 'object') ? exam.returnState : null
+  });
+}
+
+function examMarkViewClosed() {
+  examWriteViewMarker(null);
+}
 
 function examCaptureReturnState() {
   var st = {
@@ -113,6 +161,7 @@ function examRestoreReturnState() {
 
 function examResetState() {
   examStopTimer();
+  try { examMarkViewClosed(); } catch (_) {}
   exam.active = false;
   exam.phase = 'idle';
   exam.bookId = null;
@@ -127,6 +176,7 @@ function examResetState() {
   exam.elapsedMs = 0;
   exam._tickBase = 0;
   exam._tickStartAt = 0;
+  exam.returnState = null;
   examUpdateTimerUi();
 }
 
@@ -168,6 +218,24 @@ function examUpdateTimerUi() {
   } catch (_) {}
 }
 
+function examStartAutoSave() {
+  if (exam._autosaveTimer) return;
+  exam._autosaveTimer = setInterval(function () {
+    try {
+      if (!examIsOpen()) return;
+      if (exam.phase !== 'running' && exam.phase !== 'result') return;
+      examSaveSnapshot(exam.phase);
+      examMarkViewOpen();
+    } catch (_) {}
+  }, 5000);
+}
+
+function examStopAutoSave() {
+  if (!exam._autosaveTimer) return;
+  try { clearInterval(exam._autosaveTimer); } catch (_) {}
+  exam._autosaveTimer = 0;
+}
+
 function examStartTimer() {
   if (exam._tickTimer) return;
   exam._tickBase = Number(exam.elapsedMs) || 0;
@@ -177,9 +245,11 @@ function examStartTimer() {
     examUpdateTimerUi();
   }, 500);
   examUpdateTimerUi();
+  examStartAutoSave();
 }
 
 function examStopTimer() {
+  examStopAutoSave();
   if (!exam._tickTimer) return;
   try { clearInterval(exam._tickTimer); } catch (_) {}
   exam._tickTimer = 0;
@@ -199,10 +269,12 @@ function examOpenModal() {
   try { document.body.classList.add('exam-mode'); } catch (_) {}
   try { syncModalScrollLock(); } catch (_) {}
   try { if (els.examModal) els.examModal.setAttribute('aria-hidden', 'false'); } catch (_) {}
+  try { examMarkViewOpen(); } catch (_) {}
 }
 
 function examCloseModal() {
   examStopTimer();
+  try { examMarkViewClosed(); } catch (_) {}
   try { examRestoreReturnState(); } catch (_) {}
   try { if (typeof hideAiSelBtn === 'function') hideAiSelBtn(); } catch (_) {}
   try { if (els.examExitModal) els.examExitModal.classList.remove('open'); } catch (_) {}
@@ -235,7 +307,7 @@ function examLoadSaved(bookId) {
   var store = examLoadStore();
   var s = store && store.books ? store.books[String(bookId)] : null;
   if (!s || typeof s !== 'object') return null;
-  if (s.phase !== 'running') return null;
+  if (s.phase !== 'running' && s.phase !== 'result') return null;
   if (!Array.isArray(s.questions) || !s.questions.length) return null;
   return s;
 }
@@ -248,12 +320,14 @@ function examClearSaved(bookId) {
 }
 
 function examSaveSnapshot() {
+  var phaseOverride = arguments.length > 0 ? arguments[0] : null;
   if (!exam.bookId) return;
+  var phase = (typeof phaseOverride === 'string' && phaseOverride) ? String(phaseOverride) : String(exam.phase || 'running');
   var store = examLoadStore();
   store.books[String(exam.bookId)] = {
     v: 1,
     savedAt: new Date().toISOString(),
-    phase: 'running',
+    phase: phase,
     elapsedMs: Math.round(Number(exam.elapsedMs) || 0),
     bookTitle: exam.bookTitle || '',
     selectedChapterIds: Array.isArray(exam.selectedChapterIds) ? exam.selectedChapterIds.slice() : [],
