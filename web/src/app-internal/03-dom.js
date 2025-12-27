@@ -20,6 +20,7 @@
       els.sidebarOverlay = document.getElementById('sidebarOverlay');
       els.sidebarCollapseBtn = document.getElementById('sidebarCollapseBtn');
       els.sidebarHomeTopBtn = document.getElementById('sidebarHomeTopBtn');
+      els.sidebarExamBtn = document.getElementById('sidebarExamBtn');
       els.fabMenu = document.getElementById('fabMenu');
       els.toastHost = document.getElementById('toastHost');
 
@@ -139,5 +140,21 @@
       els.aiHistoryRefreshBtn = document.getElementById('aiHistoryRefreshBtn');
       els.aiHistoryList = document.getElementById('aiHistoryList');
       els.aiHistoryHint = document.getElementById('aiHistoryHint');
+
+      // exam modal
+      els.examModal = document.getElementById('examModal');
+      els.examHeaderTitle = document.getElementById('examHeaderTitle');
+      els.examHeaderSub = document.getElementById('examHeaderSub');
+      els.examHeaderTimer = document.getElementById('examHeaderTimer');
+      els.examRestartBtn = document.getElementById('examRestartBtn');
+      els.examExitBtn = document.getElementById('examExitBtn');
+      els.examPickerView = document.getElementById('examPickerView');
+      els.examRunnerView = document.getElementById('examRunnerView');
+
+      els.examExitModal = document.getElementById('examExitModal');
+      els.examExitHint = document.getElementById('examExitHint');
+      els.examExitCancelBtn = document.getElementById('examExitCancelBtn');
+      els.examExitKeepBtn = document.getElementById('examExitKeepBtn');
+      els.examExitDiscardBtn = document.getElementById('examExitDiscardBtn');
     }
   

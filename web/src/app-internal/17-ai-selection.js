@@ -1,7 +1,7 @@
     /** ---------------------------
      * 8.3) 选中引用快捷问 AI（浮动按钮）
      * --------------------------- */
-    var aiSel = { btn: null, qid: null, text: '', timer: 0 };
+    var aiSel = { btn: null, qid: null, chapterId: null, text: '', timer: 0 };
 
     function ensureAiSelBtn() {
       if (aiSel.btn) return aiSel.btn;
@@ -11,10 +11,11 @@
       btn.textContent = '问AI';
       btn.onclick = function () {
         var qid = aiSel.qid;
+        var chapterId = aiSel.chapterId;
         var txt = aiSel.text;
         hideAiSelBtn();
         if (!qid || !txt) return;
-        openAiChatForQuestionId(qid, txt);
+        openAiChatForQuestionId(qid, txt, chapterId);
       };
       document.body.appendChild(btn);
       aiSel.btn = btn;
@@ -25,6 +26,7 @@
       if (!aiSel.btn) return;
       aiSel.btn.style.display = 'none';
       aiSel.qid = null;
+      aiSel.chapterId = null;
       aiSel.text = '';
     }
 
@@ -59,6 +61,11 @@
       if (!el || !el.closest) { hideAiSelBtn(); return; }
       var card = el.closest('.question-card');
       if (!card || !card.dataset || !card.dataset.qid) { hideAiSelBtn(); return; }
+      try {
+        if (document.body && document.body.classList && document.body.classList.contains('exam-mode')) {
+          if (card.dataset.exam === '1' && card.dataset.examRevealed !== '1') { hideAiSelBtn(); return; }
+        }
+      } catch (_) {}
 
       var rect = null;
       try {
@@ -73,6 +80,7 @@
 
       var btn = ensureAiSelBtn();
       aiSel.qid = String(card.dataset.qid);
+      aiSel.chapterId = card.dataset.chapterId ? String(card.dataset.chapterId) : null;
       aiSel.text = text;
 
       var left = rect.right + 10;

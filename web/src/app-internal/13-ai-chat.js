@@ -435,6 +435,7 @@
 
     function openAiChatForQuestionId(qid) {
       var selectedText = arguments.length > 1 ? arguments[1] : '';
+      var overrideChapterId = arguments.length > 2 ? arguments[2] : null;
       var token = getToken();
       if (!token) {
         showToast('请先登录云同步后使用 AI', { timeoutMs: 2400 });
@@ -444,7 +445,8 @@
         return;
       }
 
-      var chapter = findChapterById(currentChapterId);
+      var chapterId = overrideChapterId ? String(overrideChapterId) : currentChapterId;
+      var chapter = chapterId ? findChapterById(chapterId) : null;
       if (!chapter || !Array.isArray(chapter.questions)) { showToast('未找到题目', { timeoutMs: 1800 }); return; }
 
       var q = null;

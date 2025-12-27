@@ -17,7 +17,8 @@
           var card = btn.closest('.question-card');
           var qid = (card && card.dataset) ? card.dataset.qid : null;
           if (!qid) return;
-          openAiChatForQuestionId(qid);
+          var chapterId = (card && card.dataset && card.dataset.chapterId) ? String(card.dataset.chapterId) : null;
+          openAiChatForQuestionId(qid, '', chapterId);
         }, false);
       }
       if (els.aiChatCloseBtn) {

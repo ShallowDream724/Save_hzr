@@ -392,6 +392,7 @@
       menu.innerHTML =
         '<button type="button" data-act="rename">自定义</button>' +
         '<button type="button" data-act="open">打开</button>' +
+        '<button type="button" data-act="exam">考试</button>' +
         '<button type="button" data-act="delete">删除</button>';
 
       document.body.appendChild(menu);
@@ -433,6 +434,11 @@
         }
         if (act === 'rename') {
           openRenameBookModal(book);
+          return;
+        }
+        if (act === 'exam') {
+          if (typeof openExamForBookId === 'function') openExamForBookId(book.id);
+          else showToast('考试功能未就绪', { timeoutMs: 2000 });
           return;
         }
         if (act === 'delete') {

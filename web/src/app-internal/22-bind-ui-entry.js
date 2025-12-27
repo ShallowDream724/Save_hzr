@@ -11,5 +11,5 @@
       bindUiSettingsOnce();
       bindUiSyncOnce();
       bindUiAiOnce();
+      bindUiExamOnce();
     }
-

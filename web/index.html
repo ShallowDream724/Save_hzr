@@ -36,12 +36,16 @@
     <script src="./src/app-internal/19-drag-core.js" defer></script>
     <script src="./src/app-internal/20-drag-runtime.js" defer></script>
     <script src="./src/app-internal/21-json-import.js" defer></script>
+    <script src="./src/app-internal/24-exam-state.js" defer></script>
+    <script src="./src/app-internal/24-exam-picker.js" defer></script>
+    <script src="./src/app-internal/24-exam-runner.js" defer></script>
     <script src="./src/app-internal/22-bind-ui-layout.js" defer></script>
     <script src="./src/app-internal/22-bind-ui-books.js" defer></script>
     <script src="./src/app-internal/22-bind-ui-import.js" defer></script>
     <script src="./src/app-internal/22-bind-ui-settings.js" defer></script>
     <script src="./src/app-internal/22-bind-ui-sync.js" defer></script>
     <script src="./src/app-internal/22-bind-ui-ai.js" defer></script>
+    <script src="./src/app-internal/22-bind-ui-exam.js" defer></script>
     <script src="./src/app-internal/22-bind-ui-entry.js" defer></script>
     <script src="./src/app-internal/23-startup.js" defer></script>
 </head>
@@ -55,6 +59,9 @@
                     <span class="brand-text">拯救Hzr</span>
                 </div>
                 <div class="brand-actions">
+                    <button id="sidebarExamBtn" class="collapse-btn" type="button" title="考试">
+                        <i class="fa-solid fa-graduation-cap"></i>
+                    </button>
                     <button id="sidebarHomeTopBtn" class="collapse-btn" type="button" title="主页">
                         <i class="fa-solid fa-book"></i>
                     </button>
@@ -159,6 +166,46 @@
     </button>
 
     <div class="toast-host" id="toastHost" aria-live="polite" aria-atomic="true"></div>
+
+    <div class="modal-overlay" id="examModal" aria-hidden="true">
+        <div class="exam-box" role="dialog" aria-modal="true" aria-label="考试模式">
+            <div class="exam-header">
+                <div class="exam-header-left">
+                    <i class="fa-solid fa-graduation-cap"></i>
+                    <div class="exam-header-titles">
+                        <div id="examHeaderTitle" class="exam-header-title">考试</div>
+                        <div id="examHeaderSub" class="exam-header-sub"></div>
+                    </div>
+                </div>
+                <div class="exam-header-actions">
+                    <div id="examHeaderTimer" class="exam-timer" aria-label="计时器">00:00</div>
+                    <button id="examRestartBtn" class="action-btn icon-btn" type="button" title="重新开始" aria-label="重新开始">
+                        <i class="fa-solid fa-rotate-right"></i>
+                    </button>
+                    <button id="examExitBtn" class="action-btn icon-btn" type="button" title="退出" aria-label="退出">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="exam-body">
+                <div id="examPickerView" class="exam-pane"></div>
+                <div id="examRunnerView" class="exam-pane" style="display:none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="examExitModal" aria-hidden="true">
+        <div class="modal-box" role="dialog" aria-modal="true" aria-label="退出考试">
+            <h3 style="margin-top:0;">退出考试</h3>
+            <div id="examExitHint" style="color:#667085; font-size:0.95rem; line-height:1.5; margin:10px 0 12px;"></div>
+            <div class="modal-actions" style="display:flex; gap:10px; flex-wrap:wrap;">
+                <button id="examExitCancelBtn" class="modal-btn" type="button">继续做题</button>
+                <button id="examExitKeepBtn" class="modal-btn primary" type="button">保留进度并退出</button>
+                <button id="examExitDiscardBtn" class="modal-btn danger" type="button">不保留退出</button>
+            </div>
+        </div>
+    </div>
 
     <div class="modal-overlay" id="importModal">
         <div class="modal-box">
