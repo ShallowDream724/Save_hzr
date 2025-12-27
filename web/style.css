@@ -845,6 +845,8 @@ body.home-mode .book-container:hover { z-index: 7000; }
     display: grid;
     place-items: center;
     cursor: pointer;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
     z-index: 20;
     opacity: 0;
     transition: opacity 220ms ease, transform 220ms ease, background 220ms ease;
@@ -852,6 +854,11 @@ body.home-mode .book-container:hover { z-index: 7000; }
 }
 .book-container:hover .book-more { opacity: 1; }
 @media (hover: none) { .book-more { opacity: 1; } }
+@media (hover: none) and (pointer: coarse) {
+    /* iOS/WebView: flatten 3D transform for reliable hit-testing on touch. */
+    .book-more { transform: translateZ(0); }
+    .book-more:hover { transform: translateZ(0); }
+}
 .book-more:hover { transform: translateZ(26px) translateY(-2px); }
 
 .book-more-visual {

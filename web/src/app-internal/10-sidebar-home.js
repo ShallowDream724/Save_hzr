@@ -283,18 +283,27 @@
         }
 
         containerEl.addEventListener('pointerdown', function (e) {
-          if (!e || e.button !== 0) return;
-          if (moreBtn && (e.target === moreBtn || (e.target && e.target.closest && e.target.closest('.book-more')))) return;
-          if (e.pointerType === 'mouse') return;
+          if (!e) return;
+          // Touch devices may have `button` undefined/-1; only enforce for real mouse input.
+          var pt = e.pointerType || 'mouse';
+          if (pt === 'mouse' && e.button !== 0) return;
+          if (moreBtn && (e.target === moreBtn || (e.target && e.target.closest && e.target.closest('.book-more')))) {
+            // Ensure the 3-dots button is never blocked by the "suppress click after long-press" guard.
+            fired = false;
+            clear();
+            return;
+          }
+          if (pt === 'mouse') return;
           startX = e.clientX;
           startY = e.clientY;
           fired = false;
           clear();
           timer = setTimeout(function () {
             fired = true;
-            // Mobile UX: long-press directly opens rename (no extra menu step)
+            // Touch UX: long-press opens the book menu (avoid conflict with rename and match "right-click menu" mental model).
             try { containerEl.__ignoreClickUntil = Date.now() + 650; } catch (_) {}
-            openRenameBookModal(book);
+            try { containerEl.__ignoreCtxUntil = Date.now() + 650; } catch (_) {}
+            openBookMenu(book, moreBtn || containerEl, { x: startX, y: startY });
           }, 520);
         }, { passive: true });
 
@@ -308,6 +317,7 @@
 
         containerEl.addEventListener('click', function (e) {
           if (!fired) return;
+          if (e && e.target && e.target.closest && e.target.closest('.book-more')) return;
           if (e) {
             e.preventDefault();
             e.stopPropagation();
@@ -318,6 +328,7 @@
         containerEl.addEventListener('contextmenu', function (e) {
           if (!e) return;
           try { e.preventDefault(); e.stopPropagation(); } catch (_) {}
+          if (Date.now() < (containerEl.__ignoreCtxUntil || 0)) return;
           try { containerEl.__ignoreClickUntil = Date.now() + 650; } catch (_) {}
           openBookMenu(book, moreBtn || containerEl, { x: e.clientX, y: e.clientY });
         }, true);
