@@ -30,21 +30,52 @@ function examPickerSelectedChapterIds() {
   return ids;
 }
 
-function examPickerSelectedCount(pool) {
+function examPickerComputeLimits(pool) {
   pool = pool || exam.pool;
-  if (!pool) return 0;
-  var total = 0;
+  if (!pool) return { max: 0, min: 0, favOn: false, favCount: 0 };
+
+  var favOn = false;
+  var favId = (typeof FAVORITES_CHAPTER_ID === 'string' && FAVORITES_CHAPTER_ID) ? FAVORITES_CHAPTER_ID : '';
+  try { favOn = !!(favId && examPicker.sel && examPicker.sel[favId]); } catch (_) { favOn = false; }
+
+  var favList = [];
+  try { if (typeof favoritesGetEligibleForExam === 'function') favList = favoritesGetEligibleForExam(pool) || []; } catch (_) { favList = []; }
+  var favCount = Array.isArray(favList) ? favList.length : 0;
+
+  var dupByChapter = {};
+  if (favOn && favCount) {
+    for (var i = 0; i < favList.length; i++) {
+      var it = favList[i];
+      if (!it || !it.chapterId) continue;
+      var cid = String(it.chapterId);
+      dupByChapter[cid] = (dupByChapter[cid] || 0) + 1;
+    }
+  }
+
+  var total = favOn ? favCount : 0;
   function addIfSelected(ch) {
     if (!ch || !ch.id) return;
     if (!examPicker.sel[String(ch.id)]) return;
-    total += Number(ch.count) || 0;
+    var cnt = Number(ch.count) || 0;
+    if (favOn && cnt) cnt -= (dupByChapter[String(ch.id)] || 0);
+    if (cnt < 0) cnt = 0;
+    total += cnt;
   }
   for (var i = 0; i < (pool.folders || []).length; i++) {
     var g = pool.folders[i];
     for (var j = 0; j < (g.chapters || []).length; j++) addIfSelected(g.chapters[j]);
   }
   if (pool.root) for (var k = 0; k < (pool.root.chapters || []).length; k++) addIfSelected(pool.root.chapters[k]);
-  return total;
+
+  var min = total > 0 ? 1 : 0;
+  if (favOn && favCount > min) min = favCount;
+
+  return { max: total, min: min, favOn: favOn, favCount: favCount };
+}
+
+function examPickerSelectedCount(pool) {
+  pool = pool || exam.pool;
+  return examPickerComputeLimits(pool).max;
 }
 
 function examPickerSetAll(on) {
@@ -93,22 +124,42 @@ function examPickerUpdateUi() {
   }
 
   // Update totals & clamp N
-  var max = examPickerSelectedCount(pool);
+  var limits = examPickerComputeLimits(pool);
+  var max = limits.max;
+  var min = limits.min;
+
+  // Favorites row
+  try {
+    var favCb = els.examPickerView.querySelector('input.exam-fav-check');
+    if (favCb) favCb.checked = !!limits.favOn;
+    var favCountEl = els.examPickerView.querySelector('#examFavCount');
+    if (favCountEl) favCountEl.textContent = String(limits.favCount);
+  } catch (_) {}
+
   var totalEl = els.examPickerView.querySelector('#examPickerTotal');
   if (totalEl) totalEl.textContent = String(max);
   var maxHintEl = els.examPickerView.querySelector('#examPickerMaxHint');
   if (maxHintEl) maxHintEl.textContent = String(max);
 
+  var minWrap = els.examPickerView.querySelector('#examPickerMinWrap');
+  var minHintEl = els.examPickerView.querySelector('#examPickerMinHint');
+  if (minHintEl) minHintEl.textContent = String(min);
+  if (minWrap) {
+    try { minWrap.style.display = (min > 1) ? '' : 'none'; } catch (_) {}
+  }
+
   var input = els.examPickerView.querySelector('#examPickerCountInput');
   if (input) {
     try { input.max = String(max); } catch (_) {}
+    try { input.min = String(min); } catch (_) {}
     var v = Number(input.value);
     if (!Number.isFinite(v)) v = 0;
     if (max <= 0) {
       input.value = '0';
     } else {
-      if (v <= 0) v = Math.min(20, max);
+      if (v <= 0) v = Math.max(min, Math.min(20, max));
       if (v > max) v = max;
+      if (v < min) v = min;
       input.value = String(Math.floor(v));
     }
   }
@@ -173,7 +224,7 @@ function examRenderPicker() {
       '<div class="exam-count-row">' +
         '<div class="exam-count-label">出题数</div>' +
         '<input id="examPickerCountInput" class="auth-input exam-count-input" type="number" min="1" step="1" inputmode="numeric" />' +
-        '<div class="exam-count-hint">最多 <span id="examPickerMaxHint"></span> 题</div>' +
+        '<div class="exam-count-hint"><span id="examPickerMinWrap" style="display:none;">最少 <span id="examPickerMinHint"></span> · </span>最多 <span id="examPickerMaxHint"></span> 题</div>' +
       '</div>' +
       '<div class="modal-actions" style="margin-top:12px;">' +
         '<button id="examPickerStartBtn" class="modal-btn primary" type="button">开始考试</button>' +
@@ -183,6 +234,26 @@ function examRenderPicker() {
   els.examPickerView.appendChild(wrap);
 
   var tree = wrap.querySelector('#examRangeTree');
+
+  // Favorites row (virtual)
+  try {
+    if (typeof FAVORITES_CHAPTER_ID === 'string' && FAVORITES_CHAPTER_ID) {
+      var favBox = document.createElement('div');
+      favBox.className = 'exam-range-folder exam-range-fav collapsed';
+      favBox.dataset.folderId = '__fav__';
+      favBox.innerHTML =
+        '<div class="exam-range-row">' +
+          '<div class="exam-fav-icon" aria-hidden="true"><i class="fa-solid fa-star"></i></div>' +
+          '<label class="exam-check exam-folder-label">' +
+            '<input class="exam-fav-check" type="checkbox" />' +
+            '<span class="exam-range-name">收藏夹</span>' +
+          '</label>' +
+          '<span class="exam-range-count"><span id="examFavCount">0</span> 题</span>' +
+        '</div>';
+      tree.appendChild(favBox);
+    }
+  } catch (_) {}
+
   function renderGroup(group, isRoot) {
     if (!group || !Array.isArray(group.chapters) || !group.chapters.length) return;
     var fid = isRoot ? '__root__' : String(group.id);
@@ -230,11 +301,21 @@ function examRenderPicker() {
     var id = chapterCbs[c].dataset ? chapterCbs[c].dataset.chapterId : '';
     if (id) chapterCbs[c].checked = !!examPicker.sel[String(id)];
   }
+  var favCbInit = wrap.querySelector('input.exam-fav-check');
+  if (favCbInit) {
+    var favId = (typeof FAVORITES_CHAPTER_ID === 'string' && FAVORITES_CHAPTER_ID) ? FAVORITES_CHAPTER_ID : '';
+    favCbInit.checked = !!(favId && examPicker.sel[favId]);
+  }
 
   // Footer default value
-  var max = examPickerSelectedCount(pool);
+  var limits2 = examPickerComputeLimits(pool);
+  var max = limits2.max;
   var input = wrap.querySelector('#examPickerCountInput');
-  if (input) input.value = String(Math.min(20, max));
+  if (input) {
+    var def = Math.min(20, max);
+    if (def < limits2.min) def = limits2.min;
+    input.value = String(def);
+  }
   var maxHint = wrap.querySelector('#examPickerMaxHint');
   if (maxHint) maxHint.textContent = String(max);
 
@@ -256,6 +337,14 @@ function examRenderPicker() {
     if (chCb) {
       var cid = chCb.getAttribute('data-chapter-id');
       if (cid) examPicker.sel[String(cid)] = !!chCb.checked;
+      examPickerUpdateUi();
+      return;
+    }
+
+    var favCb = t.closest('input.exam-fav-check');
+    if (favCb) {
+      var favId = (typeof FAVORITES_CHAPTER_ID === 'string' && FAVORITES_CHAPTER_ID) ? FAVORITES_CHAPTER_ID : '';
+      if (favId) examPicker.sel[favId] = !!favCb.checked;
       examPickerUpdateUi();
       return;
     }
@@ -304,13 +393,20 @@ function examRenderPicker() {
 
     var startBtn = t.closest('#examPickerStartBtn');
     if (startBtn) {
-      var max2 = examPickerSelectedCount(pool);
+      var limits3 = examPickerComputeLimits(pool);
+      var max2 = limits3.max;
+      var min2 = limits3.min;
       var input2 = wrap.querySelector('#examPickerCountInput');
       var want = input2 ? Number(input2.value) : 0;
       if (!Number.isFinite(want)) want = 0;
       want = Math.floor(want);
       if (want <= 0) { showToast('请先选择出题数', { timeoutMs: 2200 }); return; }
       if (want > max2) want = max2;
+      if (want < min2) {
+        want = min2;
+        try { if (input2) input2.value = String(want); } catch (_) {}
+        showToast('已包含收藏夹，出题数最少 ' + min2, { timeoutMs: 2200 });
+      }
       if (want <= 0) { showToast('请先选择范围', { timeoutMs: 2200 }); return; }
 
       exam.selectedChapterIds = examPickerSelectedChapterIds();
@@ -337,7 +433,7 @@ function examRenderPicker() {
 
   if (input) {
     input.oninput = function () {
-      var max3 = examPickerSelectedCount(pool);
+      var max3 = examPickerComputeLimits(pool).max;
       var v = Number(input.value);
       if (!Number.isFinite(v)) v = 0;
       v = Math.floor(v);

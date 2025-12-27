@@ -101,6 +101,7 @@
         layoutMap: (book.layoutMap && typeof book.layoutMap === 'object' && !Array.isArray(book.layoutMap)) ? book.layoutMap : {},
         chapterOrder: (book.chapterOrder && typeof book.chapterOrder === 'object' && !Array.isArray(book.chapterOrder)) ? book.chapterOrder : {},
         chapterTitleOverrides: titleOverrides,
+        favorites: (book.favorites && typeof book.favorites === 'object' && !Array.isArray(book.favorites)) ? book.favorites : {},
         deletedChapterIds: Array.isArray(book.deletedChapterIds) ? book.deletedChapterIds : [],
         createdAt: (typeof book.createdAt === 'string' && book.createdAt) ? book.createdAt : new Date().toISOString(),
         updatedAt: (typeof book.updatedAt === 'string' && book.updatedAt) ? book.updatedAt : new Date().toISOString()
@@ -169,6 +170,7 @@
         layoutMap: (lib.layoutMap && typeof lib.layoutMap === 'object' && !Array.isArray(lib.layoutMap)) ? lib.layoutMap : {},
         chapterOrder: (lib.chapterOrder && typeof lib.chapterOrder === 'object' && !Array.isArray(lib.chapterOrder)) ? lib.chapterOrder : {},
         chapterTitleOverrides: (lib.chapterTitleOverrides && typeof lib.chapterTitleOverrides === 'object' && !Array.isArray(lib.chapterTitleOverrides)) ? lib.chapterTitleOverrides : {},
+        favorites: (lib.favorites && typeof lib.favorites === 'object' && !Array.isArray(lib.favorites)) ? lib.favorites : {},
         deletedChapterIds: Array.isArray(lib.deletedChapterIds) ? lib.deletedChapterIds : [],
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()

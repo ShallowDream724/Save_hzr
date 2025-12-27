@@ -1080,6 +1080,24 @@ body.home-transitioning #booksGrid .book-more { opacity: 0 !important; }
 
 .item-title { font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
+/* Pinned favorites chapter count */
+.favorites-count {
+    flex: none;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: rgba(148,163,184,0.12);
+    border: 1px solid rgba(148,163,184,0.18);
+    font-weight: 950;
+    color: #64748b;
+    font-size: 0.82rem;
+    pointer-events: none;
+}
+.list-item.active .favorites-count {
+    color: var(--accent-color);
+    background: var(--accent-soft);
+    border-color: var(--accent-soft);
+}
+
 /* --- 文件夹样式 --- */
 .folder-container {
     margin-bottom: 5px;
@@ -1335,6 +1353,33 @@ body.home-transitioning #booksGrid .book-more { opacity: 0 !important; }
 /* Keep top-bar icon buttons compact (avoid stretching because `.icon-btn { flex: 1; }`) */
 .top-bar .icon-btn { flex: none; width: 44px; height: 44px; border-radius: 16px; }
 .top-bar .menu-toggle { flex: none; width: 44px; height: 44px; }
+
+.to-top-btn {
+    position: fixed;
+    right: 16px;
+    bottom: 88px;
+    width: 48px;
+    height: 48px;
+    border-radius: 999px;
+    border: 1px solid rgba(148,163,184,0.22);
+    background: rgba(255,255,255,0.92);
+    box-shadow: 0 10px 24px rgba(15,23,42,0.12), 0 2px 6px rgba(15, 23, 42, 0.04);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    color: #334155;
+    cursor: pointer;
+    z-index: 1950;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+}
+.to-top-btn:hover {
+    background: rgba(255,255,255,0.98);
+    border-color: var(--accent-soft);
+    color: var(--accent-color);
+}
+.to-top-btn:active { transform: translateY(1px); }
+.to-top-btn i { pointer-events: none; }
 
 .fab-menu {
     /* --- 基础定位 --- */
@@ -1602,8 +1647,25 @@ h2 {
     border-color: rgba(255,255,255,0.8);
 }
 
+.favorites-empty {
+    padding: 18px 18px;
+    border-radius: 18px;
+    background: rgba(255,255,255,0.76);
+    border: 1px dashed rgba(148,163,184,0.35);
+    color: #64748b;
+    font-weight: 650;
+    line-height: 1.6;
+}
+
 .q-header { display: flex; gap: 16px; margin-bottom: 20px; align-items: flex-start; }
 .q-header { min-width: 0; }
+.q-actions {
+    margin-left: auto;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    flex: none;
+}
 .q-id {
     background: var(--primary-color);
     color: white;
@@ -2217,6 +2279,28 @@ h2 {
 /* ---------------------------
  * AI chat (modal)
  * --------------------------- */
+.fav-btn {
+    align-self: flex-start;
+    padding: 6px 10px;
+    border-radius: 10px;
+    border: 1px solid rgba(148,163,184,0.22);
+    background: rgba(255,255,255,0.86);
+    color: rgba(15,23,42,0.55);
+    font-weight: 900;
+    font-size: 0.85rem;
+    cursor: pointer;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+.fav-btn i { pointer-events: none; }
+.fav-btn:hover { background: rgba(255,255,255,0.96); border-color: rgba(245,158,11,0.55); color: #f59e0b; }
+.fav-btn:active { transform: translateY(1px); }
+.fav-btn.on {
+    background: rgba(245,158,11,0.10);
+    border-color: rgba(245,158,11,0.38);
+    color: #f59e0b;
+}
+
 .ai-ask-btn {
     margin-left: auto;
     align-self: flex-start;
@@ -2232,6 +2316,7 @@ h2 {
 }
 .ai-ask-btn:hover { background: rgba(255,255,255,0.96); border-color: var(--accent-color); }
 .ai-ask-btn:active { transform: translateY(1px); }
+.q-actions .ai-ask-btn { margin-left: 0; }
 
 .ai-sel-btn {
     position: fixed;
@@ -3241,6 +3326,21 @@ h2 {
     flex: none;
     -webkit-tap-highlight-color: transparent;
 }
+.exam-fav-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 12px;
+    border: 1px solid rgba(245,158,11,0.24);
+    background: rgba(245,158,11,0.12);
+    color: #f59e0b;
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+    pointer-events: none;
+}
+.exam-fav-icon i { pointer-events: none; }
 .exam-fold-btn i { transition: transform 0.18s ease; }
 .exam-range-folder:not(.collapsed) .exam-fold-btn i { transform: rotate(90deg); }
 .exam-range-folder.collapsed .exam-range-children { display: none; }

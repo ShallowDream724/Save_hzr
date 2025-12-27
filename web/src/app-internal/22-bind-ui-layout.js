@@ -2,6 +2,77 @@
      * 12.1) UI 绑定：布局/侧边栏/通用关闭
      * --------------------------- */
     var uiLayoutBound = false;
+    var uiToTopBound = false;
+    var uiToTopRaf = 0;
+
+    function uiGetScrollY() {
+      try { if (typeof getScrollY === 'function') return Number(getScrollY()) || 0; } catch (_) {}
+      return window.scrollY || document.documentElement.scrollTop || document.body.scrollTop || 0;
+    }
+
+    function uiUpdateToTopBtn() {
+      if (!els.toTopBtn) return;
+      var show = false;
+      try {
+        var inHomeMode = false;
+        try { inHomeMode = !!(document.body && document.body.classList && document.body.classList.contains('home-mode')); } catch (_) { inHomeMode = false; }
+        if (!inHomeMode) inHomeMode = !!homeVisible;
+        var inExamMode = false;
+        try { inExamMode = !!(document.body && document.body.classList && document.body.classList.contains('exam-mode')); } catch (_) { inExamMode = false; }
+        if (!inHomeMode && !inExamMode) {
+          show = uiGetScrollY() > 420;
+        }
+      } catch (_) { show = false; }
+
+      try { els.toTopBtn.style.display = show ? 'inline-flex' : 'none'; } catch (_) {}
+      if (!show) return;
+
+      // Avoid fighting with FAB: place above it when possible.
+      try {
+        if (!els.fabMenu || !els.fabMenu.getBoundingClientRect) {
+          els.toTopBtn.style.left = '';
+          els.toTopBtn.style.top = '';
+          els.toTopBtn.style.right = '';
+          els.toTopBtn.style.bottom = '';
+          return;
+        }
+        var fab = els.fabMenu.getBoundingClientRect();
+        var b = els.toTopBtn.getBoundingClientRect();
+        var size = (b && b.width) ? b.width : 48;
+        var gap = 12;
+
+        var x = fab.left + (fab.width - size) / 2;
+        var y = fab.top - size - gap;
+
+        var maxX = Math.max(8, (window.innerWidth || 1200) - size - 8);
+        var maxY = Math.max(8, (window.innerHeight || 800) - size - 8);
+
+        x = Math.max(8, Math.min(maxX, x));
+        y = Math.max(8, Math.min(maxY, y));
+
+        // If there's no room above, place to the left.
+        if (fab.top < size + gap + 8) {
+          x = fab.left - size - gap;
+          y = fab.top + (fab.height - size) / 2;
+          x = Math.max(8, Math.min(maxX, x));
+          y = Math.max(8, Math.min(maxY, y));
+        }
+
+        els.toTopBtn.style.left = Math.round(x) + 'px';
+        els.toTopBtn.style.top = Math.round(y) + 'px';
+        els.toTopBtn.style.right = 'auto';
+        els.toTopBtn.style.bottom = 'auto';
+      } catch (_) {}
+    }
+
+    function uiScheduleToTopUpdate() {
+      if (!els.toTopBtn) return;
+      if (uiToTopRaf) return;
+      uiToTopRaf = (window.requestAnimationFrame || window.setTimeout)(function () {
+        uiToTopRaf = 0;
+        uiUpdateToTopBtn();
+      }, 0);
+    }
 
     function uiIsCompactLayout() {
       var coarse = false;
@@ -135,11 +206,13 @@
           els.fabMenu.style.top = t + 'px';
           els.fabMenu.style.right = 'auto';
           els.fabMenu.style.bottom = 'auto';
+          try { uiScheduleToTopUpdate(); } catch (_) {}
           return { left: l, top: t };
         }
         function persistFabPos(pos) {
           if (!pos) return;
           try { localStorage.setItem(FAB_KEY, JSON.stringify(pos)); } catch (_) {}
+          try { uiScheduleToTopUpdate(); } catch (_) {}
         }
 
         // restore
@@ -274,6 +347,21 @@
         }
         addEvt(els.fabMenu, 'touchend', endFabTouch, { passive: false });
         addEvt(els.fabMenu, 'touchcancel', endFabTouch, { passive: false });
+      }
+
+      // Chapter view: quick scroll-to-top (appears after scrolling down).
+      if (els.toTopBtn && !uiToTopBound) {
+        uiToTopBound = true;
+        els.toTopBtn.onclick = function () {
+          try {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          } catch (_) {
+            try { window.scrollTo(0, 0); } catch (_) {}
+          }
+        };
+        addEvt(window, 'scroll', uiScheduleToTopUpdate, { passive: true });
+        addEvt(window, 'resize', uiScheduleToTopUpdate, { passive: true });
+        uiScheduleToTopUpdate();
       }
 
       // 点击空白立即收起 toast（但不影响 toast 按钮）

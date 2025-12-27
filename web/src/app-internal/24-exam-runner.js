@@ -122,9 +122,33 @@ function examCreateQuestionCard(qref, idx) {
   if (!q) renderMarkdownInto(textEl, '题目已不存在（可能被删除/覆盖）');
   else renderMarkdownInto(textEl, q.text);
 
+  var actions = document.createElement('div');
+  actions.className = 'q-actions';
+
+  var favBtn = document.createElement('button');
+  favBtn.className = 'fav-btn';
+  favBtn.type = 'button';
+  favBtn.title = '收藏';
+  favBtn.setAttribute('aria-label', '收藏');
+  favBtn.setAttribute('aria-pressed', 'false');
+  favBtn.innerHTML = '<i class="fa-regular fa-star"></i>';
+  try {
+    if (typeof setFavBtnState === 'function') setFavBtnState(favBtn, !!(qref && qref.chapterId && qref.qid && isFavoriteQuestion(qref.chapterId, qref.qid)));
+  } catch (_) {}
+
   header.appendChild(idEl);
   header.appendChild(textEl);
+  actions.appendChild(favBtn);
+  header.appendChild(actions);
   card.appendChild(header);
+
+  favBtn.onclick = function (e) {
+    try { if (e) { e.preventDefault(); e.stopPropagation(); } } catch (_) {}
+    if (!qref || !qref.chapterId || !qref.qid) return;
+    var res = null;
+    try { if (typeof toggleFavoriteQuestion === 'function') res = toggleFavoriteQuestion(qref.chapterId, qref.qid, qref.idx); } catch (_) { res = null; }
+    try { if (typeof setFavBtnState === 'function') setFavBtnState(favBtn, !!(res && res.on)); } catch (_) {}
+  };
 
   var ul = document.createElement('ul');
   ul.className = 'options-list exam-options';
@@ -150,20 +174,21 @@ function examApplyRevealUi(card, qref, q, pickedLabel, opts) {
   // Add AI button (after reveal only)
   try {
     var header = card.querySelector('.q-header');
-    if (header && !header.querySelector('.ai-ask-btn')) {
+    var host = header ? (header.querySelector('.q-actions') || header) : null;
+    if (host && !host.querySelector('.ai-ask-btn')) {
       var aiBtn = document.createElement('button');
       aiBtn.className = 'ai-ask-btn';
       aiBtn.type = 'button';
       aiBtn.title = '问 AI';
       aiBtn.textContent = '问AI';
-      header.appendChild(aiBtn);
+      host.appendChild(aiBtn);
     }
   } catch (_) {}
 
   // Mark options
-  var opts = card.querySelectorAll('.exam-option');
-  for (var i = 0; i < opts.length; i++) {
-    var el = opts[i];
+  var optEls = card.querySelectorAll('.exam-option');
+  for (var i = 0; i < optEls.length; i++) {
+    var el = optEls[i];
     var lab = (el && el.dataset) ? String(el.dataset.label || '') : '';
     try { el.classList.remove('correct', 'wrong', 'picked'); } catch (_) {}
     if (lab && lab === correctLabel) { try { el.classList.add('correct'); } catch (_) {} }

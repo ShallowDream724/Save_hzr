@@ -34,7 +34,10 @@
 
             if (vs.chapterId) {
               var canLoad = false;
-              try { canLoad = !!(findChapterById(vs.chapterId) && !isDeleted(vs.chapterId)); } catch (_) { canLoad = false; }
+              try {
+                if (typeof isFavoritesChapterId === 'function' && isFavoritesChapterId(vs.chapterId)) canLoad = true;
+                else canLoad = !!(findChapterById(vs.chapterId) && !isDeleted(vs.chapterId));
+              } catch (_) { canLoad = false; }
               if (canLoad) loadChapter(vs.chapterId);
             }
           }

@@ -89,6 +89,13 @@
   
       var book = getActiveBook();
       var allChapters = getAllChapters();
+
+      // Pinned "Favorites" chapter (always on top, above folders).
+      try {
+        if (typeof createFavoritesSidebarElement === 'function') {
+          els.sidebarList.appendChild(createFavoritesSidebarElement());
+        }
+      } catch (_) {}
   
       var folderContents = {};
       var rootChapters = [];

@@ -138,7 +138,9 @@ function examRestoreReturnState() {
 
     if (!already) {
       try {
-        var ok = !!(findChapterById(wantChapterId) && !isDeleted(wantChapterId));
+        var ok = false;
+        if (typeof isFavoritesChapterId === 'function' && isFavoritesChapterId(wantChapterId)) ok = true;
+        else ok = !!(findChapterById(wantChapterId) && !isDeleted(wantChapterId));
         if (ok) loadChapter(wantChapterId);
       } catch (_) {}
     }
@@ -453,6 +455,31 @@ function examBuildQuestionSet(pool, selectedChapterIds, wantCount) {
   var selected = {};
   for (var i = 0; i < selectedChapterIds.length; i++) selected[String(selectedChapterIds[i])] = true;
 
+  // Favorites: must-include + smart de-dup (exclude must questions from random pool)
+  var favId = (typeof FAVORITES_CHAPTER_ID === 'string' && FAVORITES_CHAPTER_ID) ? FAVORITES_CHAPTER_ID : '';
+  var includeFav = !!(favId && selected[favId]);
+  var must = [];
+  var mustSet = {};
+  if (includeFav) {
+    var favList = [];
+    try { if (typeof favoritesGetEligibleForExam === 'function') favList = favoritesGetEligibleForExam(pool) || []; } catch (_) { favList = []; }
+    for (var fi = 0; fi < favList.length; fi++) {
+      var ref = favList[fi];
+      if (!ref || !ref.chapterId || !ref.qid) continue;
+      var k = (typeof favKey === 'function') ? favKey(ref.chapterId, ref.qid) : (String(ref.chapterId) + '|' + String(ref.qid));
+      if (!k || mustSet[k]) continue;
+      mustSet[k] = true;
+      must.push({
+        folderId: ref.folderId || null,
+        folderTitle: ref.folderTitle || '',
+        chapterId: ref.chapterId,
+        chapterTitle: ref.chapterTitle || '',
+        qid: ref.qid,
+        idx: ref.idx
+      });
+    }
+  }
+
   // Build selected folders snapshot
   var groups = []; // { folderId, folderTitle, chapters:[{id,title,qs:[{qid,idx}]}], total }
 
@@ -462,8 +489,20 @@ function examBuildQuestionSet(pool, selectedChapterIds, wantCount) {
     for (var j = 0; j < chapters.length; j++) {
       var ch = chapters[j];
       if (!ch || !selected[String(ch.id)] || !Array.isArray(ch.questions) || !ch.questions.length) continue;
-      chs.push({ id: String(ch.id), title: String(ch.title || ''), qs: ch.questions.slice() });
-      total += ch.count;
+      var qs = ch.questions.slice();
+      if (includeFav && qs.length) {
+        var kept = [];
+        for (var qi = 0; qi < qs.length; qi++) {
+          var qref = qs[qi];
+          var k = (typeof favKey === 'function') ? favKey(ch.id, qref.qid) : (String(ch.id) + '|' + String(qref.qid));
+          if (k && mustSet[k]) continue;
+          kept.push(qref);
+        }
+        qs = kept;
+      }
+      if (!qs.length) continue;
+      chs.push({ id: String(ch.id), title: String(ch.title || ''), qs: qs });
+      total += qs.length;
     }
     if (!chs.length || total <= 0) return;
     groups.push({ folderId: folderId, folderTitle: folderTitle, chapters: chs, total: total });
@@ -474,23 +513,32 @@ function examBuildQuestionSet(pool, selectedChapterIds, wantCount) {
     addGroup(String(g.id), String(g.title || '未命名文件夹'), g.chapters || []);
   }
   if (pool.root) addGroup('', '未分组', pool.root.chapters || []);
-  if (!groups.length) return [];
+  if (!groups.length && !must.length) return [];
 
-  var max = 0;
-  for (var gg = 0; gg < groups.length; gg++) max += groups[gg].total;
-  wantCount = Math.max(0, Math.min(Number(wantCount) || 0, max));
+  var maxRemain = 0;
+  for (var gg = 0; gg < groups.length; gg++) maxRemain += groups[gg].total;
+  var maxAll = must.length + maxRemain;
+  wantCount = Math.max(0, Math.min(Number(wantCount) || 0, maxAll));
+  if (wantCount < must.length) wantCount = must.length;
   if (!wantCount) return [];
+
+  var remainWanted = wantCount - must.length;
+  if (remainWanted <= 0 || maxRemain <= 0) {
+    var only = must.slice();
+    examShuffle(only);
+    return only;
+  }
 
   // 1) folder allocation (largest remainder, tie randomized)
   var alloc = []; // { idx, n }
   var baseSum = 0;
   for (var a = 0; a < groups.length; a++) {
-    var exact = wantCount * groups[a].total / max;
+    var exact = remainWanted * groups[a].total / maxRemain;
     var base = Math.floor(exact);
     alloc.push({ idx: a, exact: exact, base: base, rem: exact - base });
     baseSum += base;
   }
-  var remain = wantCount - baseSum;
+  var remain = remainWanted - baseSum;
   examShuffle(alloc);
   alloc.sort(function (x, y) { return y.rem - x.rem; });
   for (var r = 0; r < alloc.length && remain > 0; r++) {
@@ -523,7 +571,7 @@ function examBuildQuestionSet(pool, selectedChapterIds, wantCount) {
   }
 
   // 2) pick questions inside each folder, try cover chapters
-  var out = [];
+  var out = must.slice();
   for (var gi3 = 0; gi3 < alloc.length; gi3++) {
     var n = alloc[gi3].base;
     if (!n) continue;

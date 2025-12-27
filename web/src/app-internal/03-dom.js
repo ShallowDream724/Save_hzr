@@ -22,6 +22,7 @@
       els.sidebarHomeTopBtn = document.getElementById('sidebarHomeTopBtn');
       els.sidebarExamBtn = document.getElementById('sidebarExamBtn');
       els.fabMenu = document.getElementById('fabMenu');
+      els.toTopBtn = document.getElementById('toTopBtn');
       els.toastHost = document.getElementById('toastHost');
 
       els.addFolderBtn = document.getElementById('addFolderBtn');
