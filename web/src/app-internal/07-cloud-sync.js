@@ -3,6 +3,7 @@
      * --------------------------- */
     var cloud = {
       token: null,
+      username: null,
       version: 0,
       savingTimer: 0,
       isSaving: false,
@@ -14,13 +15,44 @@
       bootstrapFailed: false
     };
 
+    function decodeJwtPayload(token) {
+      try {
+        if (!token || typeof token !== 'string') return null;
+        var parts = token.split('.');
+        if (parts.length < 2) return null;
+        var b64 = String(parts[1] || '').replace(/-/g, '+').replace(/_/g, '/');
+        while (b64.length % 4) b64 += '=';
+        if (typeof atob !== 'function') return null;
+        var json = atob(b64);
+        return JSON.parse(json);
+      } catch (_) {
+        return null;
+      }
+    }
+
+    function getTokenUsername() {
+      var t = getToken();
+      if (!t) return '';
+      if (cloud.username) return cloud.username;
+      var payload = decodeJwtPayload(t);
+      var u = payload && typeof payload.username === 'string' ? String(payload.username || '').trim() : '';
+      cloud.username = u || null;
+      return u || '';
+    }
+
     function getToken() {
       if (cloud.token) return cloud.token;
       try { cloud.token = localStorage.getItem(AUTH_TOKEN_KEY) || null; } catch (e) { cloud.token = null; }
+      if (!cloud.token) cloud.username = null;
       return cloud.token;
     }
     function setToken(token) {
       cloud.token = token || null;
+      cloud.username = cloud.token ? (function () {
+        var payload = decodeJwtPayload(cloud.token);
+        var u = payload && typeof payload.username === 'string' ? String(payload.username || '').trim() : '';
+        return u || null;
+      })() : null;
       cloud.version = 0;
       cloud.bootstrapDone = false;
       cloud.syncEnabled = false;
@@ -40,9 +72,14 @@
       var dot = 'status-dot--off';
       var label = '';
       var state = 'off'; // off | warn | ok | err
+      var uname = '';
+      try { uname = getTokenUsername(); } catch (_) { uname = ''; }
+      var loggedInPrefix = '';
+      if (getToken()) loggedInPrefix = uname ? ('已登录：' + uname + ' · ') : '已登录 · ';
 
       if (text) {
         label = String(text);
+        if (loggedInPrefix) label = loggedInPrefix + label;
         if (label.indexOf('失败') !== -1) { dot = 'status-dot--err'; state = 'err'; }
         else if (label.indexOf('冲突') !== -1) { dot = 'status-dot--warn'; state = 'warn'; }
         else if (label.indexOf('同步中') !== -1) { dot = 'status-dot--warn'; state = 'warn'; }
@@ -55,19 +92,19 @@
           state = 'off';
         } else if (cloud.bootstrapFailed) {
           dot = 'status-dot--err';
-          label = '已登录 · 同步失败（未启用）';
+          label = (uname ? ('已登录：' + uname) : '已登录') + ' · 同步失败（未启用）';
           state = 'err';
         } else if (!cloud.bootstrapDone) {
           dot = 'status-dot--warn';
-          label = '已登录 · 同步初始化中…';
+          label = (uname ? ('已登录：' + uname) : '已登录') + ' · 同步初始化中…';
           state = 'warn';
         } else if (!cloud.syncEnabled) {
           dot = 'status-dot--warn';
-          label = '已登录 · 未启用自动同步';
+          label = (uname ? ('已登录：' + uname) : '已登录') + ' · 未启用自动同步';
           state = 'warn';
         } else {
           dot = 'status-dot--ok';
-          label = '已登录 · 自动同步';
+          label = (uname ? ('已登录：' + uname) : '已登录') + ' · 自动同步';
           state = 'ok';
         }
       }
@@ -92,7 +129,7 @@
       if (!dotEl || !labelEl) {
         els.syncStatus.innerHTML = '<span class="status-dot ' + dot + '"></span><span class="sync-label">' + escapeHtml(label) + '</span>';
       }
-      if (els.syncModalStatus) els.syncModalStatus.textContent = getToken() ? '已登录 · 自动同步' : '未登录 · 仅本地';
+      if (els.syncModalStatus) els.syncModalStatus.textContent = label;
     }
 
     function apiFetch(path, options) {

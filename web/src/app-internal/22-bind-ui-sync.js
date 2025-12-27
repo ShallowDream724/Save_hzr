@@ -6,13 +6,16 @@
     function updateAuthModalUI() {
       if (!els.authModal) return;
       var loggedIn = !!getToken();
+      var uname = '';
+      try { if (loggedIn && typeof getTokenUsername === 'function') uname = String(getTokenUsername() || '').trim(); } catch (_) { uname = ''; }
+      var userTag = uname ? ('（' + uname + '）') : '';
       if (els.authLogoutBtn) els.authLogoutBtn.style.display = loggedIn ? 'inline-block' : 'none';
       if (els.authHint) {
         if (!loggedIn) els.authHint.textContent = '登录后可跨设备同步，并提供自动/手动存档。';
-        else if (cloud.bootstrapFailed) els.authHint.textContent = '已登录：同步初始化失败（不会上传本机）。请检查网络/反代配置后重试。';
-        else if (!cloud.bootstrapDone) els.authHint.textContent = '已登录：正在从云端拉取数据…（不会上传本机）';
-        else if (!cloud.syncEnabled) els.authHint.textContent = '已登录：云同步未启用（为防误覆盖，不会自动上传本机）。';
-        else els.authHint.textContent = '已登录：默认拉取云端；之后改动会自动同步到云端（云端每5分钟自动备份）。';
+        else if (cloud.bootstrapFailed) els.authHint.textContent = '已登录' + userTag + '：同步初始化失败（不会上传本机）。请检查网络/反代配置后重试。';
+        else if (!cloud.bootstrapDone) els.authHint.textContent = '已登录' + userTag + '：正在从云端拉取数据…（不会上传本机）';
+        else if (!cloud.syncEnabled) els.authHint.textContent = '已登录' + userTag + '：云同步未启用（为防误覆盖，不会自动上传本机）。';
+        else els.authHint.textContent = '已登录' + userTag + '：默认拉取云端；之后改动会自动同步到云端（云端每5分钟自动备份）。';
       }
 
       // Logged-in users should not see the login/register form (avoid confusion).

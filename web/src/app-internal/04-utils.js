@@ -25,9 +25,9 @@
     function topBarTitleMaxChars() {
       var w = 1024;
       try { w = Number(window.innerWidth) || 1024; } catch (_) { w = 1024; }
-      if (w <= 720) return 10; // phone: max 10 chars (avoid overflow)
-      if (w <= 1024) return 28;
-      return 64;
+      if (w <= 720) return 8; // phone: max 8 chars (avoid overflow)
+      if (w <= 1024) return 24;
+      return 40;
     }
 
     function setTopBarTitle(fullTitle) {
