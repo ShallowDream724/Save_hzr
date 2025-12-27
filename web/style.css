@@ -1751,6 +1751,14 @@ h2 {
             0 18px 40px rgba(15,23,42,0.10);
     }
 }
+/* Touch devices: some mobile browsers over-render `color-mix(..., transparent)` spread shadows (turns the halo into a solid, oversized ring). */
+@media (hover: none) and (pointer: coarse) {
+    .analysis-title i {
+        box-shadow:
+            0 0 0 6px var(--analysis-bg-2),
+            0 10px 22px rgba(15,23,42,0.10);
+    }
+}
 .knowledge-details {
     margin-top: 14px;
     border: 1px solid var(--knowledge-border);
