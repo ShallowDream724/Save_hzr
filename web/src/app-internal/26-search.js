@@ -18,7 +18,10 @@ var searchState = {
   lastHitIdxs: null, // [indexIdx]
   searchToken: 0,
   inputTimer: 0,
-  selectedHit: null // {chapterId,qid}
+  selectedHit: null, // {chapterId,qid}
+
+  // chapterId -> collapsed?
+  fold: {}
 };
 
 function searchNormalizeQid(q) {
@@ -175,22 +178,23 @@ function searchRenderResults(hits, stats) {
   var html = '';
   for (var g = 0; g < order.length; g++) {
     var cid2 = order[g];
-    var group = byChapter[cid2];
-    if (!group || !group.items || !group.items.length) continue;
-    var chapterTitle = String(group.chapterTitle || '').trim() || '未命名章节';
-    var folderTitle = String(group.folderTitle || '').trim() || '未分组';
+	    var group = byChapter[cid2];
+	    if (!group || !group.items || !group.items.length) continue;
+	    var chapterTitle = String(group.chapterTitle || '').trim() || '未命名章节';
+	    var folderTitle = String(group.folderTitle || '').trim() || '未分组';
+	    var collapsed = !!(searchState && searchState.fold && searchState.fold[cid2]);
 
-    html +=
-      '<div class="search-group">' +
-        '<div class="search-group-head">' +
-          '<div class="search-group-title" title="' + searchEscapeAttr(folderTitle + ' / ' + chapterTitle) + '">' +
-            '<span class="search-group-folder">' + searchEscape(folderTitle) + '</span>' +
-            '<span class="search-group-sep">/</span>' +
-            '<span class="search-group-chapter">' + searchEscape(chapterTitle) + '</span>' +
-          '</div>' +
-          '<div class="search-group-count">' + group.items.length + '</div>' +
-        '</div>' +
-        '<div class="search-group-items">';
+	    html +=
+	      '<div class="search-group' + (collapsed ? ' collapsed' : '') + '" data-chapter-id="' + searchEscapeAttr(cid2) + '">' +
+	        '<button type="button" class="search-group-head" data-chapter-id="' + searchEscapeAttr(cid2) + '" aria-expanded="' + (collapsed ? 'false' : 'true') + '">' +
+	          '<span class="search-group-title" title="' + searchEscapeAttr(folderTitle + ' / ' + chapterTitle) + '">' +
+	            '<span class="search-group-folder">' + searchEscape(folderTitle) + '</span>' +
+	            '<span class="search-group-sep">/</span>' +
+	            '<span class="search-group-chapter">' + searchEscape(chapterTitle) + '</span>' +
+	          '</span>' +
+	          '<span class="search-group-count">' + group.items.length + '</span>' +
+	        '</button>' +
+	        '<div class="search-group-items">';
 
     for (var j = 0; j < group.items.length; j++) {
       var it = group.items[j];
@@ -232,6 +236,7 @@ function searchBuildIndexStart() {
   searchState.index = [];
   searchState.lastQuery = '';
   searchState.lastHitIdxs = null;
+  searchState.fold = {};
 
   var folderMap = searchFolderTitleByChapterId(book);
 
@@ -486,13 +491,26 @@ function bindSearchOnce() {
   }
 
   if (els.searchResults) {
-    els.searchResults.onclick = function (e) {
-      var t = e && e.target ? e.target : null;
-      if (!t || !t.closest) return;
-      var btn = t.closest('.search-hit');
-      if (!btn || !btn.dataset) return;
-      var cid = btn.dataset.chapterId ? String(btn.dataset.chapterId) : '';
-      var qid = btn.dataset.qid ? String(btn.dataset.qid) : '';
+	    els.searchResults.onclick = function (e) {
+	      var t = e && e.target ? e.target : null;
+	      if (!t || !t.closest) return;
+
+	      var head = t.closest('.search-group-head');
+	      if (head && head.dataset) {
+	        var cid0 = head.dataset.chapterId ? String(head.dataset.chapterId) : '';
+	        if (!cid0) return;
+	        var group0 = head.closest('.search-group');
+	        var willCollapse = true;
+	        try { willCollapse = !(!group0 || group0.classList.contains('collapsed')); } catch (_) { willCollapse = true; }
+	        try { if (group0) group0.classList.toggle('collapsed', !!willCollapse); } catch (_) {}
+	        try { head.setAttribute('aria-expanded', willCollapse ? 'false' : 'true'); } catch (_) {}
+	        try { if (searchState.fold) searchState.fold[cid0] = !!willCollapse; } catch (_) {}
+	        return;
+	      }
+	      var btn = t.closest('.search-hit');
+	      if (!btn || !btn.dataset) return;
+	      var cid = btn.dataset.chapterId ? String(btn.dataset.chapterId) : '';
+	      var qid = btn.dataset.qid ? String(btn.dataset.qid) : '';
       if (!cid || !qid) return;
       searchJumpTo(cid, qid);
     };
