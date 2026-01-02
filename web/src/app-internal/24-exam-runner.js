@@ -4,6 +4,13 @@
 
 var examRunnerBound = false;
 
+function examBuildLabelSetFromNormalized(norm) {
+  norm = (norm === undefined || norm === null) ? '' : String(norm);
+  var out = {};
+  for (var i = 0; i < norm.length; i++) out[norm[i]] = true;
+  return out;
+}
+
 function examFindQuestionInChapter(chapter, qref) {
   if (!chapter || !Array.isArray(chapter.questions) || !qref) return null;
   var wantQid = String(qref.qid || '');
@@ -77,7 +84,7 @@ function examUpdateRunnerHeader() {
 function examCreateOptionLi(opt) {
   var li = document.createElement('li');
   li.className = 'option-item exam-option';
-  var lab = opt && opt.label ? String(opt.label).trim() : '';
+  var lab = opt && opt.label ? String(opt.label).trim().toUpperCase() : '';
   li.dataset.label = lab;
 
   var labEl = document.createElement('span');
@@ -109,6 +116,9 @@ function examCreateQuestionCard(qref, idx) {
 
   var chapter = findChapterById(qref.chapterId);
   var q = examFindQuestionInChapter(chapter, qref);
+  var correctLabel = (typeof examNormalizeAnswerLabels === 'function') ? examNormalizeAnswerLabels(q && q.answer) : String((q && q.answer) ? q.answer : '').trim();
+  var isMulti = !!(correctLabel && correctLabel.length > 1);
+  try { card.dataset.examMulti = isMulti ? '1' : '0'; } catch (_) {}
 
   var header = document.createElement('div');
   header.className = 'q-header';
@@ -157,6 +167,51 @@ function examCreateQuestionCard(qref, idx) {
   }
   card.appendChild(ul);
 
+  if (isMulti) {
+    var bar = document.createElement('div');
+    bar.className = 'exam-multi-actions';
+
+    var submitBtn = document.createElement('button');
+    submitBtn.className = 'exam-multi-submit';
+    submitBtn.type = 'button';
+    submitBtn.textContent = '提交';
+    submitBtn.disabled = true;
+
+    var clearBtn = document.createElement('button');
+    clearBtn.className = 'exam-multi-clear';
+    clearBtn.type = 'button';
+    clearBtn.textContent = '清空';
+
+    bar.appendChild(submitBtn);
+    bar.appendChild(clearBtn);
+    card.appendChild(bar);
+
+    submitBtn.onclick = function (e) {
+      try { if (e) { e.preventDefault(); e.stopPropagation(); } } catch (_) {}
+      if (exam.phase !== 'running') return;
+      if (card.dataset.examRevealed === '1') return;
+      var sel = card.querySelectorAll('.exam-option.selected');
+      if (!sel || !sel.length) return;
+      var picked = [];
+      for (var si = 0; si < sel.length; si++) {
+        var el = sel[si];
+        var lab = (el && el.dataset) ? String(el.dataset.label || '').trim() : '';
+        if (lab) picked.push(lab);
+      }
+      if (!picked.length) return;
+      examAnswerQuestion(card, qref, picked.join(''));
+    };
+
+    clearBtn.onclick = function (e) {
+      try { if (e) { e.preventDefault(); e.stopPropagation(); } } catch (_) {}
+      if (exam.phase !== 'running') return;
+      if (card.dataset.examRevealed === '1') return;
+      var sel2 = card.querySelectorAll('.exam-option.selected');
+      for (var ci = 0; ci < sel2.length; ci++) { try { sel2[ci].classList.remove('selected'); } catch (_) {} }
+      try { submitBtn.disabled = true; } catch (_) {}
+    };
+  }
+
   applyRandomHighlights(card);
   return card;
 }
@@ -164,9 +219,11 @@ function examCreateQuestionCard(qref, idx) {
 function examApplyRevealUi(card, qref, q, pickedLabel, opts) {
   opts = opts || {};
   if (!card) return;
-  var correctLabel = (q && q.answer !== undefined && q.answer !== null) ? String(q.answer).trim() : '';
-  var picked = String(pickedLabel || '').trim();
+  var correctLabel = (typeof examNormalizeAnswerLabels === 'function') ? examNormalizeAnswerLabels(q && q.answer) : String((q && q.answer) ? q.answer : '').trim();
+  var picked = (typeof examNormalizeAnswerLabels === 'function') ? examNormalizeAnswerLabels(pickedLabel) : String(pickedLabel || '').trim();
   var isCorrect = picked && correctLabel && picked === correctLabel;
+  var correctSet = examBuildLabelSetFromNormalized(correctLabel);
+  var pickedSet = examBuildLabelSetFromNormalized(picked);
 
   try { card.dataset.examRevealed = '1'; } catch (_) {}
   try { card.classList.add('exam-revealed'); } catch (_) {}
@@ -190,15 +247,15 @@ function examApplyRevealUi(card, qref, q, pickedLabel, opts) {
   for (var i = 0; i < optEls.length; i++) {
     var el = optEls[i];
     var lab = (el && el.dataset) ? String(el.dataset.label || '') : '';
-    try { el.classList.remove('correct', 'wrong', 'picked'); } catch (_) {}
-    if (lab && lab === correctLabel) { try { el.classList.add('correct'); } catch (_) {} }
-    if (lab && picked && lab === picked) { try { el.classList.add('picked'); } catch (_) {} }
-    if (lab && picked && lab === picked && lab !== correctLabel) { try { el.classList.add('wrong'); } catch (_) {} }
+    try { el.classList.remove('correct', 'wrong', 'picked', 'selected'); } catch (_) {}
+    if (lab && correctSet[lab]) { try { el.classList.add('correct'); } catch (_) {} }
+    if (lab && pickedSet[lab]) { try { el.classList.add('picked'); } catch (_) {} }
+    if (lab && pickedSet[lab] && !correctSet[lab]) { try { el.classList.add('wrong'); } catch (_) {} }
 
     var mark = el.querySelector('.exam-opt-mark');
     if (mark) {
-      if (lab === correctLabel) mark.innerHTML = '<i class="fa-solid fa-check"></i>';
-      else if (lab === picked && lab !== correctLabel) mark.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+      if (lab && correctSet[lab]) mark.innerHTML = '<i class="fa-solid fa-check"></i>';
+      else if (lab && pickedSet[lab] && !correctSet[lab]) mark.innerHTML = '<i class="fa-solid fa-xmark"></i>';
       else mark.innerHTML = '';
     }
   }
@@ -282,8 +339,8 @@ function examAnswerQuestion(card, qref, pickedLabel) {
   var q = examFindQuestionInChapter(chapter, qref);
   if (!q) { showToast('题目已不存在', { timeoutMs: 2000 }); return; }
 
-  var correctLabel = (q.answer !== undefined && q.answer !== null) ? String(q.answer).trim() : '';
-  var picked = String(pickedLabel).trim();
+  var correctLabel = (typeof examNormalizeAnswerLabels === 'function') ? examNormalizeAnswerLabels(q.answer) : String((q.answer !== undefined && q.answer !== null) ? q.answer : '').trim();
+  var picked = (typeof examNormalizeAnswerLabels === 'function') ? examNormalizeAnswerLabels(pickedLabel) : String(pickedLabel).trim();
   if (!picked) return;
   var isCorrect = picked === correctLabel;
 
@@ -336,6 +393,15 @@ function examBindRunnerEventsOnce() {
     var card = opt.closest('.question-card');
     if (!card || !card.dataset) return;
     if (card.dataset.examRevealed === '1') return;
+    if (card.dataset.examMulti === '1') {
+      try { opt.classList.toggle('selected'); } catch (_) {}
+      try {
+        var btn = card.querySelector('.exam-multi-submit');
+        if (btn) btn.disabled = !card.querySelector('.exam-option.selected');
+      } catch (_) {}
+      return;
+    }
+
     var picked = opt.dataset ? opt.dataset.label : '';
     var idx = Number(card.dataset.examIdx);
     if (!Number.isFinite(idx) || idx < 0 || idx >= exam.questions.length) return;
@@ -390,7 +456,7 @@ function examRenderRunner() {
   var head = document.createElement('div');
   head.className = 'exam-runner-head';
   head.innerHTML =
-    '<div class="exam-runner-tip">点击选项作答；出答案后才显示“问AI”。</div>' +
+    '<div class="exam-runner-tip">单选：点击选项作答；多选：先点选，再点“提交”。出答案后才显示“问AI”。</div>' +
     '<div id="examRunnerStats" class="exam-runner-stats"></div>' +
     '<div id="examResultBox" class="exam-result-box" style="display:none;"></div>';
   els.examRunnerView.appendChild(head);

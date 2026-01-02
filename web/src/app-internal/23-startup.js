@@ -6,7 +6,7 @@
       installModalScrollWatcher();
       if (!els.sidebarList) return;
 
-      Promise.all([loadStaticPresets(), loadDefaultSeed()]).then(function () {
+      Promise.all([loadStaticPresets(), loadDefaultSeed(), loadDefaultEpidemiologySeed()]).then(function () {
         loadLocalData();
         if (!appData.ui) appData.ui = defaultUi();
         appData.ui = normalizeUi(appData.ui);

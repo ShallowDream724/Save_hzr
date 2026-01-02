@@ -359,17 +359,36 @@ function examNormalizeQid(q) {
   return qid;
 }
 
+function examNormalizeAnswerLabels(raw) {
+  var s = (raw === undefined || raw === null) ? '' : String(raw);
+  var m = s.toUpperCase().match(/[A-Z]/g);
+  if (!m || !m.length) return '';
+  var seen = {};
+  var out = [];
+  for (var i = 0; i < m.length; i++) {
+    var ch = m[i];
+    if (seen[ch]) continue;
+    seen[ch] = true;
+    out.push(ch);
+  }
+  out.sort();
+  return out.join('');
+}
+
 function examIsEligibleQuestion(q) {
   if (!q || typeof q !== 'object') return false;
   if (!Array.isArray(q.options) || q.options.length < 2) return false;
-  var ans = (q.answer !== undefined && q.answer !== null) ? String(q.answer).trim() : '';
+  var ans = examNormalizeAnswerLabels(q.answer);
   if (!ans) return false;
-  var ok = false;
+
+  var labels = {};
   for (var i = 0; i < q.options.length; i++) {
-    var lab = (q.options[i] && q.options[i].label !== undefined && q.options[i].label !== null) ? String(q.options[i].label).trim() : '';
-    if (lab && lab === ans) { ok = true; break; }
+    var lab = (q.options[i] && q.options[i].label !== undefined && q.options[i].label !== null) ? String(q.options[i].label).trim().toUpperCase() : '';
+    if (lab) labels[lab] = true;
   }
-  if (!ok) return false;
+  for (var j = 0; j < ans.length; j++) {
+    if (!labels[ans[j]]) return false;
+  }
   var qid = examNormalizeQid(q);
   if (!qid) return false;
   return true;

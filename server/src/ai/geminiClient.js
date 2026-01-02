@@ -3,10 +3,84 @@ const { FunctionCallingConfigMode, MediaResolution, PartMediaResolutionLevel } =
 const { getAiClient } = require('./geminiCore');
 const { normalizeGeminiError } = require('./geminiErrors');
 
+function normalizeThinkingLevel(raw, fallback) {
+  const s = String(raw || '').trim().toUpperCase();
+  if (s === 'LOW' || s === 'MEDIUM' || s === 'HIGH') return s;
+  return fallback;
+}
+
+function getImportThinkingLevel() {
+  return normalizeThinkingLevel(process.env.AI_IMPORT_THINKING_LEVEL, 'HIGH');
+}
+
+function isUnsupportedThinkingLevelError(err) {
+  const msg = err instanceof Error ? err.message : String(err || '');
+  const up = String(msg || '').toUpperCase();
+  return up.includes('THINKING LEVEL') && up.includes('NOT SUPPORTED');
+}
+
+let warnedThinkingFallback = false;
+function maybeWarnThinkingFallback(fromLevel, toLevel, modelId) {
+  if (warnedThinkingFallback) return;
+  warnedThinkingFallback = true;
+  try {
+    console.warn(
+      `[ai] thinkingLevel ${String(fromLevel)} is not supported by ${String(modelId)}; falling back to ${String(toLevel)}`
+    );
+  } catch (_) {}
+}
+
 function getModelId(model) {
-  if (model === 'pro') return 'gemini-3-pro-preview';
-  if (model === 'flash') return 'gemini-3-flash-preview';
+  if (model === 'pro') {
+    const override = String(process.env.AI_IMPORT_PRO_MODEL_ID || process.env.AI_GEMINI_PRO_MODEL_ID || '').trim();
+    return override || 'gemini-3-pro-preview';
+  }
+  if (model === 'flash') {
+    const override = String(process.env.AI_IMPORT_FLASH_MODEL_ID || process.env.AI_GEMINI_FLASH_MODEL_ID || '').trim();
+    return override || 'gemini-3-flash-preview';
+  }
   throw new Error(`Unsupported model: ${model}`);
+}
+
+function isGoogleGeminiBaseUrl() {
+  const raw =
+    process.env.GEMINI_NEXT_GEN_API_BASE_URL ||
+    process.env.GEMINI_BASE_URL ||
+    process.env.GEMINI_API_BASE_URL ||
+    process.env.GOOGLE_GEMINI_BASE_URL;
+  const s = String(raw || '').trim();
+  if (!s) return true; // default is generativelanguage.googleapis.com
+  try {
+    const u = new URL(s);
+    const host = String(u.host || '').toLowerCase();
+    return host.endsWith('generativelanguage.googleapis.com') || host.endsWith('googleapis.com');
+  } catch (_) {
+    return false;
+  }
+}
+
+function applyThinkingConfigToRequestConfig(config, thinkingLevel) {
+  if (!thinkingLevel) return config;
+
+  // Google Gemini API accepts the SDK's default placement; some gateways require thinkingConfig at the top-level.
+  if (isGoogleGeminiBaseUrl()) return { ...config, thinkingConfig: { thinkingLevel } };
+
+  const baseHttpOptions = config && config.httpOptions ? config.httpOptions : {};
+  const baseExtraBody =
+    baseHttpOptions && baseHttpOptions.extraBody && typeof baseHttpOptions.extraBody === 'object' && !Array.isArray(baseHttpOptions.extraBody)
+      ? baseHttpOptions.extraBody
+      : {};
+
+  return {
+    ...config,
+    httpOptions: {
+      ...baseHttpOptions,
+      extraBody: {
+        ...baseExtraBody,
+        thinkingConfig: { thinkingLevel },
+      },
+    },
+  };
 }
 
 const extractPageBundleDeclaration = {
@@ -267,28 +341,60 @@ async function extractPageBundle({ model, pageIndex, noteText, imagePath, mimeTy
   const prompt = buildExtractPrompt({ pageIndex, noteText });
   const parts = [buildInlineImagePart(imagePath, mimeType, modelId), { text: prompt }];
   const isGemini3 = isGemini3ModelId(modelId);
+  const thinkingLevel = getImportThinkingLevel();
 
   let response;
   try {
+    const baseConfig = {
+      ...(isGemini3 ? {} : { mediaResolution: MediaResolution.MEDIA_RESOLUTION_HIGH }),
+      toolConfig: {
+        functionCallingConfig: {
+          mode: FunctionCallingConfigMode.ANY,
+          allowedFunctionNames: ['extract_page_bundle'],
+        },
+      },
+      tools: [{ functionDeclarations: [extractPageBundleDeclaration] }],
+      temperature: 0.2,
+      topP: 0.95,
+    };
+
     response = await ai.models.generateContent({
       model: modelId,
       contents: [{ role: 'user', parts }],
       config: {
-        ...(isGemini3 ? {} : { mediaResolution: MediaResolution.MEDIA_RESOLUTION_HIGH }),
-        thinkingConfig: { thinkingLevel: 'HIGH' },
-        toolConfig: {
-          functionCallingConfig: {
-            mode: FunctionCallingConfigMode.ANY,
-            allowedFunctionNames: ['extract_page_bundle'],
-          },
-        },
-        tools: [{ functionDeclarations: [extractPageBundleDeclaration] }],
-        temperature: 0.2,
-        topP: 0.95,
+        ...applyThinkingConfigToRequestConfig(baseConfig, thinkingLevel),
       },
     });
   } catch (e) {
+    if (thinkingLevel !== 'HIGH' && isUnsupportedThinkingLevelError(e)) {
+      maybeWarnThinkingFallback(thinkingLevel, 'HIGH', modelId);
+      try {
+        const baseConfig = {
+          ...(isGemini3 ? {} : { mediaResolution: MediaResolution.MEDIA_RESOLUTION_HIGH }),
+          toolConfig: {
+            functionCallingConfig: {
+              mode: FunctionCallingConfigMode.ANY,
+              allowedFunctionNames: ['extract_page_bundle'],
+            },
+          },
+          tools: [{ functionDeclarations: [extractPageBundleDeclaration] }],
+          temperature: 0.2,
+          topP: 0.95,
+        };
+
+        response = await ai.models.generateContent({
+          model: modelId,
+          contents: [{ role: 'user', parts }],
+          config: {
+            ...applyThinkingConfigToRequestConfig(baseConfig, 'HIGH'),
+          },
+        });
+      } catch (e2) {
+        throw normalizeGeminiError(e2);
+      }
+    } else {
     throw normalizeGeminiError(e);
+    }
   }
 
   const calls = response.functionCalls || [];
@@ -308,27 +414,58 @@ module.exports = {
     const ai = getAiClient();
     const modelId = getModelId(model);
     const prompt = buildFinalizePrompt({ pages, noteText });
+    const thinkingLevel = getImportThinkingLevel();
 
     let response;
     try {
+      const baseConfig = {
+        toolConfig: {
+          functionCallingConfig: {
+            mode: FunctionCallingConfigMode.ANY,
+            allowedFunctionNames: ['finalize_import_job'],
+          },
+        },
+        tools: [{ functionDeclarations: [finalizeImportJobDeclaration] }],
+        temperature: 0.2,
+        topP: 0.95,
+      };
+
       response = await ai.models.generateContent({
         model: modelId,
         contents: [{ role: 'user', parts: [{ text: prompt }] }],
         config: {
-          thinkingConfig: { thinkingLevel: 'HIGH' },
-          toolConfig: {
-            functionCallingConfig: {
-              mode: FunctionCallingConfigMode.ANY,
-              allowedFunctionNames: ['finalize_import_job'],
-            },
-          },
-          tools: [{ functionDeclarations: [finalizeImportJobDeclaration] }],
-          temperature: 0.2,
-          topP: 0.95,
+          ...applyThinkingConfigToRequestConfig(baseConfig, thinkingLevel),
         },
       });
     } catch (e) {
+      if (thinkingLevel !== 'HIGH' && isUnsupportedThinkingLevelError(e)) {
+        maybeWarnThinkingFallback(thinkingLevel, 'HIGH', modelId);
+        try {
+          const baseConfig = {
+            toolConfig: {
+              functionCallingConfig: {
+                mode: FunctionCallingConfigMode.ANY,
+                allowedFunctionNames: ['finalize_import_job'],
+              },
+            },
+            tools: [{ functionDeclarations: [finalizeImportJobDeclaration] }],
+            temperature: 0.2,
+            topP: 0.95,
+          };
+
+          response = await ai.models.generateContent({
+            model: modelId,
+            contents: [{ role: 'user', parts: [{ text: prompt }] }],
+            config: {
+              ...applyThinkingConfigToRequestConfig(baseConfig, 'HIGH'),
+            },
+          });
+        } catch (e2) {
+          throw normalizeGeminiError(e2);
+        }
+      } else {
       throw normalizeGeminiError(e);
+      }
     }
 
     const calls = response.functionCalls || [];

@@ -498,7 +498,7 @@ function examRenderPicker() {
     empty.className = 'exam-empty';
     empty.innerHTML =
       '<div class="exam-empty-title">暂无可用题目</div>' +
-      '<div class="exam-empty-desc">当前书里没有可用的单选题（需要有选项且答案可匹配）。</div>';
+      '<div class="exam-empty-desc">当前书里没有可用的选择题（需要有选项且答案可匹配，支持单选/多选）。</div>';
     els.examPickerView.appendChild(empty);
     return;
   }

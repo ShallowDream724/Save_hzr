@@ -281,7 +281,169 @@
       } catch (e) {}
       bookOpenAnim = null;
     }
-  
+
+    var textPromptState = { bound: false, onSubmit: null };
+
+    function closeTextPromptModal() {
+      try { textPromptState.onSubmit = null; } catch (_) {}
+      if (!els || !els.textPromptModal) return;
+      try { els.textPromptModal.classList.remove('open'); } catch (_) {}
+      try { syncModalScrollLock(); } catch (_) {}
+    }
+
+    function bindTextPromptModalOnce() {
+      if (textPromptState.bound) return;
+      textPromptState.bound = true;
+
+      if (!els || !els.textPromptModal) return;
+
+      if (els.textPromptCancelBtn) {
+        els.textPromptCancelBtn.onclick = function () {
+          closeTextPromptModal();
+        };
+      }
+
+      if (els.textPromptOkBtn) {
+        els.textPromptOkBtn.onclick = function () {
+          var v = '';
+          try { v = (els.textPromptInput && typeof els.textPromptInput.value === 'string') ? els.textPromptInput.value : ''; } catch (_) { v = ''; }
+          var fn = null;
+          try { fn = textPromptState.onSubmit; } catch (_) { fn = null; }
+          if (typeof fn !== 'function') { closeTextPromptModal(); return; }
+          var ok = true;
+          try { ok = fn(v) !== false; } catch (_) { ok = true; }
+          if (ok) closeTextPromptModal();
+        };
+      }
+
+      if (els.textPromptInput) {
+        els.textPromptInput.addEventListener('keydown', function (e) {
+          if (!e) return;
+          if (e.key === 'Enter') {
+            try { e.preventDefault(); } catch (_) {}
+            if (els.textPromptOkBtn) els.textPromptOkBtn.click();
+          }
+        });
+      }
+
+      // Ensure state clears when closing via overlay / X.
+      try {
+        els.textPromptModal.addEventListener('click', function (e) {
+          if (e && e.target !== els.textPromptModal) return;
+          textPromptState.onSubmit = null;
+        }, { passive: true });
+        var closeX = els.textPromptModal.querySelector('.modal-close-x');
+        if (closeX) closeX.addEventListener('click', function () { textPromptState.onSubmit = null; }, { passive: true });
+      } catch (_) {}
+    }
+
+    function openTextPromptModal(opts) {
+      opts = (opts && typeof opts === 'object') ? opts : {};
+      var title = (typeof opts.title === 'string') ? opts.title : '输入';
+      var value = (typeof opts.value === 'string') ? opts.value : '';
+      var placeholder = (typeof opts.placeholder === 'string') ? opts.placeholder : '请输入…';
+      var okText = (typeof opts.okText === 'string') ? opts.okText : '保存';
+      var onSubmit = (typeof opts.onSubmit === 'function') ? opts.onSubmit : null;
+
+      // Fallback: native prompt.
+      if (!els || !els.textPromptModal || !els.textPromptInput) {
+        var next = prompt(title, value);
+        if (next === null) return;
+        if (onSubmit) onSubmit(String(next || ''));
+        return;
+      }
+
+      bindTextPromptModalOnce();
+      textPromptState.onSubmit = onSubmit;
+
+      try { if (els.textPromptTitle) els.textPromptTitle.textContent = title; } catch (_) {}
+      try { if (els.textPromptOkBtn) els.textPromptOkBtn.textContent = okText; } catch (_) {}
+      try { els.textPromptInput.value = value; } catch (_) {}
+      try { els.textPromptInput.placeholder = placeholder; } catch (_) {}
+
+      try { els.textPromptModal.classList.add('open'); } catch (_) {}
+      try { syncModalScrollLock(); } catch (_) {}
+      try { els.textPromptInput.focus(); els.textPromptInput.select(); } catch (_) {}
+    }
+
+    function renameChapterTitleById(chapterId, nextTitle) {
+      var id = String(chapterId || '');
+      if (!id) return false;
+
+      nextTitle = String(nextTitle || '').trim();
+      if (!nextTitle) {
+        showToast('章节名不能为空', { timeoutMs: 2200 });
+        return false;
+      }
+      if (nextTitle.length > 80) {
+        showToast('章节名过长（最多 80 字）', { timeoutMs: 2200 });
+        return false;
+      }
+
+      var book = getActiveBook();
+      var ch = null;
+      try { ch = findChapterById(id); } catch (_) { ch = null; }
+      var isStatic = (String(id).indexOf('static_') === 0) || !!(ch && ch.isStatic);
+
+      if (isStatic) {
+        if (!book.chapterTitleOverrides || typeof book.chapterTitleOverrides !== 'object' || Array.isArray(book.chapterTitleOverrides)) {
+          book.chapterTitleOverrides = {};
+        }
+        var base = '';
+        for (var i = 0; i < staticData.length; i++) {
+          if (staticData[i] && staticData[i].id === id) { base = String(staticData[i].title || '').trim(); break; }
+        }
+        if (base && nextTitle === base) delete book.chapterTitleOverrides[id];
+        else book.chapterTitleOverrides[id] = nextTitle;
+      } else {
+        var list = book.chapters || [];
+        for (var j = 0; j < list.length; j++) {
+          if (list[j] && list[j].id === id) {
+            list[j].title = nextTitle;
+            break;
+          }
+        }
+      }
+
+      try { book.updatedAt = new Date().toISOString(); } catch (_) {}
+      saveData();
+      renderSidebar();
+
+      try {
+        if (currentChapterId === id) {
+          var ch2 = findChapterById(id);
+          if (typeof setTopBarTitle === 'function') setTopBarTitle((ch2 && ch2.title) ? String(ch2.title) : nextTitle);
+          else if (els.chapterTitle) els.chapterTitle.innerText = (ch2 && ch2.title) ? String(ch2.title) : nextTitle;
+        }
+      } catch (_) {}
+
+      showToast('已重命名：' + nextTitle, { timeoutMs: 2200 });
+      return true;
+    }
+
+    function openRenameChapterModal(chapterId) {
+      var id = String(chapterId || '');
+      if (!id) return;
+      if (typeof isFavoritesChapterId === 'function' && isFavoritesChapterId(id)) {
+        showToast('收藏夹不能重命名', { timeoutMs: 1800 });
+        return;
+      }
+      var ch = null;
+      try { ch = findChapterById(id); } catch (_) { ch = null; }
+      if (!ch) {
+        showToast('未找到章节', { timeoutMs: 2200 });
+        return;
+      }
+      var cur = (ch && typeof ch.title === 'string') ? ch.title.trim() : '';
+      openTextPromptModal({
+        title: '重命名章节',
+        value: cur || '未命名章节',
+        placeholder: '输入章节名（最多 80 字）',
+        okText: '保存',
+        onSubmit: function (v) { return renameChapterTitleById(id, v); }
+      });
+    }
+   
     function createFolderElement(folder) {
       var container = document.createElement('div');
       container.className = 'folder-container' + (folder.isOpen ? ' open' : '');
@@ -313,17 +475,27 @@
       if (actions) {
         var renBtn = actions.children[0];
         var delBtn = actions.children[1];
-  
+   
         if (renBtn) renBtn.onclick = function (e) {
           e.stopPropagation();
-          var name = prompt('重命名:', folder.title);
-          if (name) {
-            folder.title = name;
-            saveData();
-            renderSidebar();
-          }
+          var cur = (folder && typeof folder.title === 'string') ? folder.title.trim() : '';
+          openTextPromptModal({
+            title: '重命名文件夹',
+            value: cur || '未命名文件夹',
+            placeholder: '输入文件夹名',
+            okText: '保存',
+            onSubmit: function (v) {
+              var name = String(v || '').trim();
+              if (!name) { showToast('文件夹名不能为空', { timeoutMs: 2000 }); return false; }
+              folder.title = name;
+              saveData();
+              renderSidebar();
+              showToast('已重命名：' + name, { timeoutMs: 2200 });
+              return true;
+            }
+          });
         };
-  
+   
         if (delBtn) delBtn.onclick = function (e) {
           e.stopPropagation();
           var book = getActiveBook();
@@ -418,55 +590,9 @@
       if (renameIcon) {
         renameIcon.onclick = function (e) {
           e.stopPropagation();
-          var book = getActiveBook();
-          var cur = (chapter && typeof chapter.title === 'string') ? chapter.title.trim() : '';
-          var next = prompt('重命名章节', cur || '未命名章节');
-          if (next === null) return;
-          next = String(next || '').trim();
-          if (!next) {
-            showToast('章节名不能为空', { timeoutMs: 2200 });
-            return;
-          }
-          if (next.length > 80) {
-            showToast('章节名过长（最多 80 字）', { timeoutMs: 2200 });
-            return;
-          }
-
-          var id = String(chapter.id || '');
-          if (!id) return;
-
-          if (String(id).indexOf('static_') === 0 || chapter.isStatic) {
-            if (!book.chapterTitleOverrides || typeof book.chapterTitleOverrides !== 'object' || Array.isArray(book.chapterTitleOverrides)) {
-              book.chapterTitleOverrides = {};
-            }
-            var base = '';
-            for (var i = 0; i < staticData.length; i++) {
-              if (staticData[i] && staticData[i].id === id) { base = String(staticData[i].title || '').trim(); break; }
-            }
-            if (base && next === base) delete book.chapterTitleOverrides[id];
-            else book.chapterTitleOverrides[id] = next;
-          } else {
-            var list = book.chapters || [];
-            for (var j = 0; j < list.length; j++) {
-              if (list[j] && list[j].id === id) {
-                list[j].title = next;
-                break;
-              }
-            }
-          }
-
-          try { book.updatedAt = new Date().toISOString(); } catch (_) {}
-          saveData();
-          renderSidebar();
-          try {
-            if (currentChapterId === id) {
-              var ch2 = findChapterById(id);
-            if (typeof setTopBarTitle === 'function') setTopBarTitle((ch2 && ch2.title) ? String(ch2.title) : next);
-            else if (els.chapterTitle) els.chapterTitle.innerText = (ch2 && ch2.title) ? String(ch2.title) : next;
-          }
-        } catch (_) {}
-      };
-    }
+          openRenameChapterModal(chapter.id);
+        };
+      }
   
       // drag bind
       bindDragStart(div, chapter.id);

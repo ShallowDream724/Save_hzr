@@ -267,7 +267,122 @@
             </div>
 
             <div id="importPanePaste" style="display:none;">
-                <textarea id="importTextarea" placeholder='{"title": "...", "questions": [...]}'></textarea>
+                <div class="import-paste-hint">
+                    粘贴 JSON 导入到当前书（支持 AI 输出）。推荐最简结构：
+                    <code>{"title":"章节名","questions":[...]}</code>（也兼容 <code>{"chapter":{...}}</code>）。
+                    AI 输出若带 <code>```json</code> 代码块也可直接粘贴。
+                </div>
+                <details class="import-paste-help">
+                    <summary>示例 / 给 AI 的提示词</summary>
+                    <div class="import-paste-help-body">
+                        <div class="import-paste-help-head">
+                            <div class="import-paste-help-title">给 Gemini 的提示词</div>
+                            <button id="copyImportPromptBtn" class="import-paste-copy-btn" type="button">一键复制</button>
+                        </div>
+                        <pre id="importPromptPre" class="import-paste-help-pre">给 Gemini 的提示词（输入是题目文本/图片/文档，输出必须是纯 JSON）：
+
+你将收到一段“题目文本/图片/文档”（可能包含单选/多选/名词解释/简答/表格/等等）。
+请把它转换为某系统可导入的 JSON，并且只输出纯 JSON（不要任何额外解释文字），推荐包裹在```json和```之间便于用户复制。
+
+输出 JSON 形态必须是：
+{"title":"（根据这部分题目内容总结一个24字以内的章节名）","questions":[...]}
+
+最简 JSON（单章节）示例：
+{"title":"第一章 绪论","questions":[{"id":"1","qid":"sc_1","text":"题干...","options":[],"answer":"","explanation":"","knowledgeTitle":"","knowledge":""}]}
+
+questions 每项字段：
+- id: 题号/标识（如有题号，应在此写；如无题号，结合上下文排序，字符串）
+- qid: 章节内唯一标识（字符串；建议：sc_1 / mc_1 / term_1 / sa_1；不要重复）
+- text: 题干（可保留换行；不要添加多余前缀；不要在这里写题号；表格公式应自动整理排版，公式注意区分行内用$，行间用$$）
+- options: 选择题才有，形如 [{"label":"A","content":"..."},...]; 非选择题用 []
+- answer: 参考答案；单选=A；多选=ABD（按字母排序）；无答案留空字符串
+- explanation: 解析，为什么最佳答案是这个，逻辑严谨，表达清晰，记得换行。
+- knowledgeTitle: 知识栏标题
+- knowledge: 知识栏内的内容，例如本题考察的知识点，或易与本题混淆/比较考察的知识点，或怎么记住这个答案（口诀/技巧），尽可能帮助用户期末复习，不要和解析重复，记得换行。
+
+系统仅支持强调样式（三者应配合使用，其余 HTML 不要用）：
+- &lt;span class="highlight"&gt;...&lt;/span&gt;(推荐，解析和知识栏，尤其是非选择题的解答，都必须使用来标出重点)
+- &lt;span class="bold-em"&gt;...&lt;/span&gt;（**加粗**也会被自动解析为bold-em,且系统默认为红色加粗）
+- &lt;span class="underline-em"&gt;...&lt;/span&gt;
+再次强调非选择题的答案必须用高亮/加粗/下划线画出重点增强可读性和复习效果！
+
+约束：
+1) 不要编造题干/选项/答案；缺失就留空，并在 explanation 说明“缺失信息”。
+2) 严格保持题目顺序；不要合并/拆分题目。
+3) 输出必须是可 JSON.parse 的合法 JSON。
+4) 如果我为你提供答案，请参考答案，但答案可能有错，当你认为答案出错，请给出警示，并给出充分理由，并给出更合理的答案。</pre>
+                        <div class="import-paste-help-title">JSON 示例</div>
+                        <pre class="import-paste-help-pre">JSON 示例（至少两题）：\n
+                            {
+                                "title": "钙通道阻滞剂药理学练习",
+                                "questions": [
+                                  {
+                                    "id": "1",
+                                    "qid": "sc_1",
+                                    "text": "维拉帕米不能用于治疗",
+                                    "options": [
+                                      {
+                                        "label": "A",
+                                        "content": "心绞痛"
+                                      },
+                                      {
+                                        "label": "B",
+                                        "content": "慢性心功能不全"
+                                      },
+                                      {
+                                        "label": "C",
+                                        "content": "高血压"
+                                      },
+                                      {
+                                        "label": "D",
+                                        "content": "室上性心动过速"
+                                      },
+                                      {
+                                        "label": "E",
+                                        "content": "心房纤颤"
+                                      }
+                                    ],
+                                    "answer": "B",
+                                    "explanation": "维拉帕米属于<span class=\"bold-em\">苯烷胺类钙通道阻滞剂</span>，对心脏有显著的<span class=\"highlight\">负性肌力作用</span>（抑制心肌收缩力）。<br> 慢性心功能不全（充血性心力衰竭）患者心肌收缩力本就减弱，使用维拉帕米会进一步降低心排血量，导致病情恶化，因此通常禁用。<br> 其他选项 A、C、D、E 均为维拉帕米的适应症。",
+                                    "knowledgeTitle": "钙拮抗药的禁忌与分类",
+                                    "knowledge": "1. **分类记忆**：\n- 二氢吡啶类（如硝苯地平）：主要扩血管，反射性心率加快。\n- 非二氢吡啶类（如维拉帕米）：主要抑制心脏，<span class=\"bold-em\">严禁用于严重心衰</span>。\n2. **口诀**：维拉帕米心不全，房室阻滞更危险（意指用于心功能不全和传导阻滞时需极度谨慎或禁用）。"
+                                  },
+                                  {
+                                    "id": "2",
+                                    "qid": "sc_2",
+                                    "text": "有选择性扩张脑血管作用的钙拮抗药是",
+                                    "options": [
+                                      {
+                                        "label": "A",
+                                        "content": "硝苯地平"
+                                      },
+                                      {
+                                        "label": "B",
+                                        "content": "尼莫地平"
+                                      },
+                                      {
+                                        "label": "C",
+                                        "content": "尼群地平"
+                                      },
+                                      {
+                                        "label": "D",
+                                        "content": "维拉帕米"
+                                      },
+                                      {
+                                        "label": "E",
+                                        "content": "地尔硫卓"
+                                      }
+                                    ],
+                                    "answer": "B",
+                                    "explanation": "尼莫地平（Nimodipine）具有高度的<span class=\"highlight\">脂溶性</span>，极易通过血脑屏障，对<span class=\"underline-em\">脑血管</span>平滑肌有较强的选择性扩张作用。<br> 临床主要用于预防和治疗蛛网膜下腔出血后的脑血管痉挛，以及缺血性脑血管病。",
+                                    "knowledgeTitle": "钙拮抗药的作用靶点",
+                                    "knowledge": "1. **尼莫地平** -> “尼”（Ni） -> 脑（Brain） -> <span class=\"highlight\">脑血管痉挛首选</span>。\n2. **硝苯地平** -> 强力扩外周血管 -> 降压/变异型心绞痛。\n3. **维拉帕米** -> 心脏 -> 阵发性室上性心动过速首选。"
+                                  }
+                                ]
+                              }</pre>
+                    </div>
+                </details>
+                <textarea id="importTextarea" placeholder='{"title":"第一章 绪论","questions":[{"id":"1","qid":"sc_1","text":"题干...","options":[{"label":"A","content":"选项A..."},{"label":"B","content":"选项B..."},{"label":"C","content":"选项C..."},{"label":"D","content":"选项D..."},{"label":"E","content":"选项E..."}],"answer":"E","explanation":"","knowledgeTitle":"","knowledge":""}]}'></textarea>
                 <div class="modal-actions">
                     <button id="cancelImportBtn" class="modal-btn">取消</button>
                     <button id="confirmImportBtn" class="modal-btn primary">导入</button>
@@ -276,6 +391,24 @@
 
             <div class="modal-actions" style="margin-top:14px;">
                 <button id="closeImportBtn" class="modal-btn">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="textPromptModal" aria-hidden="true">
+        <div class="modal-box" role="dialog" aria-modal="true" aria-label="输入">
+            <div class="modal-sticky-close">
+                <button class="icon-btn modal-close-x" type="button" title="关闭" aria-label="关闭">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <h3 id="textPromptTitle" style="margin-top:0;">输入</h3>
+            <div style="display:grid; gap:10px; margin-top:10px;">
+                <input id="textPromptInput" class="auth-input" placeholder="请输入…">
+            </div>
+            <div class="modal-actions" style="margin-top:14px;">
+                <button id="textPromptCancelBtn" class="modal-btn" type="button">取消</button>
+                <button id="textPromptOkBtn" class="modal-btn primary" type="button">保存</button>
             </div>
         </div>
     </div>

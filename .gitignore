@@ -6,7 +6,10 @@ pnpm-debug.log*
 *.stackdump
 
 .env
+.env.local
 .DS_Store
+package-lock.json
+tmp_*
 
 # runtime data
 *.db

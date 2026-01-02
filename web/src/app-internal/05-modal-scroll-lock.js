@@ -70,6 +70,7 @@
           els.importModal,
           els.folderModal,
           els.bookModal,
+          els.textPromptModal,
           els.authModal,
           els.settingsModal,
           els.searchModal,

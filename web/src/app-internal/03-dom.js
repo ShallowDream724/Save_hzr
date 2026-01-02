@@ -47,6 +47,8 @@
       els.importPanePaste = document.getElementById('importPanePaste');
       els.importFileInput = document.getElementById('importFileInput');
       els.importTextarea = document.getElementById('importTextarea');
+      els.copyImportPromptBtn = document.getElementById('copyImportPromptBtn');
+      els.importPromptPre = document.getElementById('importPromptPre');
       els.cancelImportBtn = document.getElementById('cancelImportBtn');
       els.confirmImportBtn = document.getElementById('confirmImportBtn');
       els.closeImportBtn = document.getElementById('closeImportBtn');
@@ -55,6 +57,13 @@
       els.folderNameInput = document.getElementById('folderNameInput');
       els.folderCancelBtn = document.getElementById('folderCancelBtn');
       els.folderCreateBtn = document.getElementById('folderCreateBtn');
+
+      // generic text prompt modal (rename etc.)
+      els.textPromptModal = document.getElementById('textPromptModal');
+      els.textPromptTitle = document.getElementById('textPromptTitle');
+      els.textPromptInput = document.getElementById('textPromptInput');
+      els.textPromptCancelBtn = document.getElementById('textPromptCancelBtn');
+      els.textPromptOkBtn = document.getElementById('textPromptOkBtn');
 
       // book modal
       els.bookModal = document.getElementById('bookModal');

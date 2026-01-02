@@ -49,16 +49,47 @@
 
     var defaultSeed = null;
     var defaultSeedLoaded = false;
+    var defaultAppSeed = null;
+    var defaultAppSeedLoaded = false;
     function loadDefaultSeed() {
       if (defaultSeedLoaded) return Promise.resolve(defaultSeed);
       defaultSeedLoaded = true;
+      // We attempt to load a full app-export as the default seed; prevent extra default seed fetches.
+      defaultAppSeedLoaded = true;
       if (typeof fetch !== 'function') return Promise.resolve(null);
-      // Default seed is a renamed local backup JSON:
+      // Default seed is a local backup JSON (app export):
+      // { exportedAt, app, books, ui }  (preferred)
+      // or legacy wrapper:
       // { exportedAt, app, data: { chapters, folders, layoutMap, deletedChapterIds, ui } }
-      return fetch('./default.json', { cache: 'no-store' })
+      // Use encodeURI because the default file name may contain spaces/CJK chars.
+      var url = './拯救Hzr-全部备份-2026-01-02-07-12.json';
+      try { url = encodeURI(url); } catch (_) {}
+      return fetch(url, { cache: 'no-store' })
         .then(function (res) { return res.ok ? res.json() : null; })
         .then(function (j) {
           if (!j || typeof j !== 'object') return null;
+
+          // New preferred: full app export seed (includes multiple books).
+          if (Array.isArray(j.books)) {
+            defaultAppSeedLoaded = true;
+            defaultAppSeed = {
+              ui: normalizeUi(j.ui),
+              books: j.books.map(normalizeBook),
+              currentBookId: (typeof j.currentBookId === 'string' && j.currentBookId) ? j.currentBookId : null
+            };
+            // Ensure currentBookId exists.
+            try {
+              var books = defaultAppSeed.books || [];
+              if (!defaultAppSeed.currentBookId && books[0] && books[0].id) defaultAppSeed.currentBookId = books[0].id;
+              else if (defaultAppSeed.currentBookId) {
+                var ok = false;
+                for (var i = 0; i < books.length; i++) if (books[i] && books[i].id === defaultAppSeed.currentBookId) { ok = true; break; }
+                if (!ok && books[0] && books[0].id) defaultAppSeed.currentBookId = books[0].id;
+              }
+            } catch (_) {}
+            return defaultAppSeed;
+          }
+
           var data = (j.data && typeof j.data === 'object') ? j.data : j;
           if (!data || typeof data !== 'object') return null;
           if (!Array.isArray(data.chapters) || !Array.isArray(data.folders)) return null;
@@ -69,6 +100,16 @@
           return defaultSeed;
         })
         .catch(function () { return null; });
+    }
+
+    var defaultEpidemiologySeed = null;
+    var defaultEpidemiologySeedLoaded = false;
+    function loadDefaultEpidemiologySeed() {
+      // Default is now provided by the full app-export seed (multi-book), so this extra seed is not used.
+      if (defaultEpidemiologySeedLoaded) return Promise.resolve(null);
+      defaultEpidemiologySeedLoaded = true;
+      defaultEpidemiologySeed = null;
+      return Promise.resolve(null);
     }
 
     function normalizeBook(book) {
@@ -221,9 +262,18 @@
     }
 
     function defaultAppData() {
+      // Preferred default: full app export seed (multi-book).
+      if (defaultAppSeed && typeof defaultAppSeed === 'object' && Array.isArray(defaultAppSeed.books) && defaultAppSeed.books.length) {
+        return {
+          ui: normalizeUi(defaultAppSeed.ui),
+          books: defaultAppSeed.books.map(normalizeBook),
+          currentBookId: (typeof defaultAppSeed.currentBookId === 'string' && defaultAppSeed.currentBookId) ? defaultAppSeed.currentBookId : defaultAppSeed.books[0].id
+        };
+      }
+
       var ui = defaultUi();
 
-      // Default book seed (药理学) comes from packaged default.json (wrapper).
+      // Legacy default book seed (药理学) comes from a single-library wrapper (if provided).
       var seedBook = null;
       if (defaultSeed && typeof defaultSeed === 'object') {
         seedBook = makeBookFromLibrary(defaultSeed, '药理学', true);
@@ -231,10 +281,19 @@
         seedBook = makeBookFromLibrary({ chapters: [], folders: [], layoutMap: {}, deletedChapterIds: [] }, '药理学', true);
       }
 
+      // Optional extra default: 流行病学（if packaged)
+      var epiBook = null;
+      if (defaultEpidemiologySeed && typeof defaultEpidemiologySeed === 'object') {
+        epiBook = makeBookFromLibrary(defaultEpidemiologySeed, '流行病学', false);
+        try { epiBook.theme = 'teal'; } catch (_) {}
+        try { epiBook.icon = '🦠'; } catch (_) {}
+        epiBook = normalizeBook(epiBook);
+      }
+
       return {
         ui: ui,
-        books: [seedBook],
-        currentBookId: seedBook.id
+        books: epiBook ? [seedBook, epiBook] : [seedBook],
+        currentBookId: epiBook ? epiBook.id : seedBook.id
       };
     }
   

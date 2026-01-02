@@ -9,6 +9,13 @@ function sanitizeApiKey(apiKey) {
     .trim();
 }
 
+function detectAuthMode(rawKey) {
+  const s = sanitizeApiKey(rawKey);
+  const lower = s.toLowerCase();
+  if (lower.startsWith('bearer ')) return { mode: 'bearer', token: s.slice(7).trim() };
+  return { mode: 'apiKey', key: s };
+}
+
 function normalizeBaseURL(raw) {
   const s = String(raw || '').trim();
   if (!s) return null;
@@ -31,38 +38,57 @@ function normalizeBaseURL(raw) {
 }
 
 function buildClientOptions({ apiKey }) {
-  const opts = { apiKey };
+  const auth = detectAuthMode(apiKey);
+  const keyForSdk = auth.mode === 'apiKey' ? auth.key : auth.token;
+  if (!keyForSdk) {
+    const e = new Error('GEMINI_API_KEY is empty');
+    e.name = 'ConfigError';
+    throw e;
+  }
+
+  /** @type {import('@google/genai').GoogleGenAIOptions} */
+  const opts = { apiKey: keyForSdk };
+
+  /** @type {import('@google/genai').HttpOptions} */
+  const httpOptions = {};
+  if (auth.mode === 'bearer' && auth.token) {
+    httpOptions.headers = { Authorization: `Bearer ${auth.token}` };
+  }
 
   const baseURLRaw =
     process.env.GEMINI_NEXT_GEN_API_BASE_URL ||
     process.env.GEMINI_BASE_URL ||
-    process.env.GEMINI_API_BASE_URL;
+    process.env.GEMINI_API_BASE_URL ||
+    process.env.GOOGLE_GEMINI_BASE_URL;
   const baseURL = normalizeBaseURL(baseURLRaw);
-  if (baseURL) opts.baseURL = baseURL;
+  if (baseURL) httpOptions.baseUrl = baseURL;
 
   const apiVersion = String(process.env.GEMINI_API_VERSION || '').trim();
-  if (apiVersion) opts.apiVersion = apiVersion;
+  if (apiVersion) {
+    opts.apiVersion = apiVersion;
+    httpOptions.apiVersion = apiVersion;
+  }
 
   const timeoutMs = Number(process.env.GEMINI_TIMEOUT_MS || process.env.AI_GEMINI_TIMEOUT_MS || 240_000);
-  if (Number.isFinite(timeoutMs) && timeoutMs > 0) opts.timeout = Math.floor(timeoutMs);
+  if (Number.isFinite(timeoutMs) && timeoutMs > 0) httpOptions.timeout = Math.floor(timeoutMs);
 
-  const maxRetries = Number(process.env.GEMINI_MAX_RETRIES);
-  if (Number.isFinite(maxRetries) && maxRetries >= 0) opts.maxRetries = Math.floor(maxRetries);
+  if (httpOptions.baseUrl || httpOptions.headers || httpOptions.timeout || httpOptions.apiVersion) {
+    opts.httpOptions = httpOptions;
+  }
 
   return opts;
 }
 
 let cachedClient = null;
 function getAiClient() {
-  const rawKey = process.env.GEMINI_API_KEY;
+  const rawKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
   if (!rawKey) {
     const e = new Error('GEMINI_API_KEY not set');
     e.name = 'ConfigError';
     throw e;
   }
   if (cachedClient) return cachedClient;
-  const apiKey = sanitizeApiKey(rawKey);
-  cachedClient = new GoogleGenAI(buildClientOptions({ apiKey }));
+  cachedClient = new GoogleGenAI(buildClientOptions({ apiKey: rawKey }));
   return cachedClient;
 }
 

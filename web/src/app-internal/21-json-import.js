@@ -28,6 +28,9 @@
       // unwrap 常见壳
       if (isObject(raw) && isObject(raw.appData)) raw = raw.appData;
       if (isObject(raw) && isObject(raw.data)) raw = raw.data;
+      // AI 常见输出壳（兼容旧引导/第三方工具）
+      if (isObject(raw) && isObject(raw.chapter)) raw = raw.chapter;
+      if (isObject(raw) && isObject(raw.sheet)) raw = raw.sheet;
   
       // 1) 单 sheet
       if (looksLikeSingleSheet(raw)) {

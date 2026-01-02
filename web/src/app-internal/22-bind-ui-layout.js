@@ -161,6 +161,26 @@
         };
       }
 
+      // 顶部章节标题：点击快速重命名（更符合直觉；三端都可用）
+      if (els.chapterTitle && !els.chapterTitle.dataset.renameBound) {
+        els.chapterTitle.dataset.renameBound = '1';
+        els.chapterTitle.addEventListener('click', function () {
+          try {
+            var id = (typeof currentChapterId === 'string') ? currentChapterId : (currentChapterId ? String(currentChapterId) : '');
+            if (!id) {
+              showToast('请先选择章节', { timeoutMs: 1800 });
+              return;
+            }
+            if (typeof isFavoritesChapterId === 'function' && isFavoritesChapterId(id)) {
+              showToast('收藏夹不能重命名', { timeoutMs: 1800 });
+              return;
+            }
+            if (typeof openRenameChapterModal === 'function') openRenameChapterModal(id);
+            else showToast('重命名功能未就绪', { timeoutMs: 2000 });
+          } catch (_) {}
+        }, { passive: true });
+      }
+
       // Home HUD shortcuts (sync / saves / settings)
       if (els.homeSyncBtn) {
         els.homeSyncBtn.onclick = function () {
@@ -391,6 +411,7 @@
       bindOverlayClose(els.importModal);
       bindOverlayClose(els.folderModal);
       bindOverlayClose(els.bookModal);
+      bindOverlayClose(els.textPromptModal);
       bindOverlayClose(els.authModal);
       bindOverlayClose(els.settingsModal);
       bindOverlayClose(els.searchModal);
@@ -423,6 +444,10 @@
         if (e.key !== 'Escape') return;
         hideToast();
         if (els.importModal) els.importModal.classList.remove('open');
+        try {
+          if (typeof closeTextPromptModal === 'function') closeTextPromptModal();
+          else if (els.textPromptModal) els.textPromptModal.classList.remove('open');
+        } catch (_) {}
         if (els.authModal) els.authModal.classList.remove('open');
         if (els.settingsModal) els.settingsModal.classList.remove('open');
         try {

@@ -1,6 +1,15 @@
     /** ---------------------------
      * 8) 章节加载与题卡（保持你原逻辑）
      * --------------------------- */
+    function buildAnswerLabelSet(answer) {
+      var s = (answer === undefined || answer === null) ? '' : String(answer);
+      var m = s.toUpperCase().match(/[A-Z]/g);
+      var out = {};
+      if (!m) return out;
+      for (var i = 0; i < m.length; i++) out[m[i]] = true;
+      return out;
+    }
+
     function loadChapter(id) {
       if (homeVisible) hideHomeView();
       currentChapterId = id;
@@ -173,36 +182,59 @@
         } catch (_) {}
       };
 
-      var ul = document.createElement('ul');
-      ul.className = 'options-list';
-      for (var i = 0; i < (q.options || []).length; i++) {
-        var opt = q.options[i];
-        var li = document.createElement('li');
-        var isCorrect = opt && opt.label === q.answer;
-        li.className = 'option-item ' + (isCorrect ? 'correct' : '');
+      var opts = Array.isArray(q && q.options) ? q.options : [];
+      var ansSet = buildAnswerLabelSet(q && q.answer);
+      if (opts.length >= 2) {
+        var ul = document.createElement('ul');
+        ul.className = 'options-list';
+        for (var i = 0; i < opts.length; i++) {
+          var opt = opts[i];
+          var li = document.createElement('li');
+          var labRaw = opt && opt.label ? String(opt.label).trim().toUpperCase() : '';
+          var isCorrect = !!(labRaw && ansSet[labRaw]);
+          li.className = 'option-item ' + (isCorrect ? 'correct' : '');
 
-        var lab = document.createElement('span');
-        lab.className = 'option-label';
-        lab.textContent = opt && opt.label ? String(opt.label) : '';
+          var lab = document.createElement('span');
+          lab.className = 'option-label';
+          lab.textContent = opt && opt.label ? String(opt.label) : '';
 
-        var cont = document.createElement('div');
-        cont.className = 'option-content';
-        renderMarkdownInto(cont, opt && opt.content, { inline: true });
+          var cont = document.createElement('div');
+          cont.className = 'option-content';
+          renderMarkdownInto(cont, opt && opt.content, { inline: true });
 
-        li.appendChild(lab);
-        li.appendChild(cont);
+          li.appendChild(lab);
+          li.appendChild(cont);
 
-        if (isCorrect) {
-          var icon = document.createElement('i');
-          icon.className = 'fa-solid fa-check';
-          icon.style.marginLeft = 'auto';
-          icon.style.color = 'green';
-          li.appendChild(icon);
+          if (isCorrect) {
+            var icon = document.createElement('i');
+            icon.className = 'fa-solid fa-check';
+            icon.style.marginLeft = 'auto';
+            icon.style.color = 'green';
+            li.appendChild(icon);
+          }
+
+          ul.appendChild(li);
         }
+        card.appendChild(ul);
+      } else if (q && q.answer) {
+        var abox = document.createElement('div');
+        abox.className = 'answer-box';
 
-        ul.appendChild(li);
+        var atitle = document.createElement('div');
+        atitle.className = 'answer-title';
+        var aicon = document.createElement('i');
+        aicon.className = 'fa-solid fa-check';
+        atitle.appendChild(aicon);
+        atitle.appendChild(document.createTextNode(' 参考答案'));
+
+        var acont = document.createElement('div');
+        acont.className = 'answer-content';
+        renderMarkdownInto(acont, q.answer);
+
+        abox.appendChild(atitle);
+        abox.appendChild(acont);
+        card.appendChild(abox);
       }
-      card.appendChild(ul);
 
       if (q && q.explanation) {
         var box = document.createElement('div');

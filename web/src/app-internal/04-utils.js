@@ -159,11 +159,90 @@
       return String(html || '');
     }
 
+    function escapeNumericPercentInMathDelimiters(text) {
+      text = String(text || '');
+      if (text.indexOf('%') === -1) return text;
+
+      function esc(body) {
+        // Only escape numeric percents like `1.0%` or `0.11 %` -> `1.0\\%`.
+        return String(body || '').replace(/([0-9])\s*%/g, '$1\\%');
+      }
+
+      // $$...$$
+      text = text.replace(/\$\$([\s\S]*?)\$\$/g, function (_, inner) {
+        return '$$' + esc(inner) + '$$';
+      });
+
+      // \[...\]
+      text = text.replace(/\\\[([\s\S]*?)\\\]/g, function (_, inner2) {
+        return '\\[' + esc(inner2) + '\\]';
+      });
+
+      // \(...\)
+      text = text.replace(/\\\(([\s\S]*?)\\\)/g, function (_, inner3) {
+        return '\\(' + esc(inner3) + '\\)';
+      });
+
+      // $...$ (single-dollar only; skip $$)
+      var out = '';
+      var inMath = false;
+      var buf = '';
+      for (var i = 0; i < text.length; i++) {
+        var ch = text.charAt(i);
+        if (!inMath) {
+          if (ch === '$') {
+            var prev = (i > 0) ? text.charAt(i - 1) : '';
+            var next = (i + 1 < text.length) ? text.charAt(i + 1) : '';
+            if (prev !== '\\' && next !== '$') {
+              inMath = true;
+              out += '$';
+              buf = '';
+              continue;
+            }
+          }
+          out += ch;
+        } else {
+          if (ch === '$') {
+            var prev2 = (i > 0) ? text.charAt(i - 1) : '';
+            if (prev2 !== '\\') {
+              out += esc(buf) + '$';
+              inMath = false;
+              buf = '';
+              continue;
+            }
+          }
+          buf += ch;
+        }
+      }
+      if (inMath) out += buf;
+      return out;
+    }
+
     function renderMathSafe(rootEl) {
       try {
         if (!rootEl) return;
         if (typeof window === 'undefined') return;
         if (typeof window.renderMathInElement !== 'function') return;
+
+        // Fix KaTeX parse failures caused by numeric percents inside math (e.g. `1.0%`).
+        // Do it at DOM-text-node level (post-Markdown) so it can't be stripped by Markdown escaping rules.
+        try {
+          if (typeof document !== 'undefined' && document.createTreeWalker) {
+            var walker = document.createTreeWalker(rootEl, 4 /* NodeFilter.SHOW_TEXT */, null, false);
+            var n = null;
+            while ((n = walker.nextNode())) {
+              if (!n || !n.parentElement) continue;
+              // Skip code-ish areas and existing KaTeX output.
+              var p = n.parentElement;
+              if (p.closest && p.closest('code,pre,textarea,.katex')) continue;
+              var v = String(n.nodeValue || '');
+              if (v.indexOf('%') === -1) continue;
+              var next = escapeNumericPercentInMathDelimiters(v);
+              if (next !== v) n.nodeValue = next;
+            }
+          }
+        } catch (_) {}
+
         window.renderMathInElement(rootEl, {
           delimiters: [
             { left: '$$', right: '$$', display: true },
@@ -231,10 +310,199 @@
       return s;
     }
 
+    function normalizePlainTextTables(raw) {
+      var s = (raw === null || raw === undefined) ? '' : String(raw);
+      s = s.replace(/\r\n/g, '\n');
+
+      // Only attempt when there are multiple lines and some obvious column separators.
+      if (s.indexOf('\n') === -1) return s;
+      if (!/(\t|  {1,}|\u3000)/.test(s)) return s;
+
+      function trimRight(x) { return String(x || '').replace(/[ \t]+$/g, ''); }
+      function isListLine(line) {
+        var t = String(line || '').trim();
+        if (!t) return false;
+        // Ordered list: "1." / "1)" / "1、"
+        if (/^\d{1,3}\s*(?:[.)]|、)\s+/.test(t)) return true;
+        // Unordered list: "-" / "*" / "+"
+        if (/^(?:[-*+])\s+/.test(t)) return true;
+        return false;
+      }
+      function isNumericish(cell) {
+        var t = String(cell || '').trim();
+        if (!t) return false;
+        // Must contain a digit; allow common symbols in stats tables.
+        return /[0-9]/.test(t) && /^[0-9\s.+\-/%~≤≥<>×x·:()（）]+$/.test(t.replace(/,/g, ''));
+      }
+
+      function splitCells(line) {
+        var t = trimRight(line).trim();
+        if (!t) return null;
+        // Already a markdown table row
+        if (t.indexOf('|') !== -1) return null;
+
+        // Prefer tab
+        if (t.indexOf('\t') !== -1) {
+          var a = t.split(/\t+/).map(function (x) { return String(x || '').trim(); }).filter(Boolean);
+          if (a.length >= 2) return a;
+        }
+
+        // Prefer multi-space or ideographic space
+        if (/(\u3000| {2,})/.test(t)) {
+          var b = t.split(/(?:\u3000+| {2,})/).map(function (x) { return String(x || '').trim(); }).filter(Boolean);
+          if (b.length >= 2) return b;
+        }
+
+        // Last resort: single-space split, but only if this looks numeric-heavy (avoid sentences).
+        var parts = t.split(/ +/).map(function (x) { return String(x || '').trim(); }).filter(Boolean);
+        if (parts.length >= 3) {
+          var nums = 0;
+          for (var i = 0; i < parts.length; i++) if (isNumericish(parts[i])) nums++;
+          if (nums >= 2) return parts;
+        }
+        return null;
+      }
+
+      function escapePipe(cell) { return String(cell || '').replace(/\|/g, '\\|').trim(); }
+
+      function convertBlockToMarkdownTable(blockText) {
+        var lines = String(blockText || '').split('\n').map(trimRight);
+        // Do not convert blocks that look like lists (avoid turning "1. ..." into tables).
+        var listLines = 0;
+        for (var li = 0; li < lines.length; li++) {
+          if (isListLine(lines[li])) listLines++;
+        }
+        if (listLines >= 2) return null;
+
+        var rows = [];
+        for (var i = 0; i < lines.length; i++) {
+          var ln = lines[i];
+          if (!String(ln || '').trim()) continue;
+          if (isListLine(ln)) return null;
+          // Avoid converting obvious prose blocks.
+          if (String(ln).trim().length > 160 && String(ln).indexOf('\t') === -1 && !/( {2,}|\u3000)/.test(String(ln))) return null;
+          var cells = splitCells(ln);
+          if (!cells) return null;
+          rows.push(cells);
+        }
+        if (rows.length < 2) return null;
+
+        // Require stable column count.
+        var colCount = rows[0].length;
+        if (colCount < 2 || colCount > 14) return null;
+        for (var r = 1; r < rows.length; r++) if (rows[r].length !== colCount) return null;
+
+        // Reduce false positives: require at least one numeric-ish cell in the whole block.
+        var hasNum = false;
+        for (var rr = 0; rr < rows.length; rr++) {
+          for (var cc = 0; cc < rows[rr].length; cc++) {
+            if (isNumericish(rows[rr][cc])) { hasNum = true; break; }
+          }
+          if (hasNum) break;
+        }
+        if (!hasNum) return null;
+
+        // Determine if first row is likely a header (wordy) or data (numeric-heavy).
+        var firstNum = 0;
+        for (var c0 = 0; c0 < colCount; c0++) if (isNumericish(rows[0][c0])) firstNum++;
+        var useGenericHeader = firstNum >= Math.ceil(colCount * 0.6);
+
+        var header = useGenericHeader
+          ? (function () { var h = []; for (var k = 0; k < colCount; k++) h.push('列' + (k + 1)); return h; })()
+          : rows[0];
+
+        var body = useGenericHeader ? rows : rows.slice(1);
+
+        // Alignment: right-align numeric-heavy columns in body.
+        var aligns = [];
+        for (var col = 0; col < colCount; col++) {
+          var num = 0;
+          for (var br = 0; br < body.length; br++) if (isNumericish(body[br][col])) num++;
+          var ratio = body.length ? (num / body.length) : 0;
+          // First column is usually a label/category; keep it left-aligned for readability.
+          aligns[col] = (col !== 0 && ratio >= 0.7) ? '---:' : '---';
+        }
+
+        function rowToLine(arr) {
+          return '| ' + arr.map(escapePipe).join(' | ') + ' |';
+        }
+
+        var out = [];
+        out.push(rowToLine(header));
+        out.push('| ' + aligns.join(' | ') + ' |');
+        for (var b = 0; b < body.length; b++) out.push(rowToLine(body[b]));
+        return out.join('\n');
+      }
+
+      function processOutsideFences(text) {
+        // Split into paragraph-ish blocks by blank lines; convert blocks that look like tables.
+        var blocks = String(text || '').split(/\n{2,}/);
+        for (var i = 0; i < blocks.length; i++) {
+          var b = blocks[i];
+          // Skip blocks that already contain markdown table separators.
+          if (/\n?\s*\|.*\|\s*\n/.test(b) || /\n?\s*[-:| ]{5,}\s*\n/.test(b)) continue;
+          var converted = convertBlockToMarkdownTable(b);
+          if (converted) blocks[i] = converted;
+        }
+        return blocks.join('\n\n');
+      }
+
+      // Protect fenced code blocks (``` ... ```) and display-math blocks ($$...$$ / \[...\]).
+      var out = [];
+      var re = /```[\s\S]*?```|\$\$[\s\S]*?\$\$|\\\[[\s\S]*?\\\]/g;
+      var last = 0;
+      var m = null;
+      while ((m = re.exec(s))) {
+        out.push(processOutsideFences(s.slice(last, m.index)));
+        out.push(m[0]);
+        last = m.index + m[0].length;
+      }
+      out.push(processOutsideFences(s.slice(last)));
+      return out.join('');
+    }
+
+    function protectDisplayMathBlocks(raw) {
+      raw = String(raw || '');
+      var blocks = [];
+      // Match $$...$$ and \[...\] (display math). Keep as-is to avoid Markdown tables/lists eating inner chars.
+      var re = /\$\$[\s\S]*?\$\$|\\\[[\s\S]*?\\\]/g;
+      raw = raw.replace(re, function (m) {
+        var idx = blocks.length;
+        blocks.push(m);
+        return 'HZR_MATH_BLOCK_' + idx + '_END';
+      });
+      return { text: raw, blocks: blocks };
+    }
+
+    function restoreProtectedMathBlocks(rootEl, blocks) {
+      if (!rootEl || !blocks || !blocks.length) return;
+      if (typeof document === 'undefined' || !document.createTreeWalker) return;
+
+      try {
+        var walker = document.createTreeWalker(rootEl, 4 /* NodeFilter.SHOW_TEXT */, null, false);
+        var n = null;
+        while ((n = walker.nextNode())) {
+          if (!n || !n.nodeValue) continue;
+          var v = String(n.nodeValue);
+          if (v.indexOf('HZR_MATH_BLOCK_') === -1) continue;
+          v = v.replace(/HZR_MATH_BLOCK_(\d+)_END/g, function (_, d) {
+            var i = Number(d);
+            return (Number.isFinite(i) && blocks[i] !== undefined) ? String(blocks[i]) : _;
+          });
+          n.nodeValue = v;
+        }
+      } catch (_) {}
+    }
+
     function renderMarkdownInto(el, mdText, opts) {
       if (!el) return;
       opts = opts || {};
       var raw = normalizeMathBlocks(mdText);
+      if (!opts.inline) raw = normalizePlainTextTables(raw);
+
+      // Protect display-math blocks from Markdown-it (so inner `|`, list markers, etc. won't break them).
+      var protectedMath = protectDisplayMathBlocks(raw);
+      raw = protectedMath.text;
       var md = getMarkdownIt();
       var html = md ? (opts.inline ? md.renderInline(raw) : md.render(raw)) : escapeHtml(raw).replace(/\n/g, '<br>');
 
@@ -247,6 +515,7 @@
 
       html = sanitizeHtmlWithPurify(html);
       el.innerHTML = html;
+      try { restoreProtectedMathBlocks(el, protectedMath.blocks); } catch (_) {}
       // Ensure links are safe
       try {
         var links = el.querySelectorAll ? el.querySelectorAll('a') : null;
